@@ -1,7 +1,6 @@
 
 from dataclasses import dataclass
 import requests
-from .utils.retries import RetryConfig
 from typing import Dict, Tuple
 from .utils import utils
 
@@ -12,4 +11,3 @@ class GlassFlowConfig:
     server_url: str = 'http://api.glassflow.xyz/v1'
     sdk_version: str = '0.0.1'
     user_agent: str = 'glassflow-python-sdk'
-    retry_config: RetryConfig = None
