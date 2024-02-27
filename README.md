@@ -36,4 +36,11 @@ Please note that the GlassFlow Python SDK is currently in beta and is subject to
 
 For more detailed information on how to use the GlassFlow Python SDK, please refer to the [GlassFlow Documentation](https://learn.glassflow.dev). The documentation provides comprehensive guides, tutorials, and examples to help you get started with GlassFlow and make the most out of the SDK.
 
-For any questions, comments or additional help, please reach out to us via email at [help@glassflow.dev](mailto:help@glassflow.dev).
+## Troubleshooting
+
+For any questions, comments, or additional help, please reach out to us via email at [help@glassflow.dev](mailto:help@glassflow.dev).
+Please check out our [Q&A](https://github.com/glassflow/glassflow-python-sdk/discussions/categories/q-a) to get solutions for common installation problems and other issues.
+
+### Raise an issue
+
+To provide feedback or report a bug, please [raise an issue on our issue tracker](https://github.com/glassflow/glassflow-python-sdk/issues).
