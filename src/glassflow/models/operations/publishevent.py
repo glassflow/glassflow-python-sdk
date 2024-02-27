@@ -1,3 +1,5 @@
+"""Dataclasses for publish event operation
+"""
 from __future__ import annotations
 import dataclasses
 import requests as requests_http
@@ -11,31 +13,73 @@ class PublishEventRequestBody:
 
 @dataclasses.dataclass
 class PublishEventRequest:
-    pipeline_id: str = dataclasses.field(metadata={'path_param': {
-                                         'field_name': 'pipeline_id', 'style': 'simple', 'explode': False}})
-    space_id: str = dataclasses.field(metadata={'query_param': {
-                                      'field_name': 'space_id', 'style': 'form', 'explode': True}})
-    organization_id: Optional[str] = dataclasses.field(default=None, metadata={
-                                                       'query_param': {'field_name': 'organization_id', 'style': 'form', 'explode': True}})
-    x_pipeline_access_token: str = dataclasses.field(default=None, metadata={'header': {
-                                                     'field_name': 'X-PIPELINE-ACCESS-TOKEN', 'style': 'simple', 'explode': False}})
+    """Request to publish an event to a pipeline topic
+
+    Attributes:
+        pipeline_id: The id of the pipeline
+        space_id: The id of the space
+        organization_id: The id of the organization
+        x_pipeline_access_token: The access token of the pipeline
+        request_body: The request body / event that should be published to the pipeline
+    """
+    pipeline_id: str = dataclasses.field(
+        metadata={
+            'path_param': {
+                'field_name': 'pipeline_id',
+                'style': 'simple',
+                'explode': False
+            }
+        })
+    space_id: str = dataclasses.field(
+        metadata={
+            'query_param': {
+                'field_name': 'space_id',
+                'style': 'form',
+                'explode': True
+            }
+        })
+    organization_id: Optional[str] = dataclasses.field(
+        default=None,
+        metadata={
+            'query_param': {
+                'field_name': 'organization_id',
+                'style': 'form',
+                'explode': True
+            }
+        })
+    x_pipeline_access_token: str = dataclasses.field(
+        default=None,
+        metadata={
+            'header': {
+                'field_name': 'X-PIPELINE-ACCESS-TOKEN',
+                'style': 'simple',
+                'explode': False
+            }
+        })
     request_body: dict = dataclasses.field(
-        default=None, metadata={'request': {'media_type': 'application/json'}})
+        default=None, metadata={'request': {
+            'media_type': 'application/json'
+        }})
 
 
 @dataclasses.dataclass
 class PublishEventResponseBody:
-    r"""Message pushed to the pipeline"""
+    """Message pushed to the pipeline"""
 
 
 @dataclasses.dataclass
 class PublishEventResponse:
+    """Response object for publish event operation
+
+    Attributes:
+        content_type: HTTP response content type for this operation
+        status_code: HTTP response status code for this operation
+        raw_response: Raw HTTP response; suitable for custom response parsing
+        object: Response to the publish operation
+
+    """
     content_type: str = dataclasses.field()
-    r"""HTTP response content type for this operation"""
     status_code: int = dataclasses.field()
-    r"""HTTP response status code for this operation"""
     raw_response: requests_http.Response = dataclasses.field()
-    r"""Raw HTTP response; suitable for custom response parsing"""
     object: Optional[PublishEventResponseBody] = dataclasses.field(
         default=None)
-    r"""Message pushed to the pipeline"""

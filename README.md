@@ -12,19 +12,47 @@ You can install the GlassFlow Python SDK using pip:
 pip install glassflow
 ```
 
-## SDK Example Usage
+## Available Operations
+
+* [publish](#publish) - Publish a new event into the pipeline
+* [consume](#consume) - Consume the transformed event from the pipeline
+
+
+## publish
+
+Publish a new event into the pipeline
+
+### Example Usage
 
 ```python
 import glassflow
 
 client = glassflow.GlassFlowClient()
-pipeline = client.pipeline_client(space_id="<space_id>", pipeline_id="<pipeline_id>")
-pipeline_access_token="<pipeline_token>"
-data = {
-    "name": "Hello World",
-    "id": 1
-}
-res = pipeline.publish(request_body=data,pipeline_access_token=pipeline_access_token)
+pipeline_client = client.pipeline_client(space_id="<str value>", pipeline_id="<str value")
+data = {} # your json event
+req = pipeline_client.publish(request_body=data, pipeline_access_token="<str token>")
+
+if res.status_code == 200:
+    print("Published sucessfully")
+```
+
+
+## consume
+
+Consume the transformed event from the pipeline
+
+### Example Usage
+
+```python
+import glassflow
+
+client = glassflow.GlassFlowClient()
+pipeline_client = client.pipeline_client(space_id="<str value>", pipeline_id="<str value")
+data = {} # your json event
+res = pipeline_client.consume(pipeline_access_token="<str value>")
+
+if res.status_code == 200:
+    print(res.body.event)
 ```
 
 ## SDK Maturity

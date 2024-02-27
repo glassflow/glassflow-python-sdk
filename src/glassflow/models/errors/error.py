@@ -7,9 +7,17 @@ from glassflow import utils
 @dataclass_json(undefined=Undefined.EXCLUDE)
 @dataclasses.dataclass
 class Error(Exception):
-    r"""Bad request"""
-    message: str = dataclasses.field(
-        metadata={'dataclasses_json': {'letter_case': utils.get_field_name('message')}})
+    """Bad request error response
+
+    Attributes:
+        message: A message describing the error
+
+    """
+    message: str = dataclasses.field(metadata={
+        'dataclasses_json': {
+            'letter_case': utils.get_field_name('message')
+        }
+    })
 
     def __str__(self) -> str:
         return utils.marshal_json(self, type(self))
