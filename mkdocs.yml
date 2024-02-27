@@ -1,0 +1,10 @@
+site_name: GlassFlow Python SDK Docs
+theme:
+  name: "material"
+
+plugins:
+  - mkdocstrings
+
+nav:
+  - GlassFlow SDK Docs: index.md
+  - GlassFlow SDK Reference: reference.md
