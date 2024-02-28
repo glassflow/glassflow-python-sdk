@@ -7,7 +7,7 @@ except FileNotFoundError:
     long_description = ""
 
 setuptools.setup(
-    name="GlassFlow",
+    name="glassflow",
     version="0.1.0",
     author="glassflow",
     description="GlassFlow Python Client SDK",
@@ -15,6 +15,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     packages=setuptools.find_packages(where="src"),
     install_requires=[
+        "urllib3==1.26.15",
         "certifi>=2023.7.22",
         "charset-normalizer>=3.2.0",
         "dataclasses-json>=0.6.4",
@@ -27,13 +28,10 @@ setuptools.setup(
         "requests>=2.31.0",
         "six>=1.16.0",
         "typing-inspect>=0.9.0",
-        "typing_extensions>=4.7.1",
-        "urllib3>=1.26.18",
+        "typing_extensions>=4.7.1"
     ],
-    extras_require={
-        "dev":["pylint==2.16.2"]
-    },
+    extras_require={"dev": ["pylint==2.16.2"]},
     package_dir={'': 'src'},
     python_requires='>=3.8',
-    package_data={"GlassFlow": ["py.typed"]},
+    package_data={"glassflow": ["py.typed"]},
 )

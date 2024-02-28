@@ -10,3 +10,4 @@ id_github_glassflow-python-sdk-docs
 id_github_glassflow-python-sdk-docs.*
 docs/api-docs/
 site/
+generate_docs/

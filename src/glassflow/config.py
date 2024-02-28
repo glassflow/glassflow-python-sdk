@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 import requests
-from typing import Dict, Tuple
-from .utils import utils
+from typing import Tuple
 
 
 @dataclass
@@ -13,6 +12,7 @@ class GlassFlowConfig:
         server_url: The base URL of the GlassFlow API
         sdk_version: The version of the GlassFlow Python SDK
         user_agent: The user agent to be used in the requests
+
     """
     client: requests.Session
     server_url: str = 'http://api.glassflow.xyz/v1'
