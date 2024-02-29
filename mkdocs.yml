@@ -1,12 +1,30 @@
 site_name: GlassFlow Python SDK Docs
+site_author: GlassFlow
+site_description: Python SDK Reference for GlassFlow
 
 theme:
   name: "material"
+  logo: assets/logo.png
+  favicon: assets/favicon.png
+  features:
+    - navigation.path
+    - navigation.footer
+
+extra:
+  social:
+    - icon: fontawesome/brands/x-twitter
+      link: https://twitter.com/glassflowdev
+    - icon: fontawesome/brands/linkedin
+      link: https://www.linkedin.com/company/glassflow-dev/
+    - icon: fontawesome/solid/paper-plane
+      link: mailto:help@glassflow.dev
 
 nav:
-  - GlassFlow Home: index.md
-  - API Reference: reference.md
-
+  - Home: index.md
+  - Python SDK Docs: reference.md
+  - "User Guide ↗️" : 'https://learn.glassflow.dev'
+  - "GlassFlow Blog ↗️" : 'https://learn.glassflow.dev/blog'
 
 plugins:
   - mkdocstrings
+  - search
