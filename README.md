@@ -30,7 +30,7 @@ import glassflow
 client = glassflow.GlassFlowClient()
 pipeline_client = client.pipeline_client(space_id="<str value>", pipeline_id="<str value")
 data = {} # your json event
-req = pipeline_client.publish(request_body=data, pipeline_access_token="<str token>")
+res = pipeline_client.publish(request_body=data, pipeline_access_token="<str token>")
 
 if res.status_code == 200:
     print("Published sucessfully")
