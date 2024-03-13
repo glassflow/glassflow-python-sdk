@@ -6,6 +6,6 @@ __pycache__/
 .DS_Store
 docs.py
 utils.bak.py
-site/
+site**
 .pypirc
 dist/

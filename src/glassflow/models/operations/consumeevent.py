@@ -86,3 +86,12 @@ class ConsumeEventResponse:
     status_code: int = dataclasses.field()
     raw_response: requests_http.Response = dataclasses.field()
     body: Optional[ConsumeEventResponseBody] = dataclasses.field(default=None)
+
+    def json(self):
+        """Return the response body as a JSON object.
+        This method is to have cmopatibility with the requests.Response.json() method
+
+        Returns:
+            dict: The transformed event as a JSON object
+        """
+        return self.body.event

@@ -15,6 +15,6 @@ class GlassFlowConfig:
 
     """
     client: requests.Session
-    server_url: str = 'http://api.glassflow.xyz/v1'
-    sdk_version: str = '0.0.1'
+    server_url: str = 'https://api.glassflow.xyz/v1'
+    sdk_version: str = '0.0.2'
     user_agent: str = 'glassflow-python-sdk'
