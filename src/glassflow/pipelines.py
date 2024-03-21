@@ -154,6 +154,10 @@ class PipelineClient():
                 raise errors.ClientError(
                     f'unknown content-type received: {content_type}',
                     http_res.status_code, http_res.text, http_res)
+        elif http_res.status_code == 204:
+            # No messages to be consumed. Return an empty response body
+            body = operations.ConsumeEventResponseBody("", "", {})
+            res.body = body
         elif http_res.status_code in [400, 500]:
             if utils.match_content_type(content_type, 'application/json'):
                 out = utils.unmarshal_json(http_res.text, errors.Error)

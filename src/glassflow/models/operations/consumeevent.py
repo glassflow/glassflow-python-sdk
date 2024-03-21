@@ -79,7 +79,7 @@ class ConsumeEventResponse:
         content_type: HTTP response content type for this operation
         status_code: HTTP response status code for this operation
         raw_response: Raw HTTP response; suitable for custom response parsing
-        body: the response body from the
+        body: the response body from the api call
 
     """
     content_type: str = dataclasses.field()

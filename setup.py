@@ -8,7 +8,7 @@ except FileNotFoundError:
 
 setuptools.setup(
     name="glassflow",
-    version="0.1.5",
+    version="1.0.0",
     author="glassflow",
     description="GlassFlow Python Client SDK",
     long_description=long_description,
