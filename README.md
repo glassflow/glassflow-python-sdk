@@ -62,7 +62,7 @@ Please note that the GlassFlow Python SDK is currently in beta and is subject to
 
 ## User Guides
 
-For more detailed information on how to use the GlassFlow Python SDK, please refer to the [GlassFlow Documentation](https://learn.glassflow.dev). The documentation provides comprehensive guides, tutorials, and examples to help you get started with GlassFlow and make the most out of the SDK.
+For more detailed information on how to use the GlassFlow Python SDK, please refer to the [GlassFlow Documentation]([https://learn.glassflow.dev](https://learn.glassflow.dev/docs)). The documentation provides comprehensive guides, tutorials, and examples to help you get started with GlassFlow and make the most out of the SDK.
 
 ## Contributing
 
