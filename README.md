@@ -55,6 +55,14 @@ if res.status_code == 200:
     print(res.body.event)
 ```
 
+## Quickstart
+
+Follow the quickstart guide [here](https://learn.glassflow.dev/docs/get-started/quickstart)
+
+## Code Samples
+
+[GlassFlow Examples](https://github.com/glassflow/glassflow-examples)
+
 ## SDK Maturity
 
 Please note that the GlassFlow Python SDK is currently in beta and is subject to potential breaking changes. We recommend keeping an eye on the official documentation and updating your code accordingly to ensure compatibility with future versions of the SDK.
