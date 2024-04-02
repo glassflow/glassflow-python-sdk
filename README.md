@@ -2,7 +2,7 @@
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/your-username/glassflow-py-sdk/blob/main/LICENSE)
 
-The [GlassFlow](https://www.glassflow.dev/) Python SDK provides a convenient way to interact with the GlassFlow API in your Python applications. It can be used to publish and consume events to your GlassFlow pipelines
+The [GlassFlow](https://www.glassflow.dev/) Python SDK provides a convenient way to interact with the GlassFlow API in your Python applications. The SDK is used to publish and consume events to your GlassFlow pipelines.
 
 ## Installation
 
