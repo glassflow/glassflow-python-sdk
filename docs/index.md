@@ -1,6 +1,6 @@
 # Welcome to GlassFlow Python SDK Docs
 
-The GlassFlow Python SDK provides a convenient way to interact with the GlassFlow API in your Python applications. It can be used to publish and consume events to your GlassFlow pipelines
+The [GlassFlow](https://www.glassflow.dev/) Python SDK provides a convenient way to interact with the GlassFlow API in your Python applications. The SDK is used to publish and consume events to your [GlassFlow pipelines](https://learn.glassflow.dev/docs/concepts/pipeline-configuration).
 
 
 ## Installation
@@ -15,6 +15,7 @@ pip install glassflow
 
 * [publish](#publish) - Publish a new event into the pipeline
 * [consume](#consume) - Consume the transformed event from the pipeline
+* [consume failed](#consume-failed) - Consume the events that failed from the pipeline
 
 
 ## publish
@@ -47,8 +48,25 @@ import glassflow
 
 client = glassflow.GlassFlowClient()
 pipeline_client = client.pipeline_client(space_id="<str value>", pipeline_id="<str value")
-data = {} # your json event
 res = pipeline_client.consume(pipeline_access_token="<str value>")
+
+if res.status_code == 200:
+    print(res.body.event)
+```
+
+
+## consume failed
+
+If the transformation failed for any event, they are available in a failed queue. You can consume those events from the pipeline
+
+### Example Usage
+
+```python
+import glassflow
+
+client = glassflow.GlassFlowClient()
+pipeline_client = client.pipeline_client(space_id="<str value>", pipeline_id="<str value")
+res = pipeline_client.consume_failed(pipeline_access_token="<str value>")
 
 if res.status_code == 200:
     print(res.body.event)
