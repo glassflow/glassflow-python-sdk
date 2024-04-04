@@ -60,12 +60,29 @@ import glassflow
 
 client = glassflow.GlassFlowClient()
 pipeline_client = client.pipeline_client(space_id="<str value>", pipeline_id="<str value")
-data = {} # your json event
 res = pipeline_client.consume(pipeline_access_token="<str value>")
 
 if res.status_code == 200:
     print(res.body.event)
 ```
+
+## consume failed
+
+If the transformation failed for any event, they are available in a failed queue. You can consume those events from the pipeline
+
+### Example Usage
+
+```python
+import glassflow
+
+client = glassflow.GlassFlowClient()
+pipeline_client = client.pipeline_client(space_id="<str value>", pipeline_id="<str value")
+res = pipeline_client.consume_failed(pipeline_access_token="<str value>")
+
+if res.status_code == 200:
+    print(res.body.event)
+```
+
 
 ## Quickstart
 
