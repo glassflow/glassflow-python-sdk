@@ -28,6 +28,7 @@ pip install glassflow
 
 * [publish](#publish) - Publish a new event into the pipeline
 * [consume](#consume) - Consume the transformed event from the pipeline
+* [consume failed](#consume-failed) - Consume the events that failed from the pipeline
 
 
 ## publish
