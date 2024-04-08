@@ -27,17 +27,19 @@ class GlassFlowClient:
         self.glassflow_config = GlassFlowConfig(rclient)
         self.organization_id = organization_id
 
-    def pipeline_client(self, space_id: str,
-                        pipeline_id: str) -> PipelineClient:
+    def pipeline_client(self, space_id: str, pipeline_id: str,
+                        pipeline_access_token: str) -> PipelineClient:
         """Create a new PipelineClient object to interact with a specific pipeline
 
         Args:
             space_id: The space id where the pipeline is located
             pipeline_id: The pipeline id to interact with
+            pipeline_access_token: The access token to access the pipeline
 
         Returns:
             PipelineClient: Client object to publish and consume events from the given pipeline.
         """
         return PipelineClient(glassflow_client=self,
                               space_id=space_id,
-                              pipeline_id=pipeline_id)
+                              pipeline_id=pipeline_id,
+                              pipeline_access_token=pipeline_access_token)
