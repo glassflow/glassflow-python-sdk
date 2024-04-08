@@ -11,29 +11,30 @@ class PipelineClient():
         space_id: The space id where the pipeline is located
         pipeline_id: The pipeline id to interact with
         organization_id: Organization ID of the user. If not provided, the default organization will be used
+        pipeline_access_token: The access token to access the pipeline
     """
 
-    def __init__(self, glassflow_client, space_id: str,
-                 pipeline_id: str) -> None:
+    def __init__(self, glassflow_client, space_id: str, pipeline_id: str,
+                 pipeline_access_token: str) -> None:
         """Create a new PipelineClient object to interact with a specific pipeline
 
         Args:
             glassflow_client: GlassFlowClient object to interact with GlassFlow API
             space_id: The space id where the pipeline is located
             pipeline_id: The pipeline id to interact with
+            pipeline_access_token: The access token to access the pipeline
         """
         self.glassflow_client = glassflow_client
         self.space_id = space_id
         self.pipeline_id = pipeline_id
         self.organization_id = self.glassflow_client.organization_id
+        self.pipeline_access_token = pipeline_access_token
 
-    def publish(self, request_body: dict,
-                pipeline_access_token: str) -> operations.PublishEventResponse:
+    def publish(self, request_body: dict) -> operations.PublishEventResponse:
         """Push a new message into the pipeline
 
         Args:
             request_body: The message to be published into the pipeline
-            pipeline_access_token: The access token to access the pipeline
 
         Returns:
             PublishEventResponse: Response object containing the status code and the raw response
@@ -45,7 +46,7 @@ class PipelineClient():
             organization_id=self.organization_id,
             space_id=self.space_id,
             pipeline_id=self.pipeline_id,
-            x_pipeline_access_token=pipeline_access_token,
+            x_pipeline_access_token=self.pipeline_access_token,
             request_body=request_body,
         )
 
@@ -101,12 +102,8 @@ class PipelineClient():
 
         return res
 
-    def consume(self,
-                pipeline_access_token: str) -> operations.ConsumeEventResponse:
+    def consume(self) -> operations.ConsumeEventResponse:
         """Consume the last message from the pipeline
-
-        Args:
-            pipeline_access_token: The access token to access the pipeline
 
         Returns:
             ConsumeEventResponse: Response object containing the status code and the raw response
@@ -119,7 +116,7 @@ class PipelineClient():
             space_id=self.space_id,
             pipeline_id=self.pipeline_id,
             organization_id=self.organization_id,
-            x_pipeline_access_token=pipeline_access_token,
+            x_pipeline_access_token=self.pipeline_access_token,
         )
 
         base_url = self.glassflow_client.glassflow_config.server_url
@@ -174,13 +171,8 @@ class PipelineClient():
 
         return res
 
-    def consume_failed(
-            self,
-            pipeline_access_token: str) -> operations.ConsumeFailedResponse:
+    def consume_failed(self) -> operations.ConsumeFailedResponse:
         """Consume the failed message from the pipeline
-
-        Args:
-            pipeline_access_token: The access token to access the pipeline
 
         Returns:
             ConsumeFailedResponse: Response object containing the status code and the raw response
@@ -193,7 +185,7 @@ class PipelineClient():
             space_id=self.space_id,
             pipeline_id=self.pipeline_id,
             organization_id=self.organization_id,
-            x_pipeline_access_token=pipeline_access_token,
+            x_pipeline_access_token=self.pipeline_access_token,
         )
 
         base_url = self.glassflow_client.glassflow_config.server_url
