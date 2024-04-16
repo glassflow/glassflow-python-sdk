@@ -39,6 +39,13 @@ class GlassFlowClient:
         Returns:
             PipelineClient: Client object to publish and consume events from the given pipeline.
         """
+        if not pipeline_id:
+            raise ValueError(
+                "pipeline_id is required to create a PipelineClient")
+        if not pipeline_access_token:
+            raise ValueError(
+                "pipeline_access_token is required to create a PipelineClient")
+
         return PipelineClient(glassflow_client=self,
                               space_id=space_id,
                               pipeline_id=pipeline_id,
