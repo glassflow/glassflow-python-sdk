@@ -28,13 +28,14 @@ Publish a new event into the pipeline
 import glassflow
 
 client = glassflow.GlassFlowClient()
-pipeline_client = client.pipeline_client(space_id="<str value>", pipeline_id="<str value", pipeline_access_token="<str token>")
+pipeline_client = client.pipeline_client(pipeline_id="<str value", pipeline_access_token="<str token>")
 data = {} # your json event
 res = pipeline_client.publish(request_body=data)
 
 if res.status_code == 200:
     print("Published sucessfully")
 ```
+
 
 
 ## consume
@@ -47,11 +48,11 @@ Consume the transformed event from the pipeline
 import glassflow
 
 client = glassflow.GlassFlowClient()
-pipeline_client = client.pipeline_client(space_id="<str value>", pipeline_id="<str value", pipeline_access_token="<str value>")
+pipeline_client = client.pipeline_client(pipeline_id="<str value", pipeline_access_token="<str value>")
 res = pipeline_client.consume()
 
 if res.status_code == 200:
-    print(res.body.event)
+    print(res.json())
 ```
 
 
@@ -65,11 +66,11 @@ If the transformation failed for any event, they are available in a failed queue
 import glassflow
 
 client = glassflow.GlassFlowClient()
-pipeline_client = client.pipeline_client(space_id="<str value>", pipeline_id="<str value", pipeline_access_token="<str value>")
+pipeline_client = client.pipeline_client(pipeline_id="<str value", pipeline_access_token="<str value>")
 res = pipeline_client.consume_failed()
 
 if res.status_code == 200:
-    print(res.body.event)
+    print(res.json())
 ```
 
 ## SDK Maturity

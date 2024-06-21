@@ -8,7 +8,7 @@ except FileNotFoundError:
 
 setuptools.setup(
     name="glassflow",
-    version="1.0.3",
+    version="1.0.4",
     author="glassflow",
     description="GlassFlow Python Client SDK",
     url="https://learn.glassflow.dev/docs",
@@ -23,7 +23,8 @@ setuptools.setup(
         "dataclasses-json>=0.6.4", "idna>=3.4", "jsonpath-python>=1.0.6 ",
         "marshmallow>=3.19.0", "mypy-extensions>=1.0.0", "packaging>=23.1",
         "python-dateutil>=2.8.2", "requests>=2.31.0", "six>=1.16.0",
-        "typing-inspect>=0.9.0", "typing_extensions>=4.7.1"
+        "typing-inspect>=0.9.0", "typing_extensions>=4.7.1",
+        "python-dotenv==1.0.1"
     ],
     extras_require={"dev": ["pylint==2.16.2"]},
     package_dir={'': 'src'},

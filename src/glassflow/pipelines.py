@@ -8,24 +8,21 @@ class PipelineClient():
 
     Attributes:
         glassflow_client: GlassFlowClient object to interact with GlassFlow API
-        space_id: The space id where the pipeline is located
         pipeline_id: The pipeline id to interact with
         organization_id: Organization ID of the user. If not provided, the default organization will be used
         pipeline_access_token: The access token to access the pipeline
     """
 
-    def __init__(self, glassflow_client, space_id: str, pipeline_id: str,
+    def __init__(self, glassflow_client, pipeline_id: str,
                  pipeline_access_token: str) -> None:
         """Create a new PipelineClient object to interact with a specific pipeline
 
         Args:
             glassflow_client: GlassFlowClient object to interact with GlassFlow API
-            space_id: The space id where the pipeline is located
             pipeline_id: The pipeline id to interact with
             pipeline_access_token: The access token to access the pipeline
         """
         self.glassflow_client = glassflow_client
-        self.space_id = space_id
         self.pipeline_id = pipeline_id
         self.organization_id = self.glassflow_client.organization_id
         self.pipeline_access_token = pipeline_access_token
@@ -44,7 +41,6 @@ class PipelineClient():
         """
         request = operations.PublishEventRequest(
             organization_id=self.organization_id,
-            space_id=self.space_id,
             pipeline_id=self.pipeline_id,
             x_pipeline_access_token=self.pipeline_access_token,
             request_body=request_body,
@@ -113,7 +109,6 @@ class PipelineClient():
 
         """
         request = operations.ConsumeEventRequest(
-            space_id=self.space_id,
             pipeline_id=self.pipeline_id,
             organization_id=self.organization_id,
             x_pipeline_access_token=self.pipeline_access_token,
@@ -182,7 +177,6 @@ class PipelineClient():
 
         """
         request = operations.ConsumeFailedRequest(
-            space_id=self.space_id,
             pipeline_id=self.pipeline_id,
             organization_id=self.organization_id,
             x_pipeline_access_token=self.pipeline_access_token,
