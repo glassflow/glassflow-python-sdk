@@ -2,6 +2,7 @@
 """
 
 from .pipelines import PipelineClient
+from typing import Optional
 from .config import GlassFlowConfig
 import requests as requests_http
 from dotenv import load_dotenv
@@ -30,9 +31,9 @@ class GlassFlowClient:
         self.organization_id = organization_id
 
     def pipeline_client(self,
-                        pipeline_id: str = None,
-                        pipeline_access_token: str = None,
-                        space_id: str = None) -> PipelineClient:
+                        pipeline_id: Optional[str] = None,
+                        pipeline_access_token: Optional[str] = None,
+                        space_id: Optional[str] = None) -> PipelineClient:
         """Create a new PipelineClient object to interact with a specific pipeline
 
         Args:
