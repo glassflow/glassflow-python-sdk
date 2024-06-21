@@ -17,7 +17,6 @@ class PublishEventRequest:
 
     Attributes:
         pipeline_id: The id of the pipeline
-        space_id: The id of the space
         organization_id: The id of the organization
         x_pipeline_access_token: The access token of the pipeline
         request_body: The request body / event that should be published to the pipeline
@@ -28,14 +27,6 @@ class PublishEventRequest:
                 'field_name': 'pipeline_id',
                 'style': 'simple',
                 'explode': False
-            }
-        })
-    space_id: str = dataclasses.field(
-        metadata={
-            'query_param': {
-                'field_name': 'space_id',
-                'style': 'form',
-                'explode': True
             }
         })
     organization_id: Optional[str] = dataclasses.field(

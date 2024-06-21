@@ -4,6 +4,8 @@
 from .pipelines import PipelineClient
 from .config import GlassFlowConfig
 import requests as requests_http
+from dotenv import load_dotenv
+import os
 
 
 class GlassFlowClient:
@@ -27,18 +29,26 @@ class GlassFlowClient:
         self.glassflow_config = GlassFlowConfig(rclient)
         self.organization_id = organization_id
 
-    def pipeline_client(self, space_id: str, pipeline_id: str,
-                        pipeline_access_token: str) -> PipelineClient:
+    def pipeline_client(self,
+                        pipeline_id: str = None,
+                        pipeline_access_token: str = None,
+                        space_id: str = None) -> PipelineClient:
         """Create a new PipelineClient object to interact with a specific pipeline
 
         Args:
-            space_id: The space id where the pipeline is located
             pipeline_id: The pipeline id to interact with
             pipeline_access_token: The access token to access the pipeline
 
         Returns:
             PipelineClient: Client object to publish and consume events from the given pipeline.
         """
+        # if no pipeline_id or pipeline_access_token is provided, try to read from environment variables
+        load_dotenv()
+        if not pipeline_id:
+            pipeline_id = os.getenv('PIPELINE_ID')
+        if not pipeline_access_token:
+            pipeline_access_token = os.getenv('PIPELINE_ACCESS_TOKEN')
+
         if not pipeline_id:
             raise ValueError(
                 "pipeline_id is required to create a PipelineClient")
@@ -47,6 +57,5 @@ class GlassFlowClient:
                 "pipeline_access_token is required to create a PipelineClient")
 
         return PipelineClient(glassflow_client=self,
-                              space_id=space_id,
                               pipeline_id=pipeline_id,
                               pipeline_access_token=pipeline_access_token)
