@@ -1,3 +1,5 @@
+import dataclasses
+import sys
 from .models import operations, errors
 from typing import Dict, Optional
 import glassflow.utils as utils
@@ -55,20 +57,14 @@ class PipelineClient():
         url = utils.generate_url(
             operations.PublishEventRequest, base_url,
             '/pipelines/{pipeline_id}/topics/input/events', request)
-        headers = utils.get_headers(request)
 
         req_content_type, data, form = utils.serialize_request_body(
             request, operations.PublishEventRequest, "request_body", False,
             True, 'json')
-        if req_content_type not in ('multipart/form-data', 'multipart/mixed'):
-            headers['content-type'] = req_content_type
 
+        headers = self._get_headers(request, req_content_type)
         query_params = utils.get_query_params(operations.PublishEventRequest,
                                               request)
-
-        headers['Accept'] = 'application/json'
-        headers[
-            'user-agent'] = self.glassflow_client.glassflow_config.user_agent
 
         client = self.glassflow_client.glassflow_config.client
 
@@ -124,12 +120,10 @@ class PipelineClient():
         url = utils.generate_url(
             operations.ConsumeEventRequest, base_url,
             '/pipelines/{pipeline_id}/topics/output/events/consume', request)
-        headers = utils.get_headers(request)
+        headers = self._get_headers(request)
         query_params = utils.get_query_params(operations.ConsumeEventRequest,
                                               request)
-        headers['Accept'] = 'application/json'
-        headers[
-            'user-agent'] = self.glassflow_client.glassflow_config.user_agent
+
         client = self.glassflow_client.glassflow_config.client
         http_res = client.request('POST',
                                   url,
@@ -193,12 +187,10 @@ class PipelineClient():
         url = utils.generate_url(
             operations.ConsumeFailedRequest, base_url,
             '/pipelines/{pipeline_id}/topics/failed/events/consume', request)
-        headers = utils.get_headers(request)
+        headers = self._get_headers(request)
         query_params = utils.get_query_params(operations.ConsumeFailedRequest,
                                               request)
-        headers['Accept'] = 'application/json'
-        headers[
-            'user-agent'] = self.glassflow_client.glassflow_config.user_agent
+
         client = self.glassflow_client.glassflow_config.client
         http_res = client.request('POST',
                                   url,
@@ -240,3 +232,24 @@ class PipelineClient():
                                      http_res)
 
         return res
+
+    def _get_headers(
+            self, request: dataclasses.dataclass,
+            req_content_type: Optional[str] = None
+    ) -> dict:
+
+        headers = utils.get_headers(request)
+        headers['Accept'] = 'application/json'
+        headers['user-agent'] = (
+            self.glassflow_client.glassflow_config.user_agent)
+        headers['X-PYTHON-VERSION'] = (f'{sys.version_info.major}.'
+                                       f'{sys.version_info.minor}.'
+                                       f'{sys.version_info.micro}')
+        headers['X-PYTHON-SDK-VERSION'] = (
+            self.glassflow_client.glassflow_config.sdk_version)
+
+        if (req_content_type and req_content_type not in
+                ('multipart/form-data', 'multipart/mixed')):
+            headers['content-type'] = req_content_type
+
+        return headers

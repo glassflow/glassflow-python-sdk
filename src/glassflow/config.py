@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 import requests
-from typing import Tuple
+from importlib.metadata import version
 
 
 @dataclass
@@ -16,5 +16,5 @@ class GlassFlowConfig:
     """
     client: requests.Session
     server_url: str = 'https://api.glassflow.xyz/v1'
-    sdk_version: str = '0.0.2'
+    sdk_version: str = version('glassflow')
     user_agent: str = 'glassflow-python-sdk'
