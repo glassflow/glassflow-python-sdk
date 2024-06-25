@@ -238,7 +238,7 @@ class PipelineClient():
             req_content_type: Optional[str] = None
     ) -> dict:
 
-        headers = utils.get_headers(request)
+        headers = utils.get_req_specific_headers(request)
         headers['Accept'] = 'application/json'
         headers['user-agent'] = (
             self.glassflow_client.glassflow_config.user_agent)

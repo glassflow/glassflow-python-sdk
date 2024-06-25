@@ -161,7 +161,7 @@ def get_query_params(
     return params
 
 
-def get_headers(headers_params: dataclass) -> Dict[str, str]:
+def get_req_specific_headers(headers_params: dataclass) -> Dict[str, str]:
     if headers_params is None:
         return {}
 
