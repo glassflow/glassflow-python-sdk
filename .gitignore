@@ -1,4 +1,5 @@
 venv/
+.venv
 src/*.egg-info/
 __pycache__/
 .pytest_cache/
@@ -9,3 +10,4 @@ utils.bak.py
 site**
 .pypirc
 dist/
+.idea
