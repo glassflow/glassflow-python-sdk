@@ -5,7 +5,6 @@ from .pipelines import PipelineClient
 from typing import Optional
 from .config import GlassFlowConfig
 import requests as requests_http
-from dotenv import load_dotenv
 import os
 
 
@@ -44,18 +43,19 @@ class GlassFlowClient:
             PipelineClient: Client object to publish and consume events from the given pipeline.
         """
         # if no pipeline_id or pipeline_access_token is provided, try to read from environment variables
-        load_dotenv()
         if not pipeline_id:
             pipeline_id = os.getenv('PIPELINE_ID')
         if not pipeline_access_token:
             pipeline_access_token = os.getenv('PIPELINE_ACCESS_TOKEN')
-
+        # no pipeline_id provided explicitly or in environment variables
         if not pipeline_id:
             raise ValueError(
-                "pipeline_id is required to create a PipelineClient")
+                "PIPELINE_ID must be set as an environment variable or provided explicitly"
+            )
         if not pipeline_access_token:
             raise ValueError(
-                "pipeline_access_token is required to create a PipelineClient")
+                "PIPELINE_ACCESS_TOKEN must be set as an environment variable or provided explicitly"
+            )
 
         return PipelineClient(glassflow_client=self,
                               pipeline_id=pipeline_id,
