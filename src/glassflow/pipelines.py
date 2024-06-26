@@ -240,13 +240,13 @@ class PipelineClient():
 
         headers = utils.get_req_specific_headers(request)
         headers['Accept'] = 'application/json'
-        headers['user-agent'] = (
-            self.glassflow_client.glassflow_config.user_agent)
-        headers['X-PYTHON-VERSION'] = (f'{sys.version_info.major}.'
-                                       f'{sys.version_info.minor}.'
-                                       f'{sys.version_info.micro}')
-        headers['X-PYTHON-SDK-VERSION'] = (
-            self.glassflow_client.glassflow_config.sdk_version)
+        headers['Gf-Client'] = (
+            f'{self.glassflow_client.glassflow_config.user_agent} / '
+            f'{self.glassflow_client.glassflow_config.sdk_version}')
+        headers['user-agent'] = headers['Gf-Client']
+        headers['Gf-Python-Version'] = (f'{sys.version_info.major}.'
+                                        f'{sys.version_info.minor}.'
+                                        f'{sys.version_info.micro}')
 
         if (req_content_type and req_content_type not in
                 ('multipart/form-data', 'multipart/mixed')):
