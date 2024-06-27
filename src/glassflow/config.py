@@ -17,4 +17,5 @@ class GlassFlowConfig:
     client: requests.Session
     server_url: str = 'https://api.glassflow.xyz/v1'
     sdk_version: str = version('glassflow')
-    user_agent: str = 'glassflow-python-sdk'
+    user_agent: str = 'glassflow-python-sdk/{}'.format(sdk_version)
+    glassflow_client: str = 'python-sdk/{}'.format(sdk_version)
