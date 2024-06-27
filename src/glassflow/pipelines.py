@@ -241,7 +241,7 @@ class PipelineClient():
         headers = utils.get_req_specific_headers(request)
         headers['Accept'] = 'application/json'
         headers['Gf-Client'] = (
-            f'{self.glassflow_client.glassflow_config.user_agent} / '
+            f'{self.glassflow_client.glassflow_config.user_agent}/'
             f'{self.glassflow_client.glassflow_config.sdk_version}')
         headers['user-agent'] = headers['Gf-Client']
         headers['Gf-Python-Version'] = (f'{sys.version_info.major}.'
