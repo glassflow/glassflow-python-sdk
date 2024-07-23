@@ -10,7 +10,7 @@
 
 # GlassFlow Python SDK
 
-The [GlassFlow](https://www.glassflow.dev/) Python SDK provides a convenient way to interact with the GlassFlow API in your Python applications. The SDK is used to publish and consume events to your [GlassFlow pipelines](https://learn.glassflow.dev/docs/concepts/pipeline-configuration).
+The [GlassFlow](https://www.glassflow.dev/) Python SDK provides a convenient way to interact with the GlassFlow API in your Python applications. The SDK is used to publish and consume events to your [GlassFlow pipelines](https://docs.glassflow.dev/concepts/pipeline).
 
 See how it is easy to setup a new data pipeline and do data transformation with GlassFlow:
 
@@ -87,7 +87,7 @@ if res.status_code == 200:
 
 ## Quickstart
 
-Follow the quickstart guide [here](https://learn.glassflow.dev/docs/get-started/quickstart)
+Follow the quickstart guide [here](https://docs.glassflow.dev/get-started/quickstart)
 
 ## Code Samples
 
@@ -100,7 +100,7 @@ Please note that the GlassFlow Python SDK is currently in beta and is subject to
 
 ## User Guides
 
-For more detailed information on how to use the GlassFlow Python SDK, please refer to the [GlassFlow Documentation]([https://learn.glassflow.dev](https://learn.glassflow.dev/docs)). The documentation provides comprehensive guides, tutorials, and examples to help you get started with GlassFlow and make the most out of the SDK.
+For more detailed information on how to use the GlassFlow Python SDK, please refer to the [GlassFlow Documentation](https://docs.glassflow.dev). The documentation provides comprehensive guides, tutorials, and examples to help you get started with GlassFlow and make the most out of the SDK.
 
 ## Contributing
 
