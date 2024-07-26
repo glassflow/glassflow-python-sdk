@@ -13,9 +13,9 @@ class Error(Exception):
         message: A message describing the error
 
     """
-    message: str = dataclasses.field(metadata={
+    detail: str = dataclasses.field(metadata={
         'dataclasses_json': {
-            'letter_case': utils.get_field_name('message')
+            'letter_case': utils.get_field_name('detail')
         }
     })
 
