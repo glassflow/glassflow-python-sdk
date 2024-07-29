@@ -30,6 +30,7 @@ class PipelineClient():
         self.pipeline_id = pipeline_id
         self.organization_id = self.glassflow_client.organization_id
         self.pipeline_access_token = pipeline_access_token
+        # retry delay for consuming messages (in seconds)
         self._consume_retry_delay_minimum = 1
         self._consume_retry_delay_current = 1
         self._consume_retry_delay_max = 60
@@ -156,6 +157,10 @@ class PipelineClient():
             # Return an empty response body
             body = operations.ConsumeEventResponseBody("", "", {})
             res.body = body
+        elif http_res.status_code == 429:
+            # update the retry delay
+            body = operations.ConsumeEventResponseBody("", "", {})
+            res.body = body
         elif http_res.status_code in [400, 500]:
             if utils.match_content_type(content_type, 'application/json'):
                 out = utils.unmarshal_json(http_res.text, errors.Error)
@@ -264,7 +269,7 @@ class PipelineClient():
     def _update_retry_delay(self, status_code: int):
         if status_code == 200:
             self._consume_retry_delay_current = self._consume_retry_delay_minimum
-        elif status_code == 204:
+        elif status_code == 204 or status_code == 429:
             self._consume_retry_delay_current *= 2
             self._consume_retry_delay_current = min(
                 self._consume_retry_delay_current,
