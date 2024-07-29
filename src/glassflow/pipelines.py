@@ -3,6 +3,8 @@ import sys
 from .models import operations, errors
 from typing import Dict, Optional
 import glassflow.utils as utils
+import random
+import time
 
 
 class PipelineClient():
@@ -28,6 +30,10 @@ class PipelineClient():
         self.pipeline_id = pipeline_id
         self.organization_id = self.glassflow_client.organization_id
         self.pipeline_access_token = pipeline_access_token
+        # retry delay for consuming messages (in seconds)
+        self._consume_retry_delay_minimum = 1
+        self._consume_retry_delay_current = 1
+        self._consume_retry_delay_max = 60
 
     def publish(self, request_body: dict) -> operations.PublishEventResponse:
         """Push a new message into the pipeline
@@ -120,6 +126,9 @@ class PipelineClient():
                                               request)
 
         client = self.glassflow_client.glassflow_config.client
+        # make the request
+        self._respect_retry_delay()
+
         http_res = client.request('POST',
                                   url,
                                   params=query_params,
@@ -130,7 +139,9 @@ class PipelineClient():
                                               content_type=content_type,
                                               raw_response=http_res)
 
+        self._update_retry_delay(http_res.status_code)
         if http_res.status_code == 200:
+            self._consume_retry_delay_current = self._consume_retry_delay_minimum
             if utils.match_content_type(content_type, 'application/json'):
                 body = utils.unmarshal_json(
                     http_res.text,
@@ -141,7 +152,13 @@ class PipelineClient():
                     f'unknown content-type received: {content_type}',
                     http_res.status_code, http_res.text, http_res)
         elif http_res.status_code == 204:
-            # No messages to be consumed. Return an empty response body
+            # No messages to be consumed.
+            # update the retry delay
+            # Return an empty response body
+            body = operations.ConsumeEventResponseBody("", "", {})
+            res.body = body
+        elif http_res.status_code == 429:
+            # update the retry delay
             body = operations.ConsumeEventResponseBody("", "", {})
             res.body = body
         elif http_res.status_code in [400, 500]:
@@ -186,6 +203,7 @@ class PipelineClient():
                                               request)
 
         client = self.glassflow_client.glassflow_config.client
+        self._respect_retry_delay()
         http_res = client.request('POST',
                                   url,
                                   params=query_params,
@@ -197,6 +215,7 @@ class PipelineClient():
             content_type=content_type,
             raw_response=http_res)
 
+        self._update_retry_delay(http_res.status_code)
         if http_res.status_code == 200:
             if utils.match_content_type(content_type, 'application/json'):
                 body = utils.unmarshal_json(
@@ -227,21 +246,37 @@ class PipelineClient():
 
         return res
 
-    def _get_headers(
-            self, request: dataclasses.dataclass,
-            req_content_type: Optional[str] = None
-    ) -> dict:
+    def _get_headers(self,
+                     request: dataclasses.dataclass,
+                     req_content_type: Optional[str] = None) -> dict:
 
         headers = utils.get_req_specific_headers(request)
         headers['Accept'] = 'application/json'
-        headers['Gf-Client'] = self.glassflow_client.glassflow_config.glassflow_client
-        headers['User-Agent'] = self.glassflow_client.glassflow_config.user_agent
+        headers[
+            'Gf-Client'] = self.glassflow_client.glassflow_config.glassflow_client
+        headers[
+            'User-Agent'] = self.glassflow_client.glassflow_config.user_agent
         headers['Gf-Python-Version'] = (f'{sys.version_info.major}.'
                                         f'{sys.version_info.minor}.'
                                         f'{sys.version_info.micro}')
 
-        if (req_content_type and req_content_type not in
-                ('multipart/form-data', 'multipart/mixed')):
+        if (req_content_type and req_content_type
+                not in ('multipart/form-data', 'multipart/mixed')):
             headers['content-type'] = req_content_type
 
         return headers
+
+    def _update_retry_delay(self, status_code: int):
+        if status_code == 200:
+            self._consume_retry_delay_current = self._consume_retry_delay_minimum
+        elif status_code == 204 or status_code == 429:
+            self._consume_retry_delay_current *= 2
+            self._consume_retry_delay_current = min(
+                self._consume_retry_delay_current,
+                self._consume_retry_delay_max)
+            self._consume_retry_delay_current += random.uniform(0, 0.1)
+
+    def _respect_retry_delay(self):
+        if self._consume_retry_delay_current > self._consume_retry_delay_minimum:
+            # sleep before making the request
+            time.sleep(self._consume_retry_delay_current)
