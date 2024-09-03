@@ -1,13 +1,13 @@
 import dataclasses
 import sys
 from .models import operations, errors
-from typing import Dict, Optional
+from typing import Optional
 import glassflow.utils as utils
 import random
 import time
 
 
-class PipelineClient():
+class PipelineClient:
     """Client object to publish and consume events from the given pipeline.
 
     Attributes:
@@ -18,22 +18,72 @@ class PipelineClient():
     """
 
     def __init__(self, glassflow_client, pipeline_id: str,
-                 pipeline_access_token: str) -> None:
+                 pipeline_access_token: str, glassflow_token: str = None) -> None:
         """Create a new PipelineClient object to interact with a specific pipeline
 
         Args:
             glassflow_client: GlassFlowClient object to interact with GlassFlow API
             pipeline_id: The pipeline id to interact with
             pipeline_access_token: The access token to access the pipeline
+            glassflow_token: The access token for the glassflow API
         """
         self.glassflow_client = glassflow_client
         self.pipeline_id = pipeline_id
         self.organization_id = self.glassflow_client.organization_id
         self.pipeline_access_token = pipeline_access_token
+        self.glassflow_token = glassflow_token
+
         # retry delay for consuming messages (in seconds)
         self._consume_retry_delay_minimum = 1
         self._consume_retry_delay_current = 1
         self._consume_retry_delay_max = 60
+
+    def get(self):
+        base_url = self.glassflow_client.glassflow_config.server_url
+        url = base_url + f"/pipelines/{self.pipeline_id}"
+        request = operations.PipelineCRUDRequest(
+            pipeline_id=self.pipeline_id,
+            organization_id=self.organization_id,
+            glassflow_token=self.glassflow_token
+        )
+        headers = self._get_headers(request)
+
+        client = self.glassflow_client.glassflow_config.client
+
+        http_res = client.request('GET',
+                                  url,
+                                  headers=headers)
+        content_type = http_res.headers.get('Content-Type')
+
+        if http_res.status_code == 200:
+            pass
+        elif http_res.status_code == 401:
+            if self.glassflow_token:
+                raise errors.ClientError(
+                    detail="Unauthorized access, make sure the GLASSFLOW_TOKEN is valid",
+                    status_code=http_res.status_code,
+                    body=http_res.text,
+                    raw_response=http_res,
+                )
+            else:
+                raise errors.ClientError(
+                    detail="Unauthorized access, no GLASSFLOW_TOKEN provided",
+                    status_code=http_res.status_code,
+                    body=http_res.text,
+                    raw_response=http_res,
+                )
+        elif 400 <= http_res.status_code < 600:
+            raise errors.ClientError('API error occurred',
+                                     http_res.status_code, http_res.text,
+                                     http_res)
+
+        res = operations.PipelineGetResponse(
+            status_code=http_res.status_code,
+            content_type=content_type,
+            raw_response=http_res,
+            object=http_res.json()
+        )
+        return res
 
     def publish(self, request_body: dict) -> operations.PublishEventResponse:
         """Push a new message into the pipeline
