@@ -19,15 +19,20 @@ class GlassFlowClient:
     """
     glassflow_config: GlassFlowConfig
 
-    def __init__(self, organization_id: str = None) -> None:
+    def __init__(self, glassflow_token: str = None, organization_id: str = None) -> None:
         """Create a new GlassFlowClient object
 
         Args:
+            glassflow_token: GlassFlow API token. If not provided, it will be loaded from env GLASSFLOW_TOKEN
             organization_id: Organization ID of the user. If not provided, the default organization will be used
         """
         rclient = requests_http.Session()
         self.glassflow_config = GlassFlowConfig(rclient)
         self.organization_id = organization_id
+
+        if not glassflow_token:
+            glassflow_token = os.getenv('GLASSFLOW_TOKEN')
+        self.glassflow_token = glassflow_token
 
     def pipeline_client(self,
                         pipeline_id: Optional[str] = None,
@@ -59,4 +64,5 @@ class GlassFlowClient:
 
         return PipelineClient(glassflow_client=self,
                               pipeline_id=pipeline_id,
-                              pipeline_access_token=pipeline_access_token)
+                              pipeline_access_token=pipeline_access_token,
+                              glassflow_token=self.glassflow_token)
