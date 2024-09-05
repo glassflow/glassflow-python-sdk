@@ -26,7 +26,7 @@ setuptools.setup(
         "typing-inspect>=0.9.0", "typing_extensions>=4.7.1",
         "python-dotenv==1.0.1"
     ],
-    extras_require={"dev": ["pylint==2.16.2"]},
+    extras_require={"dev": ["pylint==2.16.2", "pytest==8.3.2", "isort==5.13.2", "ruff==0.6.3"]},
     package_dir={'': 'src'},
     python_requires='>=3.8',
     package_data={"glassflow": ["py.typed"]},
