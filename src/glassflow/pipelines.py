@@ -1,7 +1,7 @@
 import dataclasses
 import sys
 from .models import operations, errors
-from typing import Dict, Optional
+from typing import Optional
 import glassflow.utils as utils
 import random
 import time
@@ -34,6 +34,52 @@ class PipelineClient():
         self._consume_retry_delay_minimum = 1
         self._consume_retry_delay_current = 1
         self._consume_retry_delay_max = 60
+
+    def is_valid_access_token(self):
+        """
+        Check if the pipeline access token is valid
+
+        Returns:
+            Boolean: True if the pipeline access token is correct, False otherwise
+        """
+        base_url = self.glassflow_client.glassflow_config.server_url
+
+        request = operations.StatusAccessTokenRequest(
+            pipeline_id=self.pipeline_id,
+            x_pipeline_access_token=self.pipeline_access_token
+        )
+
+        url = utils.generate_url(
+            operations.PublishEventRequest, base_url,
+            '/pipelines/{pipeline_id}/status/access_token', request)
+
+        headers = self._get_headers(request)
+
+        client = self.glassflow_client.glassflow_config.client
+
+        http_res = client.request('GET',
+                                  url,
+                                  headers=headers)
+        content_type = http_res.headers.get('Content-Type')
+
+        if http_res.status_code == 200:
+            res = True
+        elif http_res.status_code == 401:
+            res = False
+        elif http_res.status_code in [400, 500]:
+            if utils.match_content_type(content_type, 'application/json'):
+                out = utils.unmarshal_json(http_res.text, errors.Error)
+                out.raw_response = http_res
+                raise out
+            else:
+                raise errors.ClientError(
+                    f'unknown content-type received: {content_type}',
+                    http_res.status_code, http_res.text, http_res)
+        elif 400 < http_res.status_code < 600:
+            raise errors.ClientError('API error occurred',
+                                     http_res.status_code, http_res.text,
+                                     http_res)
+        return res
 
     def publish(self, request_body: dict) -> operations.PublishEventResponse:
         """Push a new message into the pipeline

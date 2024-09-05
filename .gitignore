@@ -10,3 +10,4 @@ site**
 .pypirc
 dist/
 build
+.env
