@@ -1,6 +1,7 @@
 from dataclasses import dataclass
-import requests
 from importlib.metadata import version
+
+import requests
 
 
 @dataclass
@@ -14,8 +15,9 @@ class GlassFlowConfig:
         user_agent: The user agent to be used in the requests
 
     """
+
     client: requests.Session
-    server_url: str = 'https://api.glassflow.dev/v1'
-    sdk_version: str = version('glassflow')
-    user_agent: str = 'glassflow-python-sdk/{}'.format(sdk_version)
-    glassflow_client: str = 'python-sdk/{}'.format(sdk_version)
+    server_url: str = "https://api.glassflow.dev/v1"
+    sdk_version: str = version("glassflow")
+    user_agent: str = "glassflow-python-sdk/{}".format(sdk_version)
+    glassflow_client: str = "python-sdk/{}".format(sdk_version)

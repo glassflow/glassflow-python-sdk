@@ -1,13 +1,15 @@
 import dataclasses
-import sys
-from .models import operations, errors
-from typing import Optional
-import glassflow.utils as utils
 import random
+import sys
 import time
+from typing import Optional
+
+import glassflow.utils as utils
+
+from .models import errors, operations
 
 
-class PipelineClient():
+class PipelineClient:
     """Client object to publish and consume events from the given pipeline.
 
     Attributes:
@@ -17,8 +19,9 @@ class PipelineClient():
         pipeline_access_token: The access token to access the pipeline
     """
 
-    def __init__(self, glassflow_client, pipeline_id: str,
-                 pipeline_access_token: str) -> None:
+    def __init__(
+        self, glassflow_client, pipeline_id: str, pipeline_access_token: str
+    ) -> None:
         """Create a new PipelineClient object to interact with a specific pipeline
 
         Args:
@@ -46,39 +49,43 @@ class PipelineClient():
 
         request = operations.StatusAccessTokenRequest(
             pipeline_id=self.pipeline_id,
-            x_pipeline_access_token=self.pipeline_access_token
+            x_pipeline_access_token=self.pipeline_access_token,
         )
 
         url = utils.generate_url(
-            operations.PublishEventRequest, base_url,
-            '/pipelines/{pipeline_id}/status/access_token', request)
+            operations.PublishEventRequest,
+            base_url,
+            "/pipelines/{pipeline_id}/status/access_token",
+            request,
+        )
 
         headers = self._get_headers(request)
 
         client = self.glassflow_client.glassflow_config.client
 
-        http_res = client.request('GET',
-                                  url,
-                                  headers=headers)
-        content_type = http_res.headers.get('Content-Type')
+        http_res = client.request("GET", url, headers=headers)
+        content_type = http_res.headers.get("Content-Type")
 
         if http_res.status_code == 200:
             res = True
         elif http_res.status_code == 401:
             res = False
         elif http_res.status_code in [400, 500]:
-            if utils.match_content_type(content_type, 'application/json'):
+            if utils.match_content_type(content_type, "application/json"):
                 out = utils.unmarshal_json(http_res.text, errors.Error)
                 out.raw_response = http_res
                 raise out
             else:
                 raise errors.ClientError(
-                    f'unknown content-type received: {content_type}',
-                    http_res.status_code, http_res.text, http_res)
+                    f"unknown content-type received: {content_type}",
+                    http_res.status_code,
+                    http_res.text,
+                    http_res,
+                )
         elif 400 < http_res.status_code < 600:
-            raise errors.ClientError('API error occurred',
-                                     http_res.status_code, http_res.text,
-                                     http_res)
+            raise errors.ClientError(
+                "API error occurred", http_res.status_code, http_res.text, http_res
+            )
         return res
 
     def publish(self, request_body: dict) -> operations.PublishEventResponse:
@@ -103,46 +110,50 @@ class PipelineClient():
         base_url = self.glassflow_client.glassflow_config.server_url
 
         url = utils.generate_url(
-            operations.PublishEventRequest, base_url,
-            '/pipelines/{pipeline_id}/topics/input/events', request)
+            operations.PublishEventRequest,
+            base_url,
+            "/pipelines/{pipeline_id}/topics/input/events",
+            request,
+        )
 
         req_content_type, data, form = utils.serialize_request_body(
-            request, operations.PublishEventRequest, "request_body", False,
-            True, 'json')
+            request, operations.PublishEventRequest, "request_body", False, True, "json"
+        )
 
         headers = self._get_headers(request, req_content_type)
-        query_params = utils.get_query_params(operations.PublishEventRequest,
-                                              request)
+        query_params = utils.get_query_params(operations.PublishEventRequest, request)
 
         client = self.glassflow_client.glassflow_config.client
 
-        http_res = client.request('POST',
-                                  url,
-                                  params=query_params,
-                                  data=data,
-                                  files=form,
-                                  headers=headers)
-        content_type = http_res.headers.get('Content-Type')
+        http_res = client.request(
+            "POST", url, params=query_params, data=data, files=form, headers=headers
+        )
+        content_type = http_res.headers.get("Content-Type")
 
-        res = operations.PublishEventResponse(status_code=http_res.status_code,
-                                              content_type=content_type,
-                                              raw_response=http_res)
+        res = operations.PublishEventResponse(
+            status_code=http_res.status_code,
+            content_type=content_type,
+            raw_response=http_res,
+        )
 
         if http_res.status_code == 200:
             pass
         elif http_res.status_code in [400, 500]:
-            if utils.match_content_type(content_type, 'application/json'):
+            if utils.match_content_type(content_type, "application/json"):
                 out = utils.unmarshal_json(http_res.text, errors.Error)
                 out.raw_response = http_res
                 raise out
             else:
                 raise errors.ClientError(
-                    f'unknown content-type received: {content_type}',
-                    http_res.status_code, http_res.text, http_res)
-        elif http_res.status_code == 401 or http_res.status_code == 404 or http_res.status_code >= 400 and http_res.status_code < 500 or http_res.status_code >= 500 and http_res.status_code < 600:
-            raise errors.ClientError('API error occurred',
-                                     http_res.status_code, http_res.text,
-                                     http_res)
+                    f"unknown content-type received: {content_type}",
+                    http_res.status_code,
+                    http_res.text,
+                    http_res,
+                )
+        elif 400 < http_res.status_code < 600:
+            raise errors.ClientError(
+                "API error occurred", http_res.status_code, http_res.text, http_res
+            )
 
         return res
 
@@ -165,38 +176,42 @@ class PipelineClient():
         base_url = self.glassflow_client.glassflow_config.server_url
 
         url = utils.generate_url(
-            operations.ConsumeEventRequest, base_url,
-            '/pipelines/{pipeline_id}/topics/output/events/consume', request)
+            operations.ConsumeEventRequest,
+            base_url,
+            "/pipelines/{pipeline_id}/topics/output/events/consume",
+            request,
+        )
         headers = self._get_headers(request)
-        query_params = utils.get_query_params(operations.ConsumeEventRequest,
-                                              request)
+        query_params = utils.get_query_params(operations.ConsumeEventRequest, request)
 
         client = self.glassflow_client.glassflow_config.client
         # make the request
         self._respect_retry_delay()
 
-        http_res = client.request('POST',
-                                  url,
-                                  params=query_params,
-                                  headers=headers)
-        content_type = http_res.headers.get('Content-Type')
+        http_res = client.request("POST", url, params=query_params, headers=headers)
+        content_type = http_res.headers.get("Content-Type")
 
-        res = operations.ConsumeEventResponse(status_code=http_res.status_code,
-                                              content_type=content_type,
-                                              raw_response=http_res)
+        res = operations.ConsumeEventResponse(
+            status_code=http_res.status_code,
+            content_type=content_type,
+            raw_response=http_res,
+        )
 
         self._update_retry_delay(http_res.status_code)
         if http_res.status_code == 200:
             self._consume_retry_delay_current = self._consume_retry_delay_minimum
-            if utils.match_content_type(content_type, 'application/json'):
+            if utils.match_content_type(content_type, "application/json"):
                 body = utils.unmarshal_json(
-                    http_res.text,
-                    Optional[operations.ConsumeEventResponseBody])
+                    http_res.text, Optional[operations.ConsumeEventResponseBody]
+                )
                 res.body = body
             else:
                 raise errors.ClientError(
-                    f'unknown content-type received: {content_type}',
-                    http_res.status_code, http_res.text, http_res)
+                    f"unknown content-type received: {content_type}",
+                    http_res.status_code,
+                    http_res.text,
+                    http_res,
+                )
         elif http_res.status_code == 204:
             # No messages to be consumed.
             # update the retry delay
@@ -208,18 +223,21 @@ class PipelineClient():
             body = operations.ConsumeEventResponseBody("", "", {})
             res.body = body
         elif http_res.status_code in [400, 500]:
-            if utils.match_content_type(content_type, 'application/json'):
+            if utils.match_content_type(content_type, "application/json"):
                 out = utils.unmarshal_json(http_res.text, errors.Error)
                 out.raw_response = http_res
                 raise out
             else:
                 raise errors.ClientError(
-                    f'unknown content-type received: {content_type}',
-                    http_res.status_code, http_res.text, http_res)
-        elif http_res.status_code == 401 or http_res.status_code == 404 or http_res.status_code >= 400 and http_res.status_code < 500 or http_res.status_code >= 500 and http_res.status_code < 600:
-            raise errors.ClientError('API error occurred',
-                                     http_res.status_code, http_res.text,
-                                     http_res)
+                    f"unknown content-type received: {content_type}",
+                    http_res.status_code,
+                    http_res.text,
+                    http_res,
+                )
+        elif 400 < http_res.status_code < 600:
+            raise errors.ClientError(
+                "API error occurred", http_res.status_code, http_res.text, http_res
+            )
 
         return res
 
@@ -242,73 +260,80 @@ class PipelineClient():
         base_url = self.glassflow_client.glassflow_config.server_url
 
         url = utils.generate_url(
-            operations.ConsumeFailedRequest, base_url,
-            '/pipelines/{pipeline_id}/topics/failed/events/consume', request)
+            operations.ConsumeFailedRequest,
+            base_url,
+            "/pipelines/{pipeline_id}/topics/failed/events/consume",
+            request,
+        )
         headers = self._get_headers(request)
-        query_params = utils.get_query_params(operations.ConsumeFailedRequest,
-                                              request)
+        query_params = utils.get_query_params(operations.ConsumeFailedRequest, request)
 
         client = self.glassflow_client.glassflow_config.client
         self._respect_retry_delay()
-        http_res = client.request('POST',
-                                  url,
-                                  params=query_params,
-                                  headers=headers)
-        content_type = http_res.headers.get('Content-Type')
+        http_res = client.request("POST", url, params=query_params, headers=headers)
+        content_type = http_res.headers.get("Content-Type")
 
         res = operations.ConsumeFailedResponse(
             status_code=http_res.status_code,
             content_type=content_type,
-            raw_response=http_res)
+            raw_response=http_res,
+        )
 
         self._update_retry_delay(http_res.status_code)
         if http_res.status_code == 200:
-            if utils.match_content_type(content_type, 'application/json'):
+            if utils.match_content_type(content_type, "application/json"):
                 body = utils.unmarshal_json(
-                    http_res.text,
-                    Optional[operations.ConsumeFailedResponseBody])
+                    http_res.text, Optional[operations.ConsumeFailedResponseBody]
+                )
                 res.body = body
             else:
                 raise errors.ClientError(
-                    f'unknown content-type received: {content_type}',
-                    http_res.status_code, http_res.text, http_res)
+                    f"unknown content-type received: {content_type}",
+                    http_res.status_code,
+                    http_res.text,
+                    http_res,
+                )
         elif http_res.status_code == 204:
             # No messages to be consumed. Return an empty response body
             body = operations.ConsumeFailedResponseBody("", "", {})
             res.body = body
         elif http_res.status_code in [400, 500]:
-            if utils.match_content_type(content_type, 'application/json'):
+            if utils.match_content_type(content_type, "application/json"):
                 out = utils.unmarshal_json(http_res.text, errors.Error)
                 out.raw_response = http_res
                 raise out
             else:
                 raise errors.ClientError(
-                    f'unknown content-type received: {content_type}',
-                    http_res.status_code, http_res.text, http_res)
-        elif http_res.status_code == 401 or http_res.status_code == 404 or http_res.status_code >= 400 and http_res.status_code < 500 or http_res.status_code >= 500 and http_res.status_code < 600:
-            raise errors.ClientError('API error occurred',
-                                     http_res.status_code, http_res.text,
-                                     http_res)
+                    f"unknown content-type received: {content_type}",
+                    http_res.status_code,
+                    http_res.text,
+                    http_res,
+                )
+        elif 400 < http_res.status_code < 600:
+            raise errors.ClientError(
+                "API error occurred", http_res.status_code, http_res.text, http_res
+            )
 
         return res
 
-    def _get_headers(self,
-                     request: dataclasses.dataclass,
-                     req_content_type: Optional[str] = None) -> dict:
-
+    def _get_headers(
+        self, request: dataclasses.dataclass, req_content_type: Optional[str] = None
+    ) -> dict:
         headers = utils.get_req_specific_headers(request)
-        headers['Accept'] = 'application/json'
-        headers[
-            'Gf-Client'] = self.glassflow_client.glassflow_config.glassflow_client
-        headers[
-            'User-Agent'] = self.glassflow_client.glassflow_config.user_agent
-        headers['Gf-Python-Version'] = (f'{sys.version_info.major}.'
-                                        f'{sys.version_info.minor}.'
-                                        f'{sys.version_info.micro}')
+        headers["Accept"] = "application/json"
+        headers["Gf-Client"] = self.glassflow_client.glassflow_config.glassflow_client
+        headers["User-Agent"] = self.glassflow_client.glassflow_config.user_agent
+        headers["Gf-Python-Version"] = (
+            f"{sys.version_info.major}."
+            f"{sys.version_info.minor}."
+            f"{sys.version_info.micro}"
+        )
 
-        if (req_content_type and req_content_type
-                not in ('multipart/form-data', 'multipart/mixed')):
-            headers['content-type'] = req_content_type
+        if req_content_type and req_content_type not in (
+            "multipart/form-data",
+            "multipart/mixed",
+        ):
+            headers["content-type"] = req_content_type
 
         return headers
 
@@ -318,8 +343,8 @@ class PipelineClient():
         elif status_code == 204 or status_code == 429:
             self._consume_retry_delay_current *= 2
             self._consume_retry_delay_current = min(
-                self._consume_retry_delay_current,
-                self._consume_retry_delay_max)
+                self._consume_retry_delay_current, self._consume_retry_delay_max
+            )
             self._consume_retry_delay_current += random.uniform(0, 0.1)
 
     def _respect_retry_delay(self):

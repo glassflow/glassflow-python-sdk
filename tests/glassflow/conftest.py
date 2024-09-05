@@ -1,7 +1,9 @@
-import pytest
 import os
-from glassflow.client import GlassFlowClient
 import uuid
+
+import pytest
+
+from glassflow.client import GlassFlowClient
 
 
 @pytest.fixture

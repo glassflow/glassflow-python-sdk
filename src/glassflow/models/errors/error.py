@@ -1,6 +1,9 @@
 from __future__ import annotations
+
 import dataclasses
+
 from dataclasses_json import Undefined, dataclass_json
+
 from glassflow import utils
 
 
@@ -13,11 +16,10 @@ class Error(Exception):
         message: A message describing the error
 
     """
-    detail: str = dataclasses.field(metadata={
-        'dataclasses_json': {
-            'letter_case': utils.get_field_name('detail')
-        }
-    })
+
+    detail: str = dataclasses.field(
+        metadata={"dataclasses_json": {"letter_case": utils.get_field_name("detail")}}
+    )
 
     def __str__(self) -> str:
         return utils.marshal_json(self, type(self))

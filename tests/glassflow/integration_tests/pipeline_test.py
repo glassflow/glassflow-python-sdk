@@ -1,4 +1,5 @@
 import pytest
+
 from glassflow.models.errors import ClientError
 
 
@@ -9,14 +10,18 @@ def test_pipeline_is_valid_access_token_ok(client, pipeline_credentials):
     assert is_valid
 
 
-def test_pipeline_is_valid_access_token_not_ok(client, pipeline_credentials_invalid_token):
+def test_pipeline_is_valid_access_token_not_ok(
+    client, pipeline_credentials_invalid_token
+):
     pipeline = client.pipeline_client(**pipeline_credentials_invalid_token)
 
     is_valid = pipeline.is_valid_access_token()
     assert not is_valid
 
 
-def test_pipeline_is_valid_access_token_with_invalid_credentials(client, pipeline_credentials_invalid_id):
+def test_pipeline_is_valid_access_token_with_invalid_credentials(
+    client, pipeline_credentials_invalid_id
+):
     pipeline = client.pipeline_client(**pipeline_credentials_invalid_id)
 
     with pytest.raises(ClientError) as exc_info:
