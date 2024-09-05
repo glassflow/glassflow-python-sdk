@@ -38,7 +38,7 @@ class PipelineClient:
         self._consume_retry_delay_current = 1
         self._consume_retry_delay_max = 60
 
-    def is_valid_access_token(self):
+    def is_access_token_valid(self):
         """
         Check if the pipeline access token is valid
 

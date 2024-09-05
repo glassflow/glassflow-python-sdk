@@ -1,19 +1,9 @@
-from .consumeevent import (
-    ConsumeEventResponse,
-    ConsumeEventRequest,
-    ConsumeEventResponseBody,
-)
-from .consumefailed import (
-    ConsumeFailedRequest,
-    ConsumeFailedResponse,
-    ConsumeFailedResponseBody,
-)
-from .publishevent import (
-    PublishEventRequest,
-    PublishEventResponse,
-    PublishEventRequestBody,
-    PublishEventResponseBody,
-)
+from .consumeevent import (ConsumeEventRequest, ConsumeEventResponse,
+                           ConsumeEventResponseBody)
+from .consumefailed import (ConsumeFailedRequest, ConsumeFailedResponse,
+                            ConsumeFailedResponseBody)
+from .publishevent import (PublishEventRequest, PublishEventRequestBody,
+                           PublishEventResponse, PublishEventResponseBody)
 from .status_access_token import StatusAccessTokenRequest
 
 __all__ = [

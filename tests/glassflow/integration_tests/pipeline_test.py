@@ -6,7 +6,7 @@ from glassflow.models.errors import ClientError
 def test_pipeline_is_valid_access_token_ok(client, pipeline_credentials):
     pipeline = client.pipeline_client(**pipeline_credentials)
 
-    is_valid = pipeline.is_valid_access_token()
+    is_valid = pipeline.is_access_token_valid()
     assert is_valid
 
 
@@ -15,7 +15,7 @@ def test_pipeline_is_valid_access_token_not_ok(
 ):
     pipeline = client.pipeline_client(**pipeline_credentials_invalid_token)
 
-    is_valid = pipeline.is_valid_access_token()
+    is_valid = pipeline.is_access_token_valid()
     assert not is_valid
 
 
@@ -25,7 +25,7 @@ def test_pipeline_is_valid_access_token_with_invalid_credentials(
     pipeline = client.pipeline_client(**pipeline_credentials_invalid_id)
 
     with pytest.raises(ClientError) as exc_info:
-        pipeline.is_valid_access_token()
+        pipeline.is_access_token_valid()
     exc = exc_info.value
     assert exc.status_code == 404
 

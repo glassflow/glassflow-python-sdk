@@ -5,7 +5,8 @@ from datetime import datetime
 from decimal import Decimal
 from email.message import Message
 from enum import Enum
-from typing import Any, Callable, Dict, List, Tuple, Union, get_args, get_origin
+from typing import (Any, Callable, Dict, List, Tuple, Union, get_args,
+                    get_origin)
 from xmlrpc.client import boolean
 
 from dataclasses_json import DataClassJsonMixin
