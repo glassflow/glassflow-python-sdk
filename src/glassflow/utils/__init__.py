@@ -5,6 +5,8 @@ from .utils import (
     serialize_request_body,
     get_query_params,
     get_req_specific_headers,
+    get_field_name,
+    marshal_json
 )
 
 __all__ = [
@@ -14,4 +16,6 @@ __all__ = [
     "serialize_request_body",
     "get_query_params",
     "get_req_specific_headers",
+    "get_field_name",
+    "marshal_json"
 ]
