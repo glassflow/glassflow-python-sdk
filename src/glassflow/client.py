@@ -1,11 +1,12 @@
-"""GlassFlow Python Client to interact with GlassFlow API
-"""
+"""GlassFlow Python Client to interact with GlassFlow API"""
 
-from .pipelines import PipelineClient
-from typing import Optional
-from .config import GlassFlowConfig
-import requests as requests_http
 import os
+from typing import Optional
+
+import requests as requests_http
+
+from .config import GlassFlowConfig
+from .pipelines import PipelineClient
 
 
 class GlassFlowClient:
@@ -17,6 +18,7 @@ class GlassFlowClient:
         organization_id: Organization ID of the user. If not provided, the default organization will be used
 
     """
+
     glassflow_config: GlassFlowConfig
 
     def __init__(self, organization_id: str = None) -> None:
@@ -29,10 +31,12 @@ class GlassFlowClient:
         self.glassflow_config = GlassFlowConfig(rclient)
         self.organization_id = organization_id
 
-    def pipeline_client(self,
-                        pipeline_id: Optional[str] = None,
-                        pipeline_access_token: Optional[str] = None,
-                        space_id: Optional[str] = None) -> PipelineClient:
+    def pipeline_client(
+        self,
+        pipeline_id: Optional[str] = None,
+        pipeline_access_token: Optional[str] = None,
+        space_id: Optional[str] = None,
+    ) -> PipelineClient:
         """Create a new PipelineClient object to interact with a specific pipeline
 
         Args:
@@ -44,9 +48,9 @@ class GlassFlowClient:
         """
         # if no pipeline_id or pipeline_access_token is provided, try to read from environment variables
         if not pipeline_id:
-            pipeline_id = os.getenv('PIPELINE_ID')
+            pipeline_id = os.getenv("PIPELINE_ID")
         if not pipeline_access_token:
-            pipeline_access_token = os.getenv('PIPELINE_ACCESS_TOKEN')
+            pipeline_access_token = os.getenv("PIPELINE_ACCESS_TOKEN")
         # no pipeline_id provided explicitly or in environment variables
         if not pipeline_id:
             raise ValueError(
@@ -57,6 +61,8 @@ class GlassFlowClient:
                 "PIPELINE_ACCESS_TOKEN must be set as an environment variable or provided explicitly"
             )
 
-        return PipelineClient(glassflow_client=self,
-                              pipeline_id=pipeline_id,
-                              pipeline_access_token=pipeline_access_token)
+        return PipelineClient(
+            glassflow_client=self,
+            pipeline_id=pipeline_id,
+            pipeline_access_token=pipeline_access_token,
+        )

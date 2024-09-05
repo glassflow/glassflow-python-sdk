@@ -1,3 +1,2 @@
-
-from .client import GlassFlowClient
-from .config import GlassFlowConfig
+from .client import GlassFlowClient as GlassFlowClient
+from .config import GlassFlowConfig as GlassFlowConfig

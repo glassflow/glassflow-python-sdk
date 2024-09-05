@@ -1,10 +1,11 @@
-"""Dataclasses for the consume event operation
-"""
+"""Dataclasses for the consume event operation"""
 
 from __future__ import annotations
+
 import dataclasses
-import requests as requests_http
 from typing import Optional
+
+import requests as requests_http
 from dataclasses_json import config, dataclass_json
 
 
@@ -18,32 +19,36 @@ class ConsumeFailedRequest:
         x_pipeline_access_token: The access token of the pipeline
 
     """
+
     pipeline_id: str = dataclasses.field(
         metadata={
-            'path_param': {
-                'field_name': 'pipeline_id',
-                'style': 'simple',
-                'explode': False
+            "path_param": {
+                "field_name": "pipeline_id",
+                "style": "simple",
+                "explode": False,
             }
-        })
+        }
+    )
     organization_id: Optional[str] = dataclasses.field(
         default=None,
         metadata={
-            'query_param': {
-                'field_name': 'organization_id',
-                'style': 'form',
-                'explode': True
+            "query_param": {
+                "field_name": "organization_id",
+                "style": "form",
+                "explode": True,
             }
-        })
+        },
+    )
     x_pipeline_access_token: str = dataclasses.field(
         default=None,
         metadata={
-            'header': {
-                'field_name': 'X-PIPELINE-ACCESS-TOKEN',
-                'style': 'simple',
-                'explode': False
+            "header": {
+                "field_name": "X-PIPELINE-ACCESS-TOKEN",
+                "style": "simple",
+                "explode": False,
             }
-        })
+        },
+    )
 
 
 @dataclass_json
@@ -57,6 +62,7 @@ class ConsumeFailedResponseBody:
         event: The event received
 
     """
+
     req_id: str = dataclasses.field()
     receive_time: str = dataclasses.field()
     event: dict = dataclasses.field(metadata=config(field_name="payload"))
@@ -73,6 +79,7 @@ class ConsumeFailedResponse:
         body: the response body from the api call
 
     """
+
     content_type: str = dataclasses.field()
     status_code: int = dataclasses.field()
     raw_response: requests_http.Response = dataclasses.field()
