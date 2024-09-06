@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://learn.glassflow.dev/~gitbook/image?url=https:%2F%2F3630921082-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-x-prod.appspot.com%2Fo%2Fspaces%252FpRyi93X0Jn9wrh2Z4Ffm%252Flogo%252Fj4ZLY66JC4CCI0kp4Tcl%252FBlue.png%3Falt=media%26token=824ab2c7-e9a7-4b53-bd9a-375650951fc1&width=128&dpr=2&quality=100&sign=312af88abf1a93b897726483f4d86c2733192ab70b94b68ba438f6c85caf7e1a" /><br /><br />
+  <img src="https://docs.glassflow.dev/~gitbook/image?url=https%3A%2F%2F1082326815-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-x-prod.appspot.com%2Fo%2Forganizations%252FaR82XtsD8fLEkzPmMtb7%252Fsites%252Fsite_8vNM9%252Flogo%252Fft4nLD8mKhRmqTJjDp3i%252Flogo-color.png%3Falt%3Dmedia%26token%3Deb19e3bf-195b-413f-9965-4c76112953a3&width=128&dpr=3&quality=100&sign=10efaa8d&sv=1" /><br /><br />
 </div>
 <p align="center">
         <a href="https://github.com/glassflow/glassflow-python-sdk/blob/main/LICENSE.md">
@@ -13,10 +13,6 @@
 # GlassFlow Python SDK
 
 The [GlassFlow](https://www.glassflow.dev/) Python SDK provides a convenient way to interact with the GlassFlow API in your Python applications. The SDK is used to publish and consume events to your [GlassFlow pipelines](https://docs.glassflow.dev/concepts/pipeline).
-
-See how it is easy to setup a new data pipeline and do data transformation with GlassFlow:
-
-![GlassFlow data pipeline creation](/assets/GlassFlow%20quickstart.gif)
 
 ## Installation
 
