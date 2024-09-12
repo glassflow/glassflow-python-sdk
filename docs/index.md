@@ -17,6 +17,7 @@ pip install glassflow
 * [consume](#consume) - Consume the transformed event from the pipeline
 * [consume failed](#consume-failed) - Consume the events that failed from the pipeline
 * [is access token valid](#is-access-token-valid) - Validates Pipeline Access Token
+* [is_valid](#is-valid) - Check if pipeline credentials are valid
 
 
 ## publish
@@ -88,6 +89,21 @@ pipeline_client = client.pipeline_client(pipeline_id="<str value", pipeline_acce
 
 if pipeline_client.is_access_token_valid():
     print("Pipeline Access Token invalid! Generate a new one from the Webapp!")
+```
+
+## is valid
+Checks if the pipeline credentials are valid.
+
+### Example Usage
+
+```python
+import glassflow
+
+client = glassflow.GlassFlowClient()
+pipeline_client = client.pipeline_client(pipeline_id="<str value", pipeline_access_token="<str value>")
+
+if pipeline_client.is_valid():
+    print("Pipeline credentials are valid")
 ```
 
 ## SDK Maturity
