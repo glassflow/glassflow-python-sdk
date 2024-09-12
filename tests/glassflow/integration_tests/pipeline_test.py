@@ -11,7 +11,7 @@ def test_pipeline_is_access_token_valid_ok(client, pipeline_credentials):
 
 
 def test_pipeline_is_access_token_valid_not_ok(
-    client, pipeline_credentials_invalid_token
+        client, pipeline_credentials_invalid_token
 ):
     pipeline = client.pipeline_client(**pipeline_credentials_invalid_token)
 
@@ -20,7 +20,7 @@ def test_pipeline_is_access_token_valid_not_ok(
 
 
 def test_pipeline_is_access_token_valid_with_invalid_credentials(
-    client, pipeline_credentials_invalid_id
+        client, pipeline_credentials_invalid_id
 ):
     pipeline = client.pipeline_client(**pipeline_credentials_invalid_id)
 
@@ -28,6 +28,30 @@ def test_pipeline_is_access_token_valid_with_invalid_credentials(
         pipeline.is_access_token_valid()
     exc = exc_info.value
     assert exc.status_code == 404
+
+
+def test_pipeline_is_valid_with_invalid_pipeline_id(
+        client, pipeline_credentials_invalid_id
+):
+    pipeline = client.pipeline_client(**pipeline_credentials_invalid_id)
+
+    assert pipeline.is_valid() is False
+
+
+def test_pipeline_is_valid_with_invalid_pipeline_token(
+        client, pipeline_credentials_invalid_token
+):
+    pipeline = client.pipeline_client(**pipeline_credentials_invalid_token)
+
+    assert pipeline.is_valid() is False
+
+
+def test_pipeline_is_valid_ok(
+        client, pipeline_credentials
+):
+    pipeline = client.pipeline_client(**pipeline_credentials)
+
+    assert pipeline.is_valid() is True
 
 
 def test_pipeline_publish_and_consume(client, pipeline_credentials):

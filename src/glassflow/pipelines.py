@@ -38,7 +38,7 @@ class PipelineClient:
         self._consume_retry_delay_current = 1
         self._consume_retry_delay_max = 60
 
-    def is_access_token_valid(self):
+    def is_access_token_valid(self) -> bool:
         """
         Check if the pipeline access token is valid
 
@@ -87,6 +87,21 @@ class PipelineClient:
                 "API error occurred", http_res.status_code, http_res.text, http_res
             )
         return res
+
+    def is_valid(self) -> bool:
+        """
+        Check if the pipeline exists and credentials are valid
+
+        Returns:
+            Boolean: True if the pipeline exists and credentials are valid, False otherwise
+        """
+        try:
+            return self.is_access_token_valid()
+        except errors.ClientError as e:
+            if e.status_code == 404:
+                return False
+            else:
+                raise e
 
     def publish(self, request_body: dict) -> operations.PublishEventResponse:
         """Push a new message into the pipeline
