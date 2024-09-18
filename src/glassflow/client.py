@@ -18,7 +18,6 @@ class GlassFlowClient(APIClient):
         organization_id: Organization ID of the user. If not provided, the default organization will be used
 
     """
-    glassflow_config: GlassFlowConfig
 
     def __init__(self, personal_access_token: str = None, organization_id: str = None) -> None:
         """Create a new GlassFlowClient object
