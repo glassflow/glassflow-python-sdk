@@ -4,7 +4,6 @@ import os
 import warnings
 from typing import Optional
 
-from .config import GlassFlowConfig
 from .pipelines import PipelineClient
 from .api_client import APIClient
 
