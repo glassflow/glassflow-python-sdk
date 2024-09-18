@@ -1,11 +1,13 @@
 ```python
 import glassflow
 
-client = glassflow.GlassFlowClient()
-pipeline = client.pipeline_client(pipeline_id="<pipeline_id>", pipeline_access_token="<pipeline_token>")
+source = glassflow.PipelineDataSource(pipeline_id="<pipeline_id>", pipeline_access_token="<pipeline_token>")
 data = {
     "name": "Hello World",
     "id": 1
 }
-res = pipeline.publish(request_body=data)
+source_res = source.publish(request_body=data)
+
+sink = glassflow.PipelineDataSink(pipeline_id="<pipeline_id>", pipeline_access_token="<pipeline_token>")
+sink_res = sink.consume()
 ```
