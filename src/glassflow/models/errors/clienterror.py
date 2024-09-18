@@ -49,3 +49,23 @@ class ClientError(Exception):
             body = f"\n{self.body}"
 
         return f"{self.detail}: Status {self.status_code}{body}"
+
+
+class PipelineNotFoundError(ClientError):
+    def __init__(self, pipeline_id: str, raw_response: requests_http.Response):
+        super().__init__(
+            detail=f"Pipeline ID {pipeline_id} does not exist",
+            status_code=404,
+            body=raw_response.text,
+            raw_response=raw_response
+        )
+
+
+class PipelineAccessTokenInvalidError(ClientError):
+    def __init__(self, raw_response: requests_http.Response):
+        super().__init__(
+            detail=f"The Pipeline Access Token used is invalid",
+            status_code=401,
+            body=raw_response.text,
+            raw_response=raw_response
+        )
