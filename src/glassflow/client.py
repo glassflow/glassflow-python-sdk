@@ -27,8 +27,6 @@ class GlassFlowClient(APIClient):
         Args:
             organization_id: Organization ID of the user. If not provided, the default organization will be used
         """
-        rclient = requests_http.Session()
-        self.glassflow_config = GlassFlowConfig(rclient)
         super().__init__()
         self.organization_id = organization_id
 
