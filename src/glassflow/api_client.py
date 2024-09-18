@@ -9,9 +9,10 @@ from .utils import get_req_specific_headers
 
 
 class APIClient:
+    glassflow_config = GlassFlowConfig()
+
     def __init__(self):
         self.client = requests_http.Session()
-        self.glassflow_config = GlassFlowConfig()
 
     def _get_headers(
             self, request: dataclass, req_content_type: Optional[str] = None

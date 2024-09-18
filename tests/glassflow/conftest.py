@@ -4,49 +4,35 @@ import uuid
 import pytest
 
 from glassflow import GlassFlowClient, PipelineDataSink, PipelineDataSource
-from glassflow.client import GlassFlowConfig
+from glassflow.api_client import APIClient
+
+# Use staging api server
+APIClient.glassflow_config.server_url = "https://staging.api.glassflow.dev/v1"
 
 
 @pytest.fixture
-def staging_config():
-    config = GlassFlowConfig()
-    config.server_url = "https://staging.api.glassflow.dev/v1"
-    return config
+def client():
+    return GlassFlowClient()
 
 
 @pytest.fixture
-def client(staging_config):
-    c = GlassFlowClient()
-    c.glassflow_config = staging_config
-    return c
+def source(pipeline_credentials):
+    return PipelineDataSource(**pipeline_credentials)
 
 
 @pytest.fixture
-def source(pipeline_credentials, staging_config):
-    source = PipelineDataSource(**pipeline_credentials)
-    source.glassflow_config = staging_config
-    return source
+def source_with_invalid_access_token(pipeline_credentials_invalid_token):
+    return PipelineDataSource(**pipeline_credentials_invalid_token)
 
 
 @pytest.fixture
-def source_with_invalid_access_token(pipeline_credentials_invalid_token, staging_config):
-    source = PipelineDataSource(**pipeline_credentials_invalid_token)
-    source.glassflow_config = staging_config
-    return source
+def source_with_non_existing_id(pipeline_credentials_invalid_id):
+    return PipelineDataSource(**pipeline_credentials_invalid_id)
 
 
 @pytest.fixture
-def source_with_non_existing_id(pipeline_credentials_invalid_id, staging_config):
-    source = PipelineDataSource(**pipeline_credentials_invalid_id)
-    source.glassflow_config = staging_config
-    return source
-
-
-@pytest.fixture
-def sink(pipeline_credentials, staging_config):
-    sink = PipelineDataSink(**pipeline_credentials)
-    sink.glassflow_config = staging_config
-    return sink
+def sink(pipeline_credentials):
+    return PipelineDataSink(**pipeline_credentials)
 
 
 @pytest.fixture
