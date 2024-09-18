@@ -1,6 +1,7 @@
 """GlassFlow Python Client to interact with GlassFlow API"""
 
 import os
+import warnings
 from typing import Optional
 
 import requests as requests_http
@@ -51,6 +52,10 @@ class GlassFlowClient:
             pipeline_id = os.getenv("PIPELINE_ID")
         if not pipeline_access_token:
             pipeline_access_token = os.getenv("PIPELINE_ACCESS_TOKEN")
+        if space_id is not None:
+            warnings.warn("Space id not needed to publish or consume events",
+                          DeprecationWarning)
+
         # no pipeline_id provided explicitly or in environment variables
         if not pipeline_id:
             raise ValueError(
