@@ -70,7 +70,7 @@ class ConsumeFailedResponseBody:
 
 @dataclasses.dataclass
 class ConsumeFailedResponse:
-    """Response to consume an failed event from a pipeline
+    """Response to consume a failed event from a pipeline
 
     Attributes:
         content_type: HTTP response content type for this operation
