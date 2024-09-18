@@ -52,6 +52,7 @@ class ClientError(Exception):
 
 
 class PipelineNotFoundError(ClientError):
+    """Error caused by a pipeline ID not found."""
     def __init__(self, pipeline_id: str, raw_response: requests_http.Response):
         super().__init__(
             detail=f"Pipeline ID {pipeline_id} does not exist",
@@ -62,6 +63,7 @@ class PipelineNotFoundError(ClientError):
 
 
 class PipelineAccessTokenInvalidError(ClientError):
+    """Error caused by invalid access token."""
     def __init__(self, raw_response: requests_http.Response):
         super().__init__(
             detail="The Pipeline Access Token used is invalid",
