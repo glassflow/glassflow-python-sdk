@@ -3,6 +3,11 @@ import pytest
 from glassflow import errors
 
 
+def test_using_staging_server(source, sink):
+    assert source.glassflow_config.server_url == "https://staging.api.glassflow.dev/v1"
+    assert sink.glassflow_config.server_url == "https://staging.api.glassflow.dev/v1"
+
+
 def test_pipeline_data_source_validate_credentials_ok(source):
     try:
         source.validate_credentials()
