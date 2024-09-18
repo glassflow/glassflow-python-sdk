@@ -4,17 +4,16 @@ import os
 import warnings
 from typing import Optional
 
-import requests as requests_http
-
 from .config import GlassFlowConfig
 from .pipelines import PipelineClient
+from .api_client import APIClient
 
 
-class GlassFlowClient:
+class GlassFlowClient(APIClient):
     """GlassFlow Client to interact with GlassFlow API and manage pipelines and other resources
 
     Attributes:
-        rclient: requests.Session object to make HTTP requests to GlassFlow API
+        client: requests.Session object to make HTTP requests to GlassFlow API
         glassflow_config: GlassFlowConfig object to store configuration
         organization_id: Organization ID of the user. If not provided, the default organization will be used
 
@@ -30,6 +29,7 @@ class GlassFlowClient:
         """
         rclient = requests_http.Session()
         self.glassflow_config = GlassFlowConfig(rclient)
+        super().__init__()
         self.organization_id = organization_id
 
     def pipeline_client(

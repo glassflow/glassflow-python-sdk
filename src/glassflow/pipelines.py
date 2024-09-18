@@ -5,6 +5,7 @@ import time
 from typing import Optional
 
 import glassflow.utils as utils
+from glassflow.api_client import APIClient
 
 from .models import errors, operations
 
@@ -61,9 +62,7 @@ class PipelineClient:
 
         headers = self._get_headers(request)
 
-        client = self.glassflow_client.glassflow_config.client
-
-        http_res = client.request("GET", url, headers=headers)
+        http_res = self.glassflow_client.client.request("GET", url, headers=headers)
         content_type = http_res.headers.get("Content-Type")
 
         if http_res.status_code == 200:
@@ -138,9 +137,7 @@ class PipelineClient:
         headers = self._get_headers(request, req_content_type)
         query_params = utils.get_query_params(operations.PublishEventRequest, request)
 
-        client = self.glassflow_client.glassflow_config.client
-
-        http_res = client.request(
+        http_res = self.glassflow_client.client.request(
             "POST", url, params=query_params, data=data, files=form, headers=headers
         )
         content_type = http_res.headers.get("Content-Type")
@@ -199,11 +196,11 @@ class PipelineClient:
         headers = self._get_headers(request)
         query_params = utils.get_query_params(operations.ConsumeEventRequest, request)
 
-        client = self.glassflow_client.glassflow_config.client
         # make the request
         self._respect_retry_delay()
 
-        http_res = client.request("POST", url, params=query_params, headers=headers)
+        http_res = self.glassflow_client.client.request(
+            "POST", url, params=query_params, headers=headers)
         content_type = http_res.headers.get("Content-Type")
 
         res = operations.ConsumeEventResponse(
@@ -283,9 +280,9 @@ class PipelineClient:
         headers = self._get_headers(request)
         query_params = utils.get_query_params(operations.ConsumeFailedRequest, request)
 
-        client = self.glassflow_client.glassflow_config.client
         self._respect_retry_delay()
-        http_res = client.request("POST", url, params=query_params, headers=headers)
+        http_res = self.glassflow_client.client.request(
+            "POST", url, params=query_params, headers=headers)
         content_type = http_res.headers.get("Content-Type")
 
         res = operations.ConsumeFailedResponse(
