@@ -1,8 +1,6 @@
 from dataclasses import dataclass
 from importlib.metadata import version
 
-import requests
-
 
 @dataclass
 class GlassFlowConfig:
