@@ -2,6 +2,7 @@ import dataclasses
 import random
 import sys
 import time
+import warnings
 from typing import Optional
 
 import glassflow.utils as utils
@@ -19,6 +20,8 @@ class PipelineClient:
         organization_id: Organization ID of the user. If not provided, the default organization will be used
         pipeline_access_token: The access token to access the pipeline
     """
+    warnings.warn("Use PipelineDataSource or PipelineDataSink instead",
+                  DeprecationWarning)
 
     def __init__(
         self, glassflow_client, pipeline_id: str, pipeline_access_token: str

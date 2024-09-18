@@ -18,7 +18,6 @@ class GlassFlowClient(APIClient):
         organization_id: Organization ID of the user. If not provided, the default organization will be used
 
     """
-
     glassflow_config: GlassFlowConfig
 
     def __init__(self, organization_id: str = None) -> None:
@@ -45,6 +44,9 @@ class GlassFlowClient(APIClient):
         Returns:
             PipelineClient: Client object to publish and consume events from the given pipeline.
         """
+        warnings.warn("Use PipelineDataSource or PipelineDataSink instead",
+                      DeprecationWarning)
+
         # if no pipeline_id or pipeline_access_token is provided, try to read from environment variables
         if not pipeline_id:
             pipeline_id = os.getenv("PIPELINE_ID")
