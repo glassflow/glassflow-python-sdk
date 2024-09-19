@@ -71,3 +71,15 @@ class PipelineAccessTokenInvalidError(ClientError):
             body=raw_response.text,
             raw_response=raw_response
         )
+
+
+class UnknownContentTypeError(ClientError):
+    """Error caused by an unknown content type response."""
+    def __init__(self, raw_response: requests_http.Response):
+        content_type = raw_response.headers.get("Content-Type")
+        super().__init__(
+            detail=f"unknown content-type received: {content_type}",
+            status_code=raw_response.status_code,
+            body=raw_response.text,
+            raw_response=raw_response
+        )
