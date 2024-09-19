@@ -3,16 +3,11 @@ import uuid
 
 import pytest
 
-from glassflow import GlassFlowClient, PipelineDataSink, PipelineDataSource
-from glassflow.api_client import APIClient
+from glassflow import PipelineDataSink, PipelineDataSource
+from glassflow.client import APIClient
 
 # Use staging api server
 APIClient.glassflow_config.server_url = "https://staging.api.glassflow.dev/v1"
-
-
-@pytest.fixture
-def client():
-    return GlassFlowClient()
 
 
 @pytest.fixture
