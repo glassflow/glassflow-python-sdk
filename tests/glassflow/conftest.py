@@ -3,12 +3,31 @@ import uuid
 
 import pytest
 
-from glassflow.client import GlassFlowClient
+from glassflow import PipelineDataSink, PipelineDataSource
+from glassflow.client import APIClient
+
+# Use staging api server
+APIClient.glassflow_config.server_url = "https://staging.api.glassflow.dev/v1"
 
 
 @pytest.fixture
-def client():
-    return GlassFlowClient()
+def source(pipeline_credentials):
+    return PipelineDataSource(**pipeline_credentials)
+
+
+@pytest.fixture
+def source_with_invalid_access_token(pipeline_credentials_invalid_token):
+    return PipelineDataSource(**pipeline_credentials_invalid_token)
+
+
+@pytest.fixture
+def source_with_non_existing_id(pipeline_credentials_invalid_id):
+    return PipelineDataSource(**pipeline_credentials_invalid_id)
+
+
+@pytest.fixture
+def sink(pipeline_credentials):
+    return PipelineDataSink(**pipeline_credentials)
 
 
 @pytest.fixture
