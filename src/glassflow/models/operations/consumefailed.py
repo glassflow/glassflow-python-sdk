@@ -5,12 +5,13 @@ from __future__ import annotations
 import dataclasses
 from typing import Optional
 
-import requests as requests_http
 from dataclasses_json import config, dataclass_json
+
+from .base import BaseResponse, BaseRequest
 
 
 @dataclasses.dataclass
-class ConsumeFailedRequest:
+class ConsumeFailedRequest(BaseRequest):
     """Request to consume failed events from a pipeline
 
     Attributes:
@@ -69,7 +70,7 @@ class ConsumeFailedResponseBody:
 
 
 @dataclasses.dataclass
-class ConsumeFailedResponse:
+class ConsumeFailedResponse(BaseResponse):
     """Response to consume a failed event from a pipeline
 
     Attributes:
@@ -79,10 +80,6 @@ class ConsumeFailedResponse:
         body: the response body from the api call
 
     """
-
-    content_type: str = dataclasses.field()
-    status_code: int = dataclasses.field()
-    raw_response: requests_http.Response = dataclasses.field()
     body: Optional[ConsumeFailedResponseBody] = dataclasses.field(default=None)
 
     def json(self):
