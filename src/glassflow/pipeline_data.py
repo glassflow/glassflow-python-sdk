@@ -3,7 +3,7 @@ import time
 from typing import Optional
 
 import glassflow.utils as utils
-from glassflow.client import APIClient
+from glassflow.api_client import APIClient
 
 from .models import errors, operations
 

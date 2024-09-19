@@ -4,7 +4,7 @@ import uuid
 import pytest
 
 from glassflow import PipelineDataSink, PipelineDataSource
-from glassflow.client import APIClient
+from glassflow.api_client import APIClient
 
 # Use staging api server
 APIClient.glassflow_config.server_url = "https://staging.api.glassflow.dev/v1"
