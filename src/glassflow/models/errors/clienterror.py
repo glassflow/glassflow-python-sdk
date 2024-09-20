@@ -62,6 +62,17 @@ class PipelineNotFoundError(ClientError):
         )
 
 
+class UnauthorizedError(ClientError):
+    """Error caused by a user not authorized."""
+    def __init__(self, raw_response: requests_http.Response):
+        super().__init__(
+            detail="Unauthorized request, Personal Access Token used is invalid",
+            status_code=401,
+            body=raw_response.text,
+            raw_response=raw_response
+        )
+
+
 class PipelineAccessTokenInvalidError(ClientError):
     """Error caused by invalid access token."""
     def __init__(self, raw_response: requests_http.Response):
