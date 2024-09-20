@@ -68,6 +68,8 @@ class APIClient:
             out = utils.unmarshal_json(http_res.text, errors.Error)
             out.raw_response = http_res
             raise out
+        elif http_res.status_code == 429:
+            pass
         elif 400 < http_res.status_code < 600:
             raise errors.ClientError(
                 "API error occurred",
