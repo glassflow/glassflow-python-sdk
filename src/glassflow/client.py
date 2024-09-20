@@ -2,6 +2,7 @@
 
 from .api_client import APIClient
 from .pipeline import Pipeline
+from .models import operations, errors
 
 
 class GlassFlowClient(APIClient):
@@ -24,3 +25,26 @@ class GlassFlowClient(APIClient):
         super().__init__()
         self.personal_access_token = personal_access_token
         self.organization_id = organization_id
+
+    def get_pipeline(self, pipeline_id: str) -> Pipeline:
+        request = operations.GetPipelineRequest(
+            pipeline_id=pipeline_id,
+            organization_id=self.organization_id,
+            personal_access_token=self.personal_access_token,
+        )
+
+        try:
+            res = self.request(
+                method="GET",
+                endpoint=f"/pipelines/{pipeline_id}",
+                request=request,
+            )
+        except errors.ClientError as e:
+            if e.status_code == 404:
+                raise errors.PipelineNotFoundError(pipeline_id, e.raw_response)
+            elif e.status_code == 401:
+                raise errors.UnauthorizedError(e.raw_response)
+            else:
+                raise e
+
+        return Pipeline(self.personal_access_token, **res.raw_response.json())

@@ -12,7 +12,8 @@ from .models.operations.base import BaseRequest, BaseResponse
 class APIClient:
     glassflow_config = GlassFlowConfig()
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.client = requests_http.Session()
 
     def _get_headers(
@@ -49,6 +50,8 @@ class APIClient:
         req_content_type, data, form = utils.serialize_request_body(
             request, request_type, "request_body", False, True, "json"
         )
+        if method == "GET":
+            data = None
 
         headers = self._get_headers(request, req_content_type)
         query_params = utils.get_query_params(request_type, request)
