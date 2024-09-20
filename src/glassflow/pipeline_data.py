@@ -2,10 +2,9 @@ import random
 import time
 from typing import Optional
 
-import glassflow.utils as utils
-from glassflow.api_client import APIClient
-
+from .api_client import APIClient
 from .models import errors, operations
+from .utils import utils
 
 
 class PipelineDataClient(APIClient):
@@ -30,40 +29,19 @@ class PipelineDataClient(APIClient):
             x_pipeline_access_token=self.pipeline_access_token,
         )
 
-        url = utils.generate_url(
-            operations.PublishEventRequest,
-            self.glassflow_config.server_url,
-            "/pipelines/{pipeline_id}/status/access_token",
-            request,
-        )
-
-        headers = self._get_headers(request)
-
-        http_res = self.client.request("GET", url, headers=headers)
-        content_type = http_res.headers.get("Content-Type")
-
-        if http_res.status_code == 200:
-            return
-        if http_res.status_code == 401:
-            raise errors.PipelineAccessTokenInvalidError(http_res)
-        elif http_res.status_code == 404:
-            raise errors.PipelineNotFoundError(self.pipeline_id, http_res)
-        elif http_res.status_code in [400, 500]:
-            if utils.match_content_type(content_type, "application/json"):
-                out = utils.unmarshal_json(http_res.text, errors.Error)
-                out.raw_response = http_res
-                raise out
-            else:
-                raise errors.ClientError(
-                    f"unknown content-type received: {content_type}",
-                    http_res.status_code,
-                    http_res.text,
-                    http_res,
-                )
-        elif 400 < http_res.status_code < 600:
-            raise errors.ClientError(
-                "API error occurred", http_res.status_code, http_res.text, http_res
+        try:
+            self.request(
+                method="GET",
+                endpoint="/pipelines/{pipeline_id}/status/access_token",
+                request=request,
             )
+        except errors.ClientError as e:
+            if e.status_code == 401:
+                raise errors.PipelineAccessTokenInvalidError(e.raw_response)
+            elif e.status_code == 404:
+                raise errors.PipelineNotFoundError(self.pipeline_id, e.raw_response)
+            else:
+                raise e
 
 
 class PipelineDataSource(PipelineDataClient):
