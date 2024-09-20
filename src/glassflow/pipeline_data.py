@@ -3,7 +3,7 @@ import time
 from typing import Optional
 
 import glassflow.utils as utils
-from glassflow.client import APIClient
+from glassflow.api_client import APIClient
 
 from .models import errors, operations
 
@@ -84,52 +84,16 @@ class PipelineDataSource(PipelineDataClient):
             x_pipeline_access_token=self.pipeline_access_token,
             request_body=request_body,
         )
+        base_res = self.request(
+            method="POST",
+            endpoint="/pipelines/{pipeline_id}/topics/input/events",
+            request=request)
 
-        url = utils.generate_url(
-            operations.PublishEventRequest,
-            self.glassflow_config.server_url,
-            "/pipelines/{pipeline_id}/topics/input/events",
-            request,
+        return operations.PublishEventResponse(
+            status_code=base_res.status_code,
+            content_type=base_res.content_type,
+            raw_response=base_res.raw_response,
         )
-
-        req_content_type, data, form = utils.serialize_request_body(
-            request, operations.PublishEventRequest, "request_body", False, True, "json"
-        )
-
-        headers = self._get_headers(request, req_content_type)
-        query_params = utils.get_query_params(operations.PublishEventRequest, request)
-
-        http_res = self.client.request(
-            "POST", url, params=query_params, data=data, files=form, headers=headers
-        )
-        content_type = http_res.headers.get("Content-Type")
-
-        res = operations.PublishEventResponse(
-            status_code=http_res.status_code,
-            content_type=content_type,
-            raw_response=http_res,
-        )
-
-        if http_res.status_code == 200:
-            pass
-        elif http_res.status_code in [400, 500]:
-            if utils.match_content_type(content_type, "application/json"):
-                out = utils.unmarshal_json(http_res.text, errors.Error)
-                out.raw_response = http_res
-                raise out
-            else:
-                raise errors.ClientError(
-                    f"unknown content-type received: {content_type}",
-                    http_res.status_code,
-                    http_res.text,
-                    http_res,
-                )
-        elif 400 < http_res.status_code < 600:
-            raise errors.ClientError(
-                "API error occurred", http_res.status_code, http_res.text, http_res
-            )
-
-        return res
 
 
 class PipelineDataSink(PipelineDataClient):
@@ -156,68 +120,37 @@ class PipelineDataSink(PipelineDataClient):
             x_pipeline_access_token=self.pipeline_access_token,
         )
 
-        url = utils.generate_url(
-            operations.ConsumeEventRequest,
-            self.glassflow_config.server_url,
-            "/pipelines/{pipeline_id}/topics/output/events/consume",
-            request,
-        )
-        headers = self._get_headers(request)
-        query_params = utils.get_query_params(operations.ConsumeEventRequest, request)
-
-        # make the request
         self._respect_retry_delay()
-
-        http_res = self.client.request("POST", url, params=query_params, headers=headers)
-        content_type = http_res.headers.get("Content-Type")
+        base_res = self.request(
+            method="POST",
+            endpoint="/pipelines/{pipeline_id}/topics/output/events/consume",
+            request=request)
 
         res = operations.ConsumeEventResponse(
-            status_code=http_res.status_code,
-            content_type=content_type,
-            raw_response=http_res,
+            status_code=base_res.status_code,
+            content_type=base_res.content_type,
+            raw_response=base_res.raw_response,
         )
 
-        self._update_retry_delay(http_res.status_code)
-        if http_res.status_code == 200:
+        self._update_retry_delay(base_res.status_code)
+        if not utils.match_content_type(res.content_type, "application/json"):
+            raise errors.UnknownContentTypeError(res.raw_response)
+        if res.status_code == 200:
             self._consume_retry_delay_current = self._consume_retry_delay_minimum
-            if utils.match_content_type(content_type, "application/json"):
-                body = utils.unmarshal_json(
-                    http_res.text, Optional[operations.ConsumeEventResponseBody]
-                )
-                res.body = body
-            else:
-                raise errors.ClientError(
-                    f"unknown content-type received: {content_type}",
-                    http_res.status_code,
-                    http_res.text,
-                    http_res,
-                )
-        elif http_res.status_code == 204:
+            body = utils.unmarshal_json(
+                res.raw_response.text, Optional[operations.ConsumeEventResponseBody]
+            )
+            res.body = body
+        elif res.status_code == 204:
             # No messages to be consumed.
             # update the retry delay
             # Return an empty response body
             body = operations.ConsumeEventResponseBody("", "", {})
             res.body = body
-        elif http_res.status_code == 429:
+        elif res.status_code == 429:
             # update the retry delay
             body = operations.ConsumeEventResponseBody("", "", {})
             res.body = body
-        elif http_res.status_code in [400, 500]:
-            if utils.match_content_type(content_type, "application/json"):
-                out = utils.unmarshal_json(http_res.text, errors.Error)
-                out.raw_response = http_res
-                raise out
-            else:
-                raise errors.ClientError(
-                    f"unknown content-type received: {content_type}",
-                    http_res.status_code,
-                    http_res.text,
-                    http_res,
-                )
-        elif 400 < http_res.status_code < 600:
-            raise errors.ClientError(
-                "API error occurred", http_res.status_code, http_res.text, http_res
-            )
 
         return res
 
@@ -236,59 +169,32 @@ class PipelineDataSink(PipelineDataClient):
             x_pipeline_access_token=self.pipeline_access_token,
         )
 
-        url = utils.generate_url(
-            operations.ConsumeFailedRequest,
-            self.glassflow_config.server_url,
-            "/pipelines/{pipeline_id}/topics/failed/events/consume",
-            request,
-        )
-        headers = self._get_headers(request)
-        query_params = utils.get_query_params(operations.ConsumeFailedRequest, request)
-
         self._respect_retry_delay()
-        http_res = self.client.request("POST", url, params=query_params, headers=headers)
-        content_type = http_res.headers.get("Content-Type")
+        base_res = self.request(
+            method="POST",
+            endpoint="/pipelines/{pipeline_id}/topics/failed/events/consume",
+            request=request)
 
         res = operations.ConsumeFailedResponse(
-            status_code=http_res.status_code,
-            content_type=content_type,
-            raw_response=http_res,
+            status_code=base_res.status_code,
+            content_type=base_res.content_type,
+            raw_response=base_res.raw_response,
         )
 
-        self._update_retry_delay(http_res.status_code)
-        if http_res.status_code == 200:
-            if utils.match_content_type(content_type, "application/json"):
-                body = utils.unmarshal_json(
-                    http_res.text, Optional[operations.ConsumeFailedResponseBody]
-                )
-                res.body = body
-            else:
-                raise errors.ClientError(
-                    f"unknown content-type received: {content_type}",
-                    http_res.status_code,
-                    http_res.text,
-                    http_res,
-                )
-        elif http_res.status_code == 204:
+        self._update_retry_delay(res.status_code)
+        if not utils.match_content_type(res.content_type, "application/json"):
+            raise errors.UnknownContentTypeError(res.raw_response)
+        if res.status_code == 200:
+            self._consume_retry_delay_current = self._consume_retry_delay_minimum
+            body = utils.unmarshal_json(
+                res.raw_response.text, Optional[operations.ConsumeFailedResponseBody]
+            )
+            res.body = body
+
+        elif res.status_code == 204:
             # No messages to be consumed. Return an empty response body
             body = operations.ConsumeFailedResponseBody("", "", {})
             res.body = body
-        elif http_res.status_code in [400, 500]:
-            if utils.match_content_type(content_type, "application/json"):
-                out = utils.unmarshal_json(http_res.text, errors.Error)
-                out.raw_response = http_res
-                raise out
-            else:
-                raise errors.ClientError(
-                    f"unknown content-type received: {content_type}",
-                    http_res.status_code,
-                    http_res.text,
-                    http_res,
-                )
-        elif 400 < http_res.status_code < 600:
-            raise errors.ClientError(
-                "API error occurred", http_res.status_code, http_res.text, http_res
-            )
 
         return res
 

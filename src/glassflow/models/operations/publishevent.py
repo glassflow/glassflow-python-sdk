@@ -5,7 +5,7 @@ from __future__ import annotations
 import dataclasses
 from typing import Optional
 
-import requests as requests_http
+from .base import BaseResponse, BaseRequest
 
 
 @dataclasses.dataclass
@@ -14,7 +14,7 @@ class PublishEventRequestBody:
 
 
 @dataclasses.dataclass
-class PublishEventRequest:
+class PublishEventRequest(BaseRequest):
     """Request to publish an event to a pipeline topic
 
     Attributes:
@@ -64,7 +64,7 @@ class PublishEventResponseBody:
 
 
 @dataclasses.dataclass
-class PublishEventResponse:
+class PublishEventResponse(BaseResponse):
     """Response object for publish event operation
 
     Attributes:
@@ -74,8 +74,4 @@ class PublishEventResponse:
         object: Response to the publish operation
 
     """
-
-    content_type: str = dataclasses.field()
-    status_code: int = dataclasses.field()
-    raw_response: requests_http.Response = dataclasses.field()
     object: Optional[PublishEventResponseBody] = dataclasses.field(default=None)

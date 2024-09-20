@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import dataclasses
 
+from .base import BaseRequest
+
 
 @dataclasses.dataclass
-class StatusAccessTokenRequest:
+class StatusAccessTokenRequest(BaseRequest):
     """Request check the status of an access token
 
     Attributes:
