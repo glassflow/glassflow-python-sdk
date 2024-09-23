@@ -2,10 +2,10 @@ import random
 import time
 from typing import Optional
 
-import glassflow.utils as utils
-from glassflow.api_client import APIClient
-
+from .api_client import APIClient
 from .models import errors, operations
+from .models.operations.base import BasePipelineDataRequest, BaseResponse
+from .utils import utils
 
 
 class PipelineDataClient(APIClient):
@@ -16,6 +16,7 @@ class PipelineDataClient(APIClient):
         pipeline_id: The pipeline id to interact with
         pipeline_access_token: The access token to access the pipeline
     """
+
     def __init__(self, pipeline_id: str, pipeline_access_token: str):
         super().__init__()
         self.pipeline_id = pipeline_id
@@ -29,41 +30,27 @@ class PipelineDataClient(APIClient):
             pipeline_id=self.pipeline_id,
             x_pipeline_access_token=self.pipeline_access_token,
         )
-
-        url = utils.generate_url(
-            operations.PublishEventRequest,
-            self.glassflow_config.server_url,
-            "/pipelines/{pipeline_id}/status/access_token",
-            request,
+        self.request(
+            method="GET",
+            endpoint="/pipelines/{pipeline_id}/status/access_token",
+            request=request,
         )
 
-        headers = self._get_headers(request)
-
-        http_res = self.client.request("GET", url, headers=headers)
-        content_type = http_res.headers.get("Content-Type")
-
-        if http_res.status_code == 200:
-            return
-        if http_res.status_code == 401:
-            raise errors.PipelineAccessTokenInvalidError(http_res)
-        elif http_res.status_code == 404:
-            raise errors.PipelineNotFoundError(self.pipeline_id, http_res)
-        elif http_res.status_code in [400, 500]:
-            if utils.match_content_type(content_type, "application/json"):
-                out = utils.unmarshal_json(http_res.text, errors.Error)
-                out.raw_response = http_res
-                raise out
+    def request(
+        self, method: str, endpoint: str, request: BasePipelineDataRequest
+    ) -> BaseResponse:
+        try:
+            res = super().request(method, endpoint, request)
+        except errors.ClientError as e:
+            if e.status_code == 401:
+                raise errors.PipelineAccessTokenInvalidError(e.raw_response) from e
+            elif e.status_code == 404:
+                raise errors.PipelineNotFoundError(
+                    self.pipeline_id, e.raw_response
+                ) from e
             else:
-                raise errors.ClientError(
-                    f"unknown content-type received: {content_type}",
-                    http_res.status_code,
-                    http_res.text,
-                    http_res,
-                )
-        elif 400 < http_res.status_code < 600:
-            raise errors.ClientError(
-                "API error occurred", http_res.status_code, http_res.text, http_res
-            )
+                raise e
+        return res
 
 
 class PipelineDataSource(PipelineDataClient):
@@ -74,7 +61,8 @@ class PipelineDataSource(PipelineDataClient):
             request_body: The message to be published into the pipeline
 
         Returns:
-            PublishEventResponse: Response object containing the status code and the raw response
+            PublishEventResponse: Response object containing the status
+                code and the raw response
 
         Raises:
             ClientError: If an error occurred while publishing the event
@@ -87,7 +75,8 @@ class PipelineDataSource(PipelineDataClient):
         base_res = self.request(
             method="POST",
             endpoint="/pipelines/{pipeline_id}/topics/input/events",
-            request=request)
+            request=request,
+        )
 
         return operations.PublishEventResponse(
             status_code=base_res.status_code,
@@ -109,7 +98,8 @@ class PipelineDataSink(PipelineDataClient):
         """Consume the last message from the pipeline
 
         Returns:
-            ConsumeEventResponse: Response object containing the status code and the raw response
+            ConsumeEventResponse: Response object containing the status
+                code and the raw response
 
         Raises:
             ClientError: If an error occurred while consuming the event
@@ -124,7 +114,8 @@ class PipelineDataSink(PipelineDataClient):
         base_res = self.request(
             method="POST",
             endpoint="/pipelines/{pipeline_id}/topics/output/events/consume",
-            request=request)
+            request=request,
+        )
 
         res = operations.ConsumeEventResponse(
             status_code=base_res.status_code,
@@ -158,7 +149,8 @@ class PipelineDataSink(PipelineDataClient):
         """Consume the failed message from the pipeline
 
         Returns:
-            ConsumeFailedResponse: Response object containing the status code and the raw response
+            ConsumeFailedResponse: Response object containing the status
+                code and the raw response
 
         Raises:
             ClientError: If an error occurred while consuming the event
@@ -173,7 +165,8 @@ class PipelineDataSink(PipelineDataClient):
         base_res = self.request(
             method="POST",
             endpoint="/pipelines/{pipeline_id}/topics/failed/events/consume",
-            request=request)
+            request=request,
+        )
 
         res = operations.ConsumeFailedResponse(
             status_code=base_res.status_code,

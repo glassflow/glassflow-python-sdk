@@ -3,9 +3,8 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Optional
 
-from .base import BaseResponse, BaseRequest
+from .base import BasePipelineDataRequest, BaseResponse
 
 
 @dataclasses.dataclass
@@ -14,7 +13,7 @@ class PublishEventRequestBody:
 
 
 @dataclasses.dataclass
-class PublishEventRequest(BaseRequest):
+class PublishEventRequest(BasePipelineDataRequest):
     """Request to publish an event to a pipeline topic
 
     Attributes:
@@ -24,35 +23,6 @@ class PublishEventRequest(BaseRequest):
         request_body: The request body / event that should be published to the pipeline
     """
 
-    pipeline_id: str = dataclasses.field(
-        metadata={
-            "path_param": {
-                "field_name": "pipeline_id",
-                "style": "simple",
-                "explode": False,
-            }
-        }
-    )
-    organization_id: Optional[str] = dataclasses.field(
-        default=None,
-        metadata={
-            "query_param": {
-                "field_name": "organization_id",
-                "style": "form",
-                "explode": True,
-            }
-        },
-    )
-    x_pipeline_access_token: str = dataclasses.field(
-        default=None,
-        metadata={
-            "header": {
-                "field_name": "X-PIPELINE-ACCESS-TOKEN",
-                "style": "simple",
-                "explode": False,
-            }
-        },
-    )
     request_body: dict = dataclasses.field(
         default=None, metadata={"request": {"media_type": "application/json"}}
     )
@@ -74,4 +44,5 @@ class PublishEventResponse(BaseResponse):
         object: Response to the publish operation
 
     """
-    object: Optional[PublishEventResponseBody] = dataclasses.field(default=None)
+
+    object: PublishEventResponseBody | None = dataclasses.field(default=None)

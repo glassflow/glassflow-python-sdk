@@ -3,15 +3,14 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Optional
 
 from dataclasses_json import config, dataclass_json
 
-from .base import BaseResponse, BaseRequest
+from .base import BasePipelineDataRequest, BaseResponse
 
 
 @dataclasses.dataclass
-class ConsumeEventRequest(BaseRequest):
+class ConsumeEventRequest(BasePipelineDataRequest):
     """Request to consume an event from a pipeline topic
 
     Attributes:
@@ -21,35 +20,7 @@ class ConsumeEventRequest(BaseRequest):
 
     """
 
-    pipeline_id: str = dataclasses.field(
-        metadata={
-            "path_param": {
-                "field_name": "pipeline_id",
-                "style": "simple",
-                "explode": False,
-            }
-        }
-    )
-    organization_id: Optional[str] = dataclasses.field(
-        default=None,
-        metadata={
-            "query_param": {
-                "field_name": "organization_id",
-                "style": "form",
-                "explode": True,
-            }
-        },
-    )
-    x_pipeline_access_token: str = dataclasses.field(
-        default=None,
-        metadata={
-            "header": {
-                "field_name": "X-PIPELINE-ACCESS-TOKEN",
-                "style": "simple",
-                "explode": False,
-            }
-        },
-    )
+    pass
 
 
 @dataclass_json
@@ -80,7 +51,8 @@ class ConsumeEventResponse(BaseResponse):
         body: the response body from the api call
 
     """
-    body: Optional[ConsumeEventResponseBody] = dataclasses.field(default=None)
+
+    body: ConsumeEventResponseBody | None = dataclasses.field(default=None)
 
     def json(self):
         """Return the response body as a JSON object.
