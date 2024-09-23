@@ -35,14 +35,20 @@ class PipelineDataClient(APIClient):
             request=request,
         )
 
-    def request(self, method: str, endpoint: str, request: BasePipelineDataRequest) -> BaseResponse:
+    def request(
+            self, method: str,
+            endpoint: str,
+            request: BasePipelineDataRequest
+    ) -> BaseResponse:
         try:
             res = super().request(method, endpoint, request)
         except errors.ClientError as e:
             if e.status_code == 401:
-                raise errors.PipelineAccessTokenInvalidError(e.raw_response)
+                raise errors.PipelineAccessTokenInvalidError(
+                    e.raw_response) from e
             elif e.status_code == 404:
-                raise errors.PipelineNotFoundError(self.pipeline_id, e.raw_response)
+                raise errors.PipelineNotFoundError(
+                    self.pipeline_id, e.raw_response) from e
             else:
                 raise e
         return res
@@ -56,7 +62,8 @@ class PipelineDataSource(PipelineDataClient):
             request_body: The message to be published into the pipeline
 
         Returns:
-            PublishEventResponse: Response object containing the status code and the raw response
+            PublishEventResponse: Response object containing the status
+                code and the raw response
 
         Raises:
             ClientError: If an error occurred while publishing the event
@@ -91,7 +98,8 @@ class PipelineDataSink(PipelineDataClient):
         """Consume the last message from the pipeline
 
         Returns:
-            ConsumeEventResponse: Response object containing the status code and the raw response
+            ConsumeEventResponse: Response object containing the status
+                code and the raw response
 
         Raises:
             ClientError: If an error occurred while consuming the event
@@ -140,7 +148,8 @@ class PipelineDataSink(PipelineDataClient):
         """Consume the failed message from the pipeline
 
         Returns:
-            ConsumeFailedResponse: Response object containing the status code and the raw response
+            ConsumeFailedResponse: Response object containing the status
+                code and the raw response
 
         Raises:
             ClientError: If an error occurred while consuming the event

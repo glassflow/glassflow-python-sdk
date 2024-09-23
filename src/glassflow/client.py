@@ -20,7 +20,11 @@ class GlassFlowClient(APIClient):
 
     """
 
-    def __init__(self, personal_access_token: str = None, organization_id: str = None) -> None:
+    def __init__(
+            self,
+            personal_access_token: str = None,
+            organization_id: str = None
+    ) -> None:
         """Create a new GlassFlowClient object
 
         Args:
@@ -43,7 +47,8 @@ class GlassFlowClient(APIClient):
 
         Raises:
             PipelineNotFoundError: Pipeline does not exist
-            UnauthorizedError: User does not have permission to perform the requested operation
+            UnauthorizedError: User does not have permission to perform the
+                requested operation
             ClientError: GlassFlow Client Error
         """
         return Pipeline(

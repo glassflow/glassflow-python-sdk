@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Optional
 
 from dataclasses_json import config, dataclass_json
 
@@ -51,11 +50,11 @@ class ConsumeFailedResponse(BaseResponse):
         body: the response body from the api call
 
     """
-    body: Optional[ConsumeFailedResponseBody] = dataclasses.field(default=None)
+    body: ConsumeFailedResponseBody | None = dataclasses.field(default=None)
 
     def json(self):
         """Return the response body as a JSON object.
-        This method is to have cmopatibility with the requests.Response.json() method
+        This method is to have compatibility with the requests.Response.json() method
 
         Returns:
             dict: The transformed event as a JSON object

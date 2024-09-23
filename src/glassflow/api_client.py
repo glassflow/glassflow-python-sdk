@@ -1,5 +1,4 @@
 import sys
-from abc import ABC
 from typing import Optional
 
 import requests as requests_http
@@ -10,7 +9,7 @@ from .models.operations.base import BaseRequest, BaseResponse
 from .utils import utils as utils
 
 
-class APIClient(ABC):
+class APIClient:
     glassflow_config = GlassFlowConfig()
 
     def __init__(self):
@@ -59,7 +58,8 @@ class APIClient(ABC):
 
         # make the request
         http_res = self.client.request(
-            method, url=url, params=query_params, headers=headers, data=data, files=form)
+            method, url=url, params=query_params,
+            headers=headers, data=data, files=form)
         content_type = http_res.headers.get("Content-Type")
 
         res = BaseResponse(

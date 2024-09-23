@@ -26,9 +26,12 @@ def test_pipeline_data_source_push_ok(requests_mock):
         pipeline_access_token="test-access-token",
     )
     requests_mock.post(
-        source.glassflow_config.server_url + '/pipelines/test-id/topics/input/events',
+        source.glassflow_config.server_url +
+        '/pipelines/test-id/topics/input/events',
         status_code=200,
-        headers={"Content-Type": "application/json", "X-pipeline-access-token": "test-access-token"},
+        headers={
+            "Content-Type": "application/json",
+            "X-pipeline-access-token": "test-access-token"},
     )
 
     res = source.publish({"test": "test"})
@@ -43,9 +46,12 @@ def test_pipeline_data_source_push_404(requests_mock):
         pipeline_access_token="test-access-token",
     )
     requests_mock.post(
-        source.glassflow_config.server_url + '/pipelines/test-id/topics/input/events',
+        source.glassflow_config.server_url +
+        '/pipelines/test-id/topics/input/events',
         status_code=404,
-        headers={"Content-Type": "application/json", "X-pipeline-access-token": "test-access-token"},
+        headers={
+            "Content-Type": "application/json",
+            "X-pipeline-access-token": "test-access-token"},
     )
 
     with pytest.raises(errors.PipelineNotFoundError):
@@ -58,9 +64,12 @@ def test_pipeline_data_source_push_401(requests_mock):
         pipeline_access_token="test-access-token",
     )
     requests_mock.post(
-        source.glassflow_config.server_url + '/pipelines/test-id/topics/input/events',
+        source.glassflow_config.server_url +
+        '/pipelines/test-id/topics/input/events',
         status_code=401,
-        headers={"Content-Type": "application/json", "X-pipeline-access-token": "test-access-token"},
+        headers={
+            "Content-Type": "application/json",
+            "X-pipeline-access-token": "test-access-token"},
     )
 
     with pytest.raises(errors.PipelineAccessTokenInvalidError):
@@ -73,10 +82,13 @@ def test_pipeline_data_sink_consume_ok(requests_mock, consume_payload):
         pipeline_access_token="test-access-token",
     )
     requests_mock.post(
-        sink.glassflow_config.server_url + '/pipelines/test-id/topics/output/events/consume',
+        sink.glassflow_config.server_url +
+        '/pipelines/test-id/topics/output/events/consume',
         json=consume_payload,
         status_code=200,
-        headers={"Content-Type": "application/json", "X-pipeline-access-token": "test-access-token"},
+        headers={
+            "Content-Type": "application/json",
+            "X-pipeline-access-token": "test-access-token"},
     )
 
     res = sink.consume()
@@ -92,10 +104,13 @@ def test_pipeline_data_sink_consume_404(requests_mock):
         pipeline_access_token="test-access-token",
     )
     requests_mock.post(
-        sink.glassflow_config.server_url + '/pipelines/test-id/topics/output/events/consume',
+        sink.glassflow_config.server_url +
+        '/pipelines/test-id/topics/output/events/consume',
         json={"test-data": "test-data"},
         status_code=404,
-        headers={"Content-Type": "application/json", "X-pipeline-access-token": "test-access-token"},
+        headers={
+            "Content-Type": "application/json",
+            "X-pipeline-access-token": "test-access-token"},
     )
 
     with pytest.raises(errors.PipelineNotFoundError):
@@ -108,10 +123,13 @@ def test_pipeline_data_sink_consume_401(requests_mock):
         pipeline_access_token="test-access-token",
     )
     requests_mock.post(
-        sink.glassflow_config.server_url + '/pipelines/test-id/topics/output/events/consume',
+        sink.glassflow_config.server_url +
+        '/pipelines/test-id/topics/output/events/consume',
         json={"test-data": "test-data"},
         status_code=401,
-        headers={"Content-Type": "application/json", "X-pipeline-access-token": "test-access-token"},
+        headers={
+            "Content-Type": "application/json",
+            "X-pipeline-access-token": "test-access-token"},
     )
 
     with pytest.raises(errors.PipelineAccessTokenInvalidError):
@@ -124,10 +142,13 @@ def test_pipeline_data_sink_consume_failed_ok(requests_mock, consume_payload):
         pipeline_access_token="test-access-token",
     )
     requests_mock.post(
-        sink.glassflow_config.server_url + '/pipelines/test-id/topics/failed/events/consume',
+        sink.glassflow_config.server_url +
+        '/pipelines/test-id/topics/failed/events/consume',
         json=consume_payload,
         status_code=200,
-        headers={"Content-Type": "application/json", "X-pipeline-access-token": "test-access-token"},
+        headers={
+            "Content-Type": "application/json",
+            "X-pipeline-access-token": "test-access-token"},
     )
 
     res = sink.consume_failed()
@@ -143,10 +164,13 @@ def test_pipeline_data_sink_consume_failed_404(requests_mock):
         pipeline_access_token="test-access-token",
     )
     requests_mock.post(
-        sink.glassflow_config.server_url + '/pipelines/test-id/topics/failed/events/consume',
+        sink.glassflow_config.server_url +
+        '/pipelines/test-id/topics/failed/events/consume',
         json={"test-data": "test-data"},
         status_code=404,
-        headers={"Content-Type": "application/json", "X-pipeline-access-token": "test-access-token"},
+        headers={
+            "Content-Type": "application/json",
+            "X-pipeline-access-token": "test-access-token"},
     )
 
     with pytest.raises(errors.PipelineNotFoundError):
@@ -159,10 +183,13 @@ def test_pipeline_data_sink_consume_failed_401(requests_mock):
         pipeline_access_token="test-access-token",
     )
     requests_mock.post(
-        sink.glassflow_config.server_url + '/pipelines/test-id/topics/failed/events/consume',
+        sink.glassflow_config.server_url +
+        '/pipelines/test-id/topics/failed/events/consume',
         json={"test-data": "test-data"},
         status_code=401,
-        headers={"Content-Type": "application/json", "X-pipeline-access-token": "test-access-token"},
+        headers={
+            "Content-Type": "application/json",
+            "X-pipeline-access-token": "test-access-token"},
     )
 
     with pytest.raises(errors.PipelineAccessTokenInvalidError):

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Optional
 
 from dataclasses_json import config, dataclass_json
 
@@ -51,7 +50,7 @@ class ConsumeEventResponse(BaseResponse):
         body: the response body from the api call
 
     """
-    body: Optional[ConsumeEventResponseBody] = dataclasses.field(default=None)
+    body: ConsumeEventResponseBody | None = dataclasses.field(default=None)
 
     def json(self):
         """Return the response body as a JSON object.

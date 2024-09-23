@@ -44,11 +44,10 @@ class Pipeline(APIClient):
 
         if self.transformation_code is None and self.transformation_file is not None:
             try:
-                self.transformation_code = open(self.transformation_file).read()
+                with open(self.transformation_file) as f:
+                    self.transformation_code = f.read()
             except FileNotFoundError:
-                raise FileNotFoundError(
-                    f"Transformation file was not found in "
-                    f"{self.transformation_file}")
+                raise
 
         if source_kind is not None and self.source_config is not None:
             self.source_connector = api.SourceConnector(
@@ -91,9 +90,10 @@ class Pipeline(APIClient):
             res_json = res.raw_response.json()
         except errors.ClientError as e:
             if e.status_code == 404:
-                raise errors.PipelineNotFoundError(self.id, e.raw_response)
+                raise errors.PipelineNotFoundError(self.id, e.raw_response) \
+                    from e
             elif e.status_code == 401:
-                raise errors.UnauthorizedError(e.raw_response)
+                raise errors.UnauthorizedError(e.raw_response) from e
             else:
                 raise e
 
@@ -151,7 +151,7 @@ class Pipeline(APIClient):
                 **base_res.raw_response.json())
         except errors.ClientError as e:
             if e.status_code == 401:
-                raise errors.UnauthorizedError(e.raw_response)
+                raise errors.UnauthorizedError(e.raw_response) from e
             else:
                 raise e
 

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Optional
 
 from .base import BasePipelineDataRequest, BaseResponse
 
@@ -44,4 +43,4 @@ class PublishEventResponse(BaseResponse):
         object: Response to the publish operation
 
     """
-    object: Optional[PublishEventResponseBody] = dataclasses.field(default=None)
+    object: PublishEventResponseBody | None = dataclasses.field(default=None)

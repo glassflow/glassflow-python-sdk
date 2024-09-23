@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Optional
 
 from ..api import CreatePipeline, GetDetailedSpacePipeline, PipelineState
 from .base import BaseManagementRequest, BasePipelineManagementRequest, BaseResponse
@@ -14,7 +13,7 @@ class GetPipelineRequest(BasePipelineManagementRequest):
 
 @dataclasses.dataclass
 class GetPipelineResponse(BaseResponse):
-    pipeline: Optional[GetDetailedSpacePipeline] = dataclasses.field(default=None)
+    pipeline: GetDetailedSpacePipeline | None = dataclasses.field(default=None)
 
 
 @dataclasses.dataclass
@@ -30,4 +29,4 @@ class CreatePipelineResponse(BaseResponse):
     created_at: str
     state: PipelineState
     access_token: str
-    metadata: Optional[dict] = dataclasses.field(default=None)
+    metadata: dict | None = dataclasses.field(default=None)
