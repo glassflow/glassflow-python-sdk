@@ -39,6 +39,7 @@ setuptools.setup(
         "dev": [
             "pylint==2.16.2",
             "pytest==8.3.2",
+            "pytest-cov==5.0.0",
             "requests-mock==1.12.1",
             "isort==5.13.2",
             "ruff==0.6.3"
