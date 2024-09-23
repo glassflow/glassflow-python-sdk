@@ -4,8 +4,13 @@ from requests import Response
 from typing import Optional
 
 
-@dataclasses.dataclass(kw_only=True)
+@dataclasses.dataclass()
 class BaseRequest:
+    pass
+
+
+@dataclasses.dataclass()
+class BaseManagementRequest(BaseRequest):
     organization_id: Optional[str] = dataclasses.field(
         default=None,
         metadata={
@@ -16,10 +21,6 @@ class BaseRequest:
             }
         },
     )
-
-
-@dataclasses.dataclass(kw_only=True)
-class BaseManagementRequest(BaseRequest):
     personal_access_token: str = dataclasses.field(
         default=None,
         metadata={
@@ -43,6 +44,16 @@ class BasePipelineRequest(BaseRequest):
             }
         }
     )
+    organization_id: Optional[str] = dataclasses.field(
+        default=None,
+        metadata={
+            "query_param": {
+                "field_name": "organization_id",
+                "style": "form",
+                "explode": True,
+            }
+        },
+    )
 
 
 @dataclasses.dataclass
@@ -60,7 +71,7 @@ class BasePipelineDataRequest(BasePipelineRequest):
 
 
 @dataclasses.dataclass
-class BasePipelineManagementRequest(BasePipelineRequest, BaseManagementRequest):
+class BasePipelineManagementRequest(BaseManagementRequest, BasePipelineRequest):
     pass
 
 
