@@ -19,6 +19,7 @@ class ConsumeEventRequest(BasePipelineDataRequest):
         x_pipeline_access_token: The access token of the pipeline
 
     """
+
     pass
 
 
@@ -50,6 +51,7 @@ class ConsumeEventResponse(BaseResponse):
         body: the response body from the api call
 
     """
+
     body: ConsumeEventResponseBody | None = dataclasses.field(default=None)
 
     def json(self):

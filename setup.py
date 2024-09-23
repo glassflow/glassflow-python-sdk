@@ -42,7 +42,7 @@ setuptools.setup(
             "pytest-cov==5.0.0",
             "requests-mock==1.12.1",
             "isort==5.13.2",
-            "ruff==0.6.3"
+            "ruff==0.6.3",
         ]
     },
     package_dir={"": "src"},

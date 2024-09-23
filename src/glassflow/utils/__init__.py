@@ -1,12 +1,12 @@
 from .utils import (
-                    generate_url,
-                    get_field_name,
-                    get_query_params,
-                    get_req_specific_headers,
-                    marshal_json,
-                    match_content_type,
-                    serialize_request_body,
-                    unmarshal_json,
+    generate_url,
+    get_field_name,
+    get_query_params,
+    get_req_specific_headers,
+    marshal_json,
+    match_content_type,
+    serialize_request_body,
+    unmarshal_json,
 )
 
 __all__ = [
@@ -17,5 +17,5 @@ __all__ = [
     "get_query_params",
     "get_req_specific_headers",
     "get_field_name",
-    "marshal_json"
+    "marshal_json",
 ]

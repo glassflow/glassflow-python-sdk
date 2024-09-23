@@ -15,4 +15,5 @@ class StatusAccessTokenRequest(BasePipelineDataRequest):
         x_pipeline_access_token: The access token of the pipeline
 
     """
+
     pass

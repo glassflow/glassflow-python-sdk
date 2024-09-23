@@ -46,8 +46,8 @@ class BasePipeline:
 
 
 class PipelineState(Enum):
-    running = 'running'
-    paused = 'paused'
+    running = "running"
+    paused = "paused"
 
 
 @dataclass
@@ -60,7 +60,7 @@ FunctionEnvironments = Optional[List[FunctionEnvironment]]
 
 
 class Kind(Enum):
-    google_pubsub = 'google_pubsub'
+    google_pubsub = "google_pubsub"
 
 
 @dataclass
@@ -77,7 +77,7 @@ class SourceConnector1:
 
 
 class Kind1(Enum):
-    amazon_sqs = 'amazon_sqs'
+    amazon_sqs = "amazon_sqs"
 
 
 @dataclass
@@ -98,15 +98,15 @@ SourceConnector = Optional[Union[SourceConnector1, SourceConnector2]]
 
 
 class Kind2(Enum):
-    webhook = 'webhook'
+    webhook = "webhook"
 
 
 class Method(Enum):
-    GET = 'GET'
-    POST = 'POST'
-    PUT = 'PUT'
-    PATCH = 'PATCH'
-    DELETE = 'DELETE'
+    GET = "GET"
+    POST = "POST"
+    PUT = "PUT"
+    PATCH = "PATCH"
+    DELETE = "DELETE"
 
 
 @dataclass
@@ -129,7 +129,7 @@ class SinkConnector1:
 
 
 class Kind3(Enum):
-    clickhouse = 'clickhouse'
+    clickhouse = "clickhouse"
 
 
 @dataclass

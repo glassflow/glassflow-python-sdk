@@ -16,6 +16,7 @@ class PipelineDataClient(APIClient):
         pipeline_id: The pipeline id to interact with
         pipeline_access_token: The access token to access the pipeline
     """
+
     def __init__(self, pipeline_id: str, pipeline_access_token: str):
         super().__init__()
         self.pipeline_id = pipeline_id
@@ -36,19 +37,17 @@ class PipelineDataClient(APIClient):
         )
 
     def request(
-            self, method: str,
-            endpoint: str,
-            request: BasePipelineDataRequest
+        self, method: str, endpoint: str, request: BasePipelineDataRequest
     ) -> BaseResponse:
         try:
             res = super().request(method, endpoint, request)
         except errors.ClientError as e:
             if e.status_code == 401:
-                raise errors.PipelineAccessTokenInvalidError(
-                    e.raw_response) from e
+                raise errors.PipelineAccessTokenInvalidError(e.raw_response) from e
             elif e.status_code == 404:
                 raise errors.PipelineNotFoundError(
-                    self.pipeline_id, e.raw_response) from e
+                    self.pipeline_id, e.raw_response
+                ) from e
             else:
                 raise e
         return res
@@ -76,7 +75,8 @@ class PipelineDataSource(PipelineDataClient):
         base_res = self.request(
             method="POST",
             endpoint="/pipelines/{pipeline_id}/topics/input/events",
-            request=request)
+            request=request,
+        )
 
         return operations.PublishEventResponse(
             status_code=base_res.status_code,
@@ -114,7 +114,8 @@ class PipelineDataSink(PipelineDataClient):
         base_res = self.request(
             method="POST",
             endpoint="/pipelines/{pipeline_id}/topics/output/events/consume",
-            request=request)
+            request=request,
+        )
 
         res = operations.ConsumeEventResponse(
             status_code=base_res.status_code,
@@ -164,7 +165,8 @@ class PipelineDataSink(PipelineDataClient):
         base_res = self.request(
             method="POST",
             endpoint="/pipelines/{pipeline_id}/topics/failed/events/consume",
-            request=request)
+            request=request,
+        )
 
         res = operations.ConsumeFailedResponse(
             status_code=base_res.status_code,

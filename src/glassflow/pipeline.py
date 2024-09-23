@@ -6,22 +6,22 @@ from .models import api, errors, operations
 
 class Pipeline(APIClient):
     def __init__(
-            self,
-            personal_access_token: str,
-            name: Optional[str] = None,
-            space_id: Optional[str] = None,
-            id: Optional[str] = None,
-            source_kind: Optional[str] = None,
-            source_config: Optional[str] = None,
-            sink_kind: Optional[str] = None,
-            sink_config: Optional[str] = None,
-            requirements: Optional[str] = None,
-            transformation_code: Optional[str] = None,
-            transformation_file: Optional[str] = None,
-            env_vars: Optional[List[str]] = None,
-            state: api.PipelineState = "running",
-            organization_id: Optional[str] = None,
-            metadata: Optional[dict] = None,
+        self,
+        personal_access_token: str,
+        name: Optional[str] = None,
+        space_id: Optional[str] = None,
+        id: Optional[str] = None,
+        source_kind: Optional[str] = None,
+        source_config: Optional[str] = None,
+        sink_kind: Optional[str] = None,
+        sink_config: Optional[str] = None,
+        requirements: Optional[str] = None,
+        transformation_code: Optional[str] = None,
+        transformation_file: Optional[str] = None,
+        env_vars: Optional[List[str]] = None,
+        state: api.PipelineState = "running",
+        organization_id: Optional[str] = None,
+        metadata: Optional[dict] = None,
     ):
         super().__init__()
         self.id = id
@@ -57,8 +57,7 @@ class Pipeline(APIClient):
         elif self.source_kind is None and self.source_config is None:
             self.source_connector = None
         else:
-            raise ValueError(
-                "Both source_kind and source_config must be provided")
+            raise ValueError("Both source_kind and source_config must be provided")
 
         if self.sink_kind is not None and self.sink_config is not None:
             self.sink_connector = api.SinkConnector(
@@ -73,7 +72,8 @@ class Pipeline(APIClient):
     def fetch(self):
         if self.id is None:
             raise ValueError(
-                "Pipeline id must be provided in order to fetch it's details")
+                "Pipeline id must be provided in order to fetch it's details"
+            )
 
         request = operations.GetPipelineRequest(
             pipeline_id=self.id,
@@ -90,8 +90,7 @@ class Pipeline(APIClient):
             res_json = res.raw_response.json()
         except errors.ClientError as e:
             if e.status_code == 404:
-                raise errors.PipelineNotFoundError(self.id, e.raw_response) \
-                    from e
+                raise errors.PipelineNotFoundError(self.id, e.raw_response) from e
             elif e.status_code == 401:
                 raise errors.UnauthorizedError(e.raw_response) from e
             else:
@@ -122,15 +121,15 @@ class Pipeline(APIClient):
             metadata=self.metadata,
         )
         if self.name is None:
-            raise ValueError(
-                "Name must be provided in order to create the pipeline")
+            raise ValueError("Name must be provided in order to create the pipeline")
         if self.space_id is None:
             raise ValueError(
-                "Space_id must be provided in order to create the pipeline")
+                "Space_id must be provided in order to create the pipeline"
+            )
         if self.transformation_code is None and self.transformation_file is None:
             raise ValueError(
-                "Either transformation_code or transformation_file must "
-                "be provided")
+                "Either transformation_code or transformation_file must be provided"
+            )
 
         request = operations.CreatePipelineRequest(
             organization_id=self.organization_id,
@@ -140,15 +139,14 @@ class Pipeline(APIClient):
 
         try:
             base_res = self.request(
-                method="POST",
-                endpoint="/pipelines",
-                request=request
+                method="POST", endpoint="/pipelines", request=request
             )
             res = operations.CreatePipelineResponse(
                 status_code=base_res.status_code,
                 content_type=base_res.content_type,
                 raw_response=base_res.raw_response,
-                **base_res.raw_response.json())
+                **base_res.raw_response.json(),
+            )
         except errors.ClientError as e:
             if e.status_code == 401:
                 raise errors.UnauthorizedError(e.raw_response) from e
@@ -157,7 +155,5 @@ class Pipeline(APIClient):
 
         self.id = res.id
         self.created_at = res.created_at
-        self.access_tokens.append({
-            "name": "default", "token": res.access_token
-        })
+        self.access_tokens.append({"name": "default", "token": res.access_token})
         return self

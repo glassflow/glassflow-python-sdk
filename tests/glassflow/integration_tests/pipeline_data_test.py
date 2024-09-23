@@ -16,13 +16,15 @@ def test_pipeline_data_source_validate_credentials_ok(source):
 
 
 def test_pipeline_data_source_validate_credentials_invalid_access_token(
-        source_with_invalid_access_token):
+    source_with_invalid_access_token,
+):
     with pytest.raises(errors.PipelineAccessTokenInvalidError):
         source_with_invalid_access_token.validate_credentials()
 
 
 def test_pipeline_data_source_validate_credentials_id_not_found(
-        source_with_non_existing_id):
+    source_with_non_existing_id,
+):
     with pytest.raises(errors.PipelineNotFoundError):
         source_with_non_existing_id.validate_credentials()
 

@@ -1,23 +1,23 @@
 from .consumeevent import (
-                           ConsumeEventRequest,
-                           ConsumeEventResponse,
-                           ConsumeEventResponseBody,
+    ConsumeEventRequest,
+    ConsumeEventResponse,
+    ConsumeEventResponseBody,
 )
 from .consumefailed import (
-                           ConsumeFailedRequest,
-                           ConsumeFailedResponse,
-                           ConsumeFailedResponseBody,
+    ConsumeFailedRequest,
+    ConsumeFailedResponse,
+    ConsumeFailedResponseBody,
 )
 from .getpipeline import (
-                           CreatePipelineRequest,
-                           CreatePipelineResponse,
-                           GetPipelineRequest,
+    CreatePipelineRequest,
+    CreatePipelineResponse,
+    GetPipelineRequest,
 )
 from .publishevent import (
-                           PublishEventRequest,
-                           PublishEventRequestBody,
-                           PublishEventResponse,
-                           PublishEventResponseBody,
+    PublishEventRequest,
+    PublishEventRequestBody,
+    PublishEventResponse,
+    PublishEventResponseBody,
 )
 from .status_access_token import StatusAccessTokenRequest
 

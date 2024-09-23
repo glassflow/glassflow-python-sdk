@@ -19,6 +19,7 @@ class ConsumeFailedRequest(BasePipelineDataRequest):
         x_pipeline_access_token: The access token of the pipeline
 
     """
+
     pass
 
 
@@ -50,6 +51,7 @@ class ConsumeFailedResponse(BaseResponse):
         body: the response body from the api call
 
     """
+
     body: ConsumeFailedResponseBody | None = dataclasses.field(default=None)
 
     def json(self):

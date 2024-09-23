@@ -17,7 +17,7 @@ class APIClient:
         self.client = requests_http.Session()
 
     def _get_headers(
-            self, request: BaseRequest, req_content_type: Optional[str] = None
+        self, request: BaseRequest, req_content_type: Optional[str] = None
     ) -> dict:
         headers = utils.get_req_specific_headers(request)
         headers["Accept"] = "application/json"
@@ -30,8 +30,8 @@ class APIClient:
         )
 
         if req_content_type and req_content_type not in (
-                "multipart/form-data",
-                "multipart/mixed",
+            "multipart/form-data",
+            "multipart/mixed",
         ):
             headers["content-type"] = req_content_type
 
@@ -58,8 +58,8 @@ class APIClient:
 
         # make the request
         http_res = self.client.request(
-            method, url=url, params=query_params,
-            headers=headers, data=data, files=form)
+            method, url=url, params=query_params, headers=headers, data=data, files=form
+        )
         content_type = http_res.headers.get("Content-Type")
 
         res = BaseResponse(
@@ -76,10 +76,7 @@ class APIClient:
             pass
         elif 400 < http_res.status_code < 600:
             raise errors.ClientError(
-                "API error occurred",
-                http_res.status_code,
-                http_res.text,
-                http_res
+                "API error occurred", http_res.status_code, http_res.text, http_res
             )
 
         return res

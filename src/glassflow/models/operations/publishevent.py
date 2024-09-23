@@ -22,6 +22,7 @@ class PublishEventRequest(BasePipelineDataRequest):
         x_pipeline_access_token: The access token of the pipeline
         request_body: The request body / event that should be published to the pipeline
     """
+
     request_body: dict = dataclasses.field(
         default=None, metadata={"request": {"media_type": "application/json"}}
     )
@@ -43,4 +44,5 @@ class PublishEventResponse(BaseResponse):
         object: Response to the publish operation
 
     """
+
     object: PublishEventResponseBody | None = dataclasses.field(default=None)

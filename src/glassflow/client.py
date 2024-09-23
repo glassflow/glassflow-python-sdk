@@ -21,9 +21,7 @@ class GlassFlowClient(APIClient):
     """
 
     def __init__(
-            self,
-            personal_access_token: str = None,
-            organization_id: str = None
+        self, personal_access_token: str = None, organization_id: str = None
     ) -> None:
         """Create a new GlassFlowClient object
 
@@ -52,16 +50,23 @@ class GlassFlowClient(APIClient):
             ClientError: GlassFlow Client Error
         """
         return Pipeline(
-            personal_access_token=self.personal_access_token,
-            id=pipeline_id).fetch()
+            personal_access_token=self.personal_access_token, id=pipeline_id
+        ).fetch()
 
     def create_pipeline(
-            self, name: str, space_id: str, transformation_code: str = None,
-            transformation_file: str = None,
-            requirements: str = None, source_kind: str = None,
-            source_config: dict = None, sink_kind: str = None,
-            sink_config: dict = None, env_vars: List[Dict[str, str]] = None,
-            state: PipelineState = "running", metadata: dict = None,
+        self,
+        name: str,
+        space_id: str,
+        transformation_code: str = None,
+        transformation_file: str = None,
+        requirements: str = None,
+        source_kind: str = None,
+        source_config: dict = None,
+        sink_kind: str = None,
+        sink_config: dict = None,
+        env_vars: List[Dict[str, str]] = None,
+        state: PipelineState = "running",
+        metadata: dict = None,
     ) -> Pipeline:
         """Creates a new GlassFlow pipeline
 
