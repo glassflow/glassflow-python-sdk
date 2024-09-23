@@ -116,3 +116,54 @@ def test_pipeline_data_sink_consume_401(requests_mock):
 
     with pytest.raises(errors.PipelineAccessTokenInvalidError):
         sink.consume()
+
+
+def test_pipeline_data_sink_consume_failed_ok(requests_mock, consume_payload):
+    sink = PipelineDataSink(
+        pipeline_id="test-id",
+        pipeline_access_token="test-access-token",
+    )
+    requests_mock.post(
+        sink.glassflow_config.server_url + '/pipelines/test-id/topics/failed/events/consume',
+        json=consume_payload,
+        status_code=200,
+        headers={"Content-Type": "application/json", "X-pipeline-access-token": "test-access-token"},
+    )
+
+    res = sink.consume_failed()
+
+    assert res.status_code == 200
+    assert res.content_type == "application/json"
+    assert res.body.req_id == consume_payload["req_id"]
+
+
+def test_pipeline_data_sink_consume_failed_404(requests_mock):
+    sink = PipelineDataSink(
+        pipeline_id="test-id",
+        pipeline_access_token="test-access-token",
+    )
+    requests_mock.post(
+        sink.glassflow_config.server_url + '/pipelines/test-id/topics/failed/events/consume',
+        json={"test-data": "test-data"},
+        status_code=404,
+        headers={"Content-Type": "application/json", "X-pipeline-access-token": "test-access-token"},
+    )
+
+    with pytest.raises(errors.PipelineNotFoundError):
+        sink.consume_failed()
+
+
+def test_pipeline_data_sink_consume_failed_401(requests_mock):
+    sink = PipelineDataSink(
+        pipeline_id="test-id",
+        pipeline_access_token="test-access-token",
+    )
+    requests_mock.post(
+        sink.glassflow_config.server_url + '/pipelines/test-id/topics/failed/events/consume',
+        json={"test-data": "test-data"},
+        status_code=401,
+        headers={"Content-Type": "application/json", "X-pipeline-access-token": "test-access-token"},
+    )
+
+    with pytest.raises(errors.PipelineAccessTokenInvalidError):
+        sink.consume_failed()
