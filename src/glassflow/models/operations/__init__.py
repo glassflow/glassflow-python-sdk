@@ -5,7 +5,7 @@ from .consumefailed import (ConsumeFailedRequest, ConsumeFailedResponse,
 from .publishevent import (PublishEventRequest, PublishEventRequestBody,
                            PublishEventResponse, PublishEventResponseBody)
 from .status_access_token import StatusAccessTokenRequest
-from .getpipeline import GetPipelineRequest
+from .getpipeline import GetPipelineRequest, CreatePipelineRequest, CreatePipelineResponse
 
 
 __all__ = [
@@ -20,5 +20,7 @@ __all__ = [
     "ConsumeFailedResponse",
     "ConsumeFailedResponseBody",
     "StatusAccessTokenRequest",
-    "GetPipelineRequest"
+    "GetPipelineRequest",
+    "CreatePipelineRequest",
+    "CreatePipelineResponse",
 ]
