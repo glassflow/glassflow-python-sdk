@@ -13,8 +13,8 @@ from .models.operations.base import BaseRequest, BaseResponse
 class APIClient(ABC):
     glassflow_config = GlassFlowConfig()
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self):
+        super().__init__()
         self.client = requests_http.Session()
 
     def _get_headers(
