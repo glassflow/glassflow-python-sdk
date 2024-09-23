@@ -24,6 +24,9 @@ jobs:
       - name: Install dependencies
         run: pip install -e .[dev]
 
+      - name: Run Unit Tests
+        run: pytest tests/glassflow/unit_tests/
+
       - name: Run Integration Tests
         run: pytest tests/glassflow/integration_tests/
         env:

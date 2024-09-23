@@ -36,7 +36,13 @@ setuptools.setup(
         "python-dotenv==1.0.1",
     ],
     extras_require={
-        "dev": ["pylint==2.16.2", "pytest==8.3.2", "isort==5.13.2", "ruff==0.6.3"]
+        "dev": [
+            "pylint==2.16.2",
+            "pytest==8.3.2",
+            "requests-mock==1.12.1",
+            "isort==5.13.2",
+            "ruff==0.6.3"
+        ]
     },
     package_dir={"": "src"},
     python_requires=">=3.8",
