@@ -1,10 +1,10 @@
 """GlassFlow Python Client to interact with GlassFlow API"""
 
-from .api_client import APIClient
-from .pipeline import Pipeline
-from .models.api import PipelineState
+from typing import Dict, List
 
-from typing import List, Dict
+from .api_client import APIClient
+from .models.api import PipelineState
+from .pipeline import Pipeline
 
 
 class GlassFlowClient(APIClient):

@@ -1,7 +1,7 @@
 import dataclasses
-from requests import Response
-
 from typing import Optional
+
+from requests import Response
 
 
 @dataclasses.dataclass()

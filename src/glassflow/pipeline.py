@@ -1,7 +1,7 @@
 from typing import List, Optional
 
 from .client import APIClient
-from .models import api, operations, errors
+from .models import api, errors, operations
 
 
 class Pipeline(APIClient):
@@ -44,7 +44,7 @@ class Pipeline(APIClient):
 
         if self.transformation_code is None and self.transformation_file is not None:
             try:
-                self.transformation_code = open(self.transformation_file, "r").read()
+                self.transformation_code = open(self.transformation_file).read()
             except FileNotFoundError:
                 raise FileNotFoundError(
                     f"Transformation file was not found in "
@@ -141,7 +141,7 @@ class Pipeline(APIClient):
         try:
             base_res = self.request(
                 method="POST",
-                endpoint=f"/pipelines",
+                endpoint="/pipelines",
                 request=request
             )
             res = operations.CreatePipelineResponse(

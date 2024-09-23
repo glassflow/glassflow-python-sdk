@@ -4,8 +4,8 @@ from typing import Optional
 
 from .api_client import APIClient
 from .models import errors, operations
-from .utils import utils
 from .models.operations.base import BasePipelineDataRequest, BaseResponse
+from .utils import utils
 
 
 class PipelineDataClient(APIClient):

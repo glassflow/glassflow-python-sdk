@@ -4,10 +4,10 @@ from typing import Optional
 
 import requests as requests_http
 
-from .utils import utils as utils
 from .config import GlassFlowConfig
 from .models import errors
 from .models.operations.base import BaseRequest, BaseResponse
+from .utils import utils as utils
 
 
 class APIClient(ABC):

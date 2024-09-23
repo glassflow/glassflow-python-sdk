@@ -3,8 +3,8 @@ from __future__ import annotations
 import dataclasses
 from typing import Optional
 
-from .base import BaseResponse, BasePipelineManagementRequest, BaseManagementRequest
-from ..api import GetDetailedSpacePipeline, CreatePipeline, PipelineState
+from ..api import CreatePipeline, GetDetailedSpacePipeline, PipelineState
+from .base import BaseManagementRequest, BasePipelineManagementRequest, BaseResponse
 
 
 @dataclasses.dataclass

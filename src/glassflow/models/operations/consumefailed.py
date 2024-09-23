@@ -7,7 +7,7 @@ from typing import Optional
 
 from dataclasses_json import config, dataclass_json
 
-from .base import BaseResponse, BasePipelineDataRequest
+from .base import BasePipelineDataRequest, BaseResponse
 
 
 @dataclasses.dataclass

@@ -5,7 +5,7 @@ from __future__ import annotations
 import dataclasses
 from typing import Optional
 
-from .base import BaseResponse, BasePipelineDataRequest
+from .base import BasePipelineDataRequest, BaseResponse
 
 
 @dataclasses.dataclass
