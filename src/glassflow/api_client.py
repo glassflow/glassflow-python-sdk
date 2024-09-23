@@ -1,4 +1,5 @@
 import sys
+from abc import ABC
 from typing import Optional
 
 import requests as requests_http
@@ -9,7 +10,7 @@ from .models import errors
 from .models.operations.base import BaseRequest, BaseResponse
 
 
-class APIClient:
+class APIClient(ABC):
     glassflow_config = GlassFlowConfig()
 
     def __init__(self, *args, **kwargs):
