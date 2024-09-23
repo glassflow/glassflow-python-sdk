@@ -5,8 +5,7 @@ from datetime import datetime
 from decimal import Decimal
 from email.message import Message
 from enum import Enum
-from typing import (Any, Callable, Dict, List, Tuple, Union, get_args,
-                    get_origin)
+from typing import Any, Callable, Dict, List, Tuple, Union, get_args, get_origin
 from xmlrpc.client import boolean
 
 from dataclasses_json import DataClassJsonMixin
@@ -387,7 +386,7 @@ def serialize_multipart_form(
 
             file_name = ""
             field_name = ""
-            content = bytes()
+            content = b""
 
             for file_field in file_fields:
                 file_metadata = file_field.metadata.get("multipart_form")
@@ -399,7 +398,7 @@ def serialize_multipart_form(
                 else:
                     field_name = file_metadata.get("field_name", file_field.name)
                     file_name = getattr(val, file_field.name)
-            if field_name == "" or file_name == "" or content == bytes():
+            if field_name == "" or file_name == "" or content == b"":
                 raise Exception("invalid multipart/form-data file")
 
             form.append([field_name, [file_name, content]])
