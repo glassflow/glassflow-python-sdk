@@ -5,6 +5,7 @@ from typing import Optional
 from .api_client import APIClient
 from .models import errors, operations
 from .utils import utils
+from .models.operations.base import BasePipelineDataRequest, BaseResponse
 
 
 class PipelineDataClient(APIClient):
@@ -28,13 +29,15 @@ class PipelineDataClient(APIClient):
             pipeline_id=self.pipeline_id,
             x_pipeline_access_token=self.pipeline_access_token,
         )
+        self.request(
+            method="GET",
+            endpoint="/pipelines/{pipeline_id}/status/access_token",
+            request=request,
+        )
 
+    def request(self, method: str, endpoint: str, request: BasePipelineDataRequest) -> BaseResponse:
         try:
-            self.request(
-                method="GET",
-                endpoint="/pipelines/{pipeline_id}/status/access_token",
-                request=request,
-            )
+            res = super().request(method, endpoint, request)
         except errors.ClientError as e:
             if e.status_code == 401:
                 raise errors.PipelineAccessTokenInvalidError(e.raw_response)
@@ -42,6 +45,7 @@ class PipelineDataClient(APIClient):
                 raise errors.PipelineNotFoundError(self.pipeline_id, e.raw_response)
             else:
                 raise e
+        return res
 
 
 class PipelineDataSource(PipelineDataClient):
