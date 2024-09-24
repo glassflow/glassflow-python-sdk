@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import List, Optional
 
 from .client import APIClient
@@ -23,6 +25,39 @@ class Pipeline(APIClient):
         organization_id: Optional[str] = None,
         metadata: Optional[dict] = None,
     ):
+        """Creates a new GlassFlow pipeline object
+
+        Args:
+            personal_access_token: The personal access token to authenticate
+                against GlassFlow
+            id: Pipeline ID
+            name: Name of the pipeline
+            space_id: ID of the GlassFlow Space you want to create the pipeline in
+            transformation_code: String with the transformation function of the
+                pipeline. Either transformation_code or transformation_file
+                must be provided.
+            transformation_file: Path to file with transformation function of
+                the pipeline. Either transformation_code or transformation_file
+                must be provided.
+            requirements: Requirements.txt of the pipeline
+            source_kind: Kind of source for the pipeline. If no source is
+                provided, the default source will be SDK
+            source_config: Configuration of the pipeline's source
+            sink_kind: Kind of sink for the pipeline. If no sink is provided,
+                the default sink will be SDK
+            sink_config: Configuration of the pipeline's sink
+            env_vars: Environment variables to pass to the pipeline
+            state: State of the pipeline after creation.
+                It can be either "running" or "paused"
+            metadata: Metadata of the pipeline
+
+        Returns:
+            Pipeline: Pipeline object to interact with the GlassFlow API
+
+        Raises:
+            FailNotFoundError: If the transformation file is provided and
+                does not exist
+        """
         super().__init__()
         self.id = id
         self.name = name
@@ -69,7 +104,20 @@ class Pipeline(APIClient):
         else:
             raise ValueError("Both sink_kind and sink_config must be provided")
 
-    def fetch(self):
+    def fetch(self) -> Pipeline:
+        """
+        Fetches pipeline information from the GlassFlow API
+
+        Returns:
+            self: Pipeline object
+
+        Raises:
+            ValueError: If ID is not provided in the constructor
+            PipelineNotFoundError: If ID provided does not match any
+                existing pipeline in GlassFlow
+            UnauthorizedError: If the Personal Access Token is not
+                provider or is invalid
+        """
         if self.id is None:
             raise ValueError(
                 "Pipeline id must be provided in order to fetch it's details"
@@ -108,7 +156,19 @@ class Pipeline(APIClient):
         self.env_vars = res_json["environments"]
         return self
 
-    def create(self):
+    def create(self) -> Pipeline:
+        """
+        Creates a new GlassFlow pipeline
+
+        Returns:
+            self: Pipeline object
+
+        Raises:
+            ValueError: If name is not provided in the constructor
+            ValueError: If space_id is not provided in the constructor
+            ValueError: If transformation_code or transformation_file are
+                not provided in the constructor
+        """
         create_pipeline = api.CreatePipeline(
             name=self.name,
             space_id=self.space_id,
@@ -157,3 +217,29 @@ class Pipeline(APIClient):
         self.created_at = res.created_at
         self.access_tokens.append({"name": "default", "token": res.access_token})
         return self
+
+    def delete(self) -> None:
+        if self.id is None:
+            raise ValueError(
+                "Pipeline id must be provided"
+            )
+
+        request = operations.DeletePipelineRequest(
+            pipeline_id=self.id,
+            organization_id=self.organization_id,
+            personal_access_token=self.personal_access_token,
+        )
+
+        try:
+            self.request(
+                method="DELETE",
+                endpoint=f"/pipelines/{self.id}",
+                request=request,
+            )
+        except errors.ClientError as e:
+            if e.status_code == 404:
+                raise errors.PipelineNotFoundError(self.id, e.raw_response) from e
+            elif e.status_code == 401:
+                raise errors.UnauthorizedError(e.raw_response) from e
+            else:
+                raise e

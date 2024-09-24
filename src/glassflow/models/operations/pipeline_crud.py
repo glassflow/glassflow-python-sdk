@@ -30,3 +30,8 @@ class CreatePipelineResponse(BaseResponse):
     state: PipelineState
     access_token: str
     metadata: dict | None = dataclasses.field(default=None)
+
+
+@dataclasses.dataclass
+class DeletePipelineRequest(BasePipelineManagementRequest):
+    pass

@@ -8,10 +8,11 @@ from .consumefailed import (
     ConsumeFailedResponse,
     ConsumeFailedResponseBody,
 )
-from .getpipeline import (
+from .pipeline_crud import (
     CreatePipelineRequest,
     CreatePipelineResponse,
     GetPipelineRequest,
+    DeletePipelineRequest,
 )
 from .publishevent import (
     PublishEventRequest,
@@ -36,4 +37,5 @@ __all__ = [
     "GetPipelineRequest",
     "CreatePipelineRequest",
     "CreatePipelineResponse",
+    "DeletePipelineRequest",
 ]
