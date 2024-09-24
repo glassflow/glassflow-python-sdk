@@ -3,12 +3,36 @@ import uuid
 
 import pytest
 
-from glassflow.client import GlassFlowClient
+from glassflow import GlassFlowClient, PipelineDataSink, PipelineDataSource
+from glassflow.api_client import APIClient
+
+# Use staging api server
+APIClient.glassflow_config.server_url = "https://staging.api.glassflow.dev/v1"
 
 
 @pytest.fixture
 def client():
-    return GlassFlowClient()
+    return GlassFlowClient(os.getenv("PERSONAL_ACCESS_TOKEN"))
+
+
+@pytest.fixture
+def source(pipeline_credentials):
+    return PipelineDataSource(**pipeline_credentials)
+
+
+@pytest.fixture
+def source_with_invalid_access_token(pipeline_credentials_invalid_token):
+    return PipelineDataSource(**pipeline_credentials_invalid_token)
+
+
+@pytest.fixture
+def source_with_non_existing_id(pipeline_credentials_invalid_id):
+    return PipelineDataSource(**pipeline_credentials_invalid_id)
+
+
+@pytest.fixture
+def sink(pipeline_credentials):
+    return PipelineDataSink(**pipeline_credentials)
 
 
 @pytest.fixture
@@ -32,4 +56,33 @@ def pipeline_credentials_invalid_id():
     return {
         "pipeline_id": str(uuid.uuid4()),
         "pipeline_access_token": os.getenv("PIPELINE_ACCESS_TOKEN"),
+    }
+
+
+@pytest.fixture
+def pipeline_dict():
+    return {
+        "id": "test-id",
+        "name": "test-name",
+        "space_id": "test-space-id",
+        "metadata": {},
+        "created_at": "",
+        "state": "running",
+        "space_name": "test-space-name",
+        "source_connector": {},
+        "sink_connector": {},
+        "environments": [],
+    }
+
+
+@pytest.fixture
+def create_pipeline_response():
+    return {
+        "name": "test-name",
+        "space_id": "string",
+        "metadata": {"additionalProp1": {}},
+        "id": "test-id",
+        "created_at": "2024-09-23T10:08:45.529Z",
+        "state": "running",
+        "access_token": "string",
     }

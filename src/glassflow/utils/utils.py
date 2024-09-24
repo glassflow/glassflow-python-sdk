@@ -1,3 +1,5 @@
+# ruff: noqa: E501, SIM102
+
 import json
 import re
 from dataclasses import Field, dataclass, fields, is_dataclass, make_dataclass
@@ -5,8 +7,7 @@ from datetime import datetime
 from decimal import Decimal
 from email.message import Message
 from enum import Enum
-from typing import (Any, Callable, Dict, List, Tuple, Union, get_args,
-                    get_origin)
+from typing import Any, Callable, Dict, List, Tuple, Union, get_args, get_origin
 from xmlrpc.client import boolean
 
 from dataclasses_json import DataClassJsonMixin
@@ -306,9 +307,8 @@ def serialize_request_body(
     serialization_method: str,
     encoder=None,
 ) -> Tuple[str, any, any]:
-    if request is None:
-        if not nullable and optional:
-            return None, None, None
+    if request is None and not nullable and optional:
+        return None, None, None
 
     if not is_dataclass(request) or not hasattr(request, request_field_name):
         return serialize_content_type(
@@ -321,9 +321,8 @@ def serialize_request_body(
 
     request_val = getattr(request, request_field_name)
 
-    if request_val is None:
-        if not nullable and optional:
-            return None, None, None
+    if request_val is None and not nullable and optional:
+        return None, None, None
 
     request_fields: Tuple[Field, ...] = fields(request)
     request_metadata = None
@@ -387,7 +386,7 @@ def serialize_multipart_form(
 
             file_name = ""
             field_name = ""
-            content = bytes()
+            content = b""
 
             for file_field in file_fields:
                 file_metadata = file_field.metadata.get("multipart_form")
@@ -399,7 +398,7 @@ def serialize_multipart_form(
                 else:
                     field_name = file_metadata.get("field_name", file_field.name)
                     file_name = getattr(val, file_field.name)
-            if field_name == "" or file_name == "" or content == bytes():
+            if field_name == "" or file_name == "" or content == b"":
                 raise Exception("invalid multipart/form-data file")
 
             form.append([field_name, [file_name, content]])
@@ -635,11 +634,7 @@ def match_content_type(content_type: str, pattern: str) -> boolean:
         return True
 
     parts = media_type.split("/")
-    if len(parts) == 2:
-        if pattern in (f"{parts[0]}/*", f"*/{parts[1]}"):
-            return True
-
-    return False
+    return len(parts) == 2 and pattern in (f"{parts[0]}/*", f"*/{parts[1]}")
 
 
 def get_field_name(name):

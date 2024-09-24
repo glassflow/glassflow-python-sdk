@@ -11,3 +11,5 @@ site**
 dist/
 build
 .env
+tests/reports
+.coverage

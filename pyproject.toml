@@ -1,3 +1,45 @@
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+addopts = """
+    --import-mode=importlib \
+    --cov=src/glassflow \
+    --cov-report xml:tests/reports/coverage.xml \
+    -ra -q
+"""
+testpaths = [
+    "tests",
+]
+
+[tool.ruff.lint]
+select = [
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # flake8-simplify
+    "SIM",
+    # isort
+    "I",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.datamodel-codegen]
+field-constraints = true
+snake-case-field = true
+strip-default-none = false
+target-python-version = "3.7"
+use-title-as-name = true
+disable-timestamp = true
+enable-version-header = true
+use-double-quotes = true
+input-file-type = "openapi"
+output-model-type = "dataclasses.dataclass"

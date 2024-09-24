@@ -1,7 +1,7 @@
 import setuptools
 
 try:
-    with open("README.md", "r") as fh:
+    with open("README.md") as fh:
         long_description = fh.read()
 except FileNotFoundError:
     long_description = ""
@@ -36,7 +36,15 @@ setuptools.setup(
         "python-dotenv==1.0.1",
     ],
     extras_require={
-        "dev": ["pylint==2.16.2", "pytest==8.3.2", "isort==5.13.2", "ruff==0.6.3"]
+        "dev": [
+            "pylint==2.16.2",
+            "pytest==8.3.2",
+            "pytest-cov==5.0.0",
+            "datamodel-code-generator[http]==0.26.0",
+            "requests-mock==1.12.1",
+            "isort==5.13.2",
+            "ruff==0.6.3",
+        ]
     },
     package_dir={"": "src"},
     python_requires=">=3.8",
