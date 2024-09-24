@@ -11,8 +11,8 @@ from .consumefailed import (
 from .pipeline_crud import (
     CreatePipelineRequest,
     CreatePipelineResponse,
-    GetPipelineRequest,
     DeletePipelineRequest,
+    GetPipelineRequest,
 )
 from .publishevent import (
     PublishEventRequest,

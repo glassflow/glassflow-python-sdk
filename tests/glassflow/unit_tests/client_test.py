@@ -40,7 +40,9 @@ def test_get_pipeline_401(requests_mock, pipeline_dict, client):
         client.get_pipeline(pipeline_id="test-id")
 
 
-def test_create_pipeline_ok(requests_mock, pipeline_dict, create_pipeline_response, client):
+def test_create_pipeline_ok(
+    requests_mock, pipeline_dict, create_pipeline_response, client
+):
     requests_mock.post(
         client.glassflow_config.server_url + "/pipelines",
         json=create_pipeline_response,

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import List, Optional
-
 from .client import APIClient
 from .models import api, errors, operations
 
@@ -10,20 +8,20 @@ class Pipeline(APIClient):
     def __init__(
         self,
         personal_access_token: str,
-        name: Optional[str] = None,
-        space_id: Optional[str] = None,
-        id: Optional[str] = None,
-        source_kind: Optional[str] = None,
-        source_config: Optional[str] = None,
-        sink_kind: Optional[str] = None,
-        sink_config: Optional[str] = None,
-        requirements: Optional[str] = None,
-        transformation_code: Optional[str] = None,
-        transformation_file: Optional[str] = None,
-        env_vars: Optional[List[str]] = None,
+        name: str | None = None,
+        space_id: str | None = None,
+        id: str | None = None,
+        source_kind: str | None = None,
+        source_config: str | None = None,
+        sink_kind: str | None = None,
+        sink_config: str | None = None,
+        requirements: str | None = None,
+        transformation_code: str | None = None,
+        transformation_file: str | None = None,
+        env_vars: list[str] | None = None,
         state: api.PipelineState = "running",
-        organization_id: Optional[str] = None,
-        metadata: Optional[dict] = None,
+        organization_id: str | None = None,
+        metadata: dict | None = None,
     ):
         """Creates a new GlassFlow pipeline object
 
@@ -220,9 +218,7 @@ class Pipeline(APIClient):
 
     def delete(self) -> None:
         if self.id is None:
-            raise ValueError(
-                "Pipeline id must be provided"
-            )
+            raise ValueError("Pipeline id must be provided")
 
         request = operations.DeletePipelineRequest(
             pipeline_id=self.id,
