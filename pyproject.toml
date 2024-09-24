@@ -31,3 +31,15 @@ select = [
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+[tool.datamodel-codegen]
+field-constraints = true
+snake-case-field = true
+strip-default-none = false
+target-python-version = "3.7"
+use-title-as-name = true
+disable-timestamp = true
+enable-version-header = true
+use-double-quotes = true
+input-file-type = "openapi"
+output-model-type = "dataclasses.dataclass"
