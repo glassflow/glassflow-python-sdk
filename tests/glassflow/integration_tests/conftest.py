@@ -1,6 +1,7 @@
 import os
-import pytest
 import uuid
+
+import pytest
 
 from glassflow import GlassFlowClient, PipelineDataSink, PipelineDataSource
 from glassflow.pipeline import Pipeline
@@ -48,15 +49,14 @@ def creating_pipeline(pipeline):
 def source(creating_pipeline):
     return PipelineDataSource(
         pipeline_id=creating_pipeline.id,
-        pipeline_access_token=creating_pipeline.access_tokens[0]["token"]
+        pipeline_access_token=creating_pipeline.access_tokens[0]["token"],
     )
 
 
 @pytest.fixture
 def source_with_invalid_access_token(creating_pipeline):
     return PipelineDataSource(
-        pipeline_id=creating_pipeline.id,
-        pipeline_access_token="invalid-access-token"
+        pipeline_id=creating_pipeline.id, pipeline_access_token="invalid-access-token"
     )
 
 
@@ -64,7 +64,7 @@ def source_with_invalid_access_token(creating_pipeline):
 def source_with_non_existing_id(creating_pipeline):
     return PipelineDataSource(
         pipeline_id=str(uuid.uuid4()),
-        pipeline_access_token=creating_pipeline.access_tokens[0]["token"]
+        pipeline_access_token=creating_pipeline.access_tokens[0]["token"],
     )
 
 
@@ -78,5 +78,5 @@ def source_with_published_events(source):
 def sink(source_with_published_events):
     return PipelineDataSink(
         pipeline_id=source_with_published_events.pipeline_id,
-        pipeline_access_token=source_with_published_events.pipeline_access_token
+        pipeline_access_token=source_with_published_events.pipeline_access_token,
     )

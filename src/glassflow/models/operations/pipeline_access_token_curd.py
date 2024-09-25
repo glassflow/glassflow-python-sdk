@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 
-from .base import BasePipelineManagementRequest, BaseResponse
+from .base import BasePipelineManagementRequest
 
 
 @dataclasses.dataclass

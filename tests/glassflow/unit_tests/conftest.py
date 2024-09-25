@@ -1,5 +1,6 @@
-from glassflow import GlassFlowClient
 import pytest
+
+from glassflow import GlassFlowClient
 
 
 @pytest.fixture
@@ -45,13 +46,13 @@ def access_tokens():
                 "name": "token1",
                 "id": "string",
                 "token": "string",
-                "created_at": "2024-09-25T10:46:18.468Z"
+                "created_at": "2024-09-25T10:46:18.468Z",
             },
             {
                 "name": "token2",
                 "id": "string",
                 "token": "string",
-                "created_at": "2024-09-26T04:28:51.782Z"
+                "created_at": "2024-09-26T04:28:51.782Z",
             },
-        ]
+        ],
     }

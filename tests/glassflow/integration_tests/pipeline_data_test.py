@@ -39,5 +39,8 @@ def test_consume_from_pipeline_data_sink_ok(sink):
         consume_response = sink.consume()
         assert consume_response.status_code in (200, 204)
         if consume_response.status_code == 200:
-            assert consume_response.json() == {"test_field": "test_value", "new_field": "new_value"}
+            assert consume_response.json() == {
+                "test_field": "test_value",
+                "new_field": "new_value",
+            }
             break

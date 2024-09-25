@@ -11,15 +11,13 @@ def list_pipelines_response():
             {
                 "name": "test-name",
                 "space_id": "test-space-id",
-                "metadata": {
-                    "additionalProp1": {}
-                },
+                "metadata": {"additionalProp1": {}},
                 "id": "test-id",
                 "created_at": "2024-09-25T13:52:17.910Z",
                 "state": "running",
                 "space_name": "test-space-name",
             }
-        ]
+        ],
     }
 
 

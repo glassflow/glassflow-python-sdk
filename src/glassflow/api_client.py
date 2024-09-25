@@ -37,7 +37,9 @@ class APIClient:
 
         return headers
 
-    def _request(self, method: str, endpoint: str, request: BaseRequest) -> BaseResponse:
+    def _request(
+        self, method: str, endpoint: str, request: BaseRequest
+    ) -> BaseResponse:
         request_type = type(request)
 
         url = utils.generate_url(

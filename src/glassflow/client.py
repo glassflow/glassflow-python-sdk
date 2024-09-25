@@ -1,11 +1,10 @@
 """GlassFlow Python Client to interact with GlassFlow API"""
+
 from __future__ import annotations
 
-from typing import Dict, List
-
 from .api_client import APIClient
-from .models.api import PipelineState
 from .models import errors, operations
+from .models.api import PipelineState
 from .pipeline import Pipeline
 
 
@@ -66,7 +65,7 @@ class GlassFlowClient(APIClient):
         source_config: dict = None,
         sink_kind: str = None,
         sink_config: dict = None,
-        env_vars: List[Dict[str, str]] = None,
+        env_vars: list[dict[str, str]] = None,
         state: PipelineState = "running",
         metadata: dict = None,
     ) -> Pipeline:
@@ -116,7 +115,9 @@ class GlassFlowClient(APIClient):
             personal_access_token=self.personal_access_token,
         ).create()
 
-    def list_pipelines(self, space_ids: list[str] | None = None) -> operations.ListPipelinesResponse:
+    def list_pipelines(
+        self, space_ids: list[str] | None = None
+    ) -> operations.ListPipelinesResponse:
         """
         Lists all pipelines in the GlassFlow API
 
@@ -138,7 +139,7 @@ class GlassFlowClient(APIClient):
         try:
             res = self._request(
                 method="GET",
-                endpoint=f"/pipelines",
+                endpoint="/pipelines",
                 request=request,
             )
             res_json = res.raw_response.json()

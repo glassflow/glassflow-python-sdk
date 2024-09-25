@@ -1,8 +1,8 @@
 from .base import (
-    BaseResponse,
-    BaseRequest,
     BaseManagementRequest,
     BasePipelineManagementRequest,
+    BaseRequest,
+    BaseResponse,
 )
 from .consumeevent import (
     ConsumeEventRequest,
@@ -14,9 +14,7 @@ from .consumefailed import (
     ConsumeFailedResponse,
     ConsumeFailedResponseBody,
 )
-from .pipeline_access_token_curd import (
-    PipelineGetAccessTokensRequest
-)
+from .pipeline_access_token_curd import PipelineGetAccessTokensRequest
 from .pipeline_crud import (
     CreatePipelineRequest,
     CreatePipelineResponse,

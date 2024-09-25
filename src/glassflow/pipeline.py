@@ -194,9 +194,7 @@ class Pipeline(APIClient):
             **create_pipeline.__dict__,
         )
 
-        base_res = self._request(
-            method="POST", endpoint="/pipelines", request=request
-        )
+        base_res = self._request(method="POST", endpoint="/pipelines", request=request)
         res = operations.CreatePipelineResponse(
             status_code=base_res.status_code,
             content_type=base_res.content_type,
@@ -240,7 +238,7 @@ class Pipeline(APIClient):
         request = operations.PipelineGetAccessTokensRequest(
             organization_id=self.organization_id,
             personal_access_token=self.personal_access_token,
-            pipeline_id=self.id
+            pipeline_id=self.id,
         )
         base_res = self._request(
             method="GET",
@@ -252,8 +250,7 @@ class Pipeline(APIClient):
         return self
 
     def get_source(
-            self,
-            pipeline_access_token_name: str | None = None
+        self, pipeline_access_token_name: str | None = None
     ) -> PipelineDataSource:
         """
         Get source client to publish data to the pipeline
@@ -272,8 +269,7 @@ class Pipeline(APIClient):
         return self._get_data_client("source", pipeline_access_token_name)
 
     def get_sink(
-            self,
-            pipeline_access_token_name: str | None = None
+        self, pipeline_access_token_name: str | None = None
     ) -> PipelineDataSink:
         """
         Get sink client to consume data from the pipeline
@@ -292,9 +288,7 @@ class Pipeline(APIClient):
         return self._get_data_client("sink", pipeline_access_token_name)
 
     def _get_data_client(
-            self,
-            client_type: str,
-            pipeline_access_token_name: str | None = None
+        self, client_type: str, pipeline_access_token_name: str | None = None
     ) -> PipelineDataSource | PipelineDataSink:
         if self.id is None:
             raise ValueError("Pipeline id must be provided in the constructor")
@@ -307,15 +301,17 @@ class Pipeline(APIClient):
                     token = t["token"]
                     break
             else:
-                raise ValueError(f"Token with name {pipeline_access_token_name} was not found")
+                raise ValueError(
+                    f"Token with name {pipeline_access_token_name} " f"was not found"
+                )
         else:
             token = self.access_tokens[0]["token"]
-        if client_type is "source":
+        if client_type == "source":
             client = PipelineDataSource(
                 pipeline_id=self.id,
                 pipeline_access_token=token,
             )
-        elif client_type is "sink":
+        elif client_type == "sink":
             client = PipelineDataSink(
                 pipeline_id=self.id,
                 pipeline_access_token=token,
@@ -325,10 +321,7 @@ class Pipeline(APIClient):
         return client
 
     def _request(
-            self,
-            method: str,
-            endpoint: str,
-            request: operations.BaseManagementRequest
+        self, method: str, endpoint: str, request: operations.BaseManagementRequest
     ) -> operations.BaseResponse:
         try:
             return super()._request(
