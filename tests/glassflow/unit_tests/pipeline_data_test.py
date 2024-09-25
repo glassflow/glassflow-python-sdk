@@ -20,7 +20,7 @@ def consume_payload():
     }
 
 
-def test_pipeline_data_source_push_ok(requests_mock):
+def test_push_to_pipeline_data_source_ok(requests_mock):
     source = PipelineDataSource(
         pipeline_id="test-id",
         pipeline_access_token="test-access-token",
@@ -40,7 +40,7 @@ def test_pipeline_data_source_push_ok(requests_mock):
     assert res.content_type == "application/json"
 
 
-def test_pipeline_data_source_push_404(requests_mock):
+def test_push_to_pipeline_data_source_fail_with_404(requests_mock):
     source = PipelineDataSource(
         pipeline_id="test-id",
         pipeline_access_token="test-access-token",
@@ -58,7 +58,7 @@ def test_pipeline_data_source_push_404(requests_mock):
         source.publish({"test": "test"})
 
 
-def test_pipeline_data_source_push_401(requests_mock):
+def test_push_to_pipeline_data_source_fail_with_401(requests_mock):
     source = PipelineDataSource(
         pipeline_id="test-id",
         pipeline_access_token="test-access-token",
@@ -76,7 +76,7 @@ def test_pipeline_data_source_push_401(requests_mock):
         source.publish({"test": "test"})
 
 
-def test_pipeline_data_sink_consume_ok(requests_mock, consume_payload):
+def test_consume_from_pipeline_data_sink_ok(requests_mock, consume_payload):
     sink = PipelineDataSink(
         pipeline_id="test-id",
         pipeline_access_token="test-access-token",
@@ -99,7 +99,7 @@ def test_pipeline_data_sink_consume_ok(requests_mock, consume_payload):
     assert res.body.req_id == consume_payload["req_id"]
 
 
-def test_pipeline_data_sink_consume_404(requests_mock):
+def test_consume_from_pipeline_data_sink_fail_with_404(requests_mock):
     sink = PipelineDataSink(
         pipeline_id="test-id",
         pipeline_access_token="test-access-token",
@@ -119,7 +119,7 @@ def test_pipeline_data_sink_consume_404(requests_mock):
         sink.consume()
 
 
-def test_pipeline_data_sink_consume_401(requests_mock):
+def test_consume_from_pipeline_data_sink_fail_with_401(requests_mock):
     sink = PipelineDataSink(
         pipeline_id="test-id",
         pipeline_access_token="test-access-token",
@@ -139,7 +139,7 @@ def test_pipeline_data_sink_consume_401(requests_mock):
         sink.consume()
 
 
-def test_pipeline_data_sink_consume_failed_ok(requests_mock, consume_payload):
+def test_consume_failed_from_pipeline_data_sink_ok(requests_mock, consume_payload):
     sink = PipelineDataSink(
         pipeline_id="test-id",
         pipeline_access_token="test-access-token",
@@ -162,7 +162,7 @@ def test_pipeline_data_sink_consume_failed_ok(requests_mock, consume_payload):
     assert res.body.req_id == consume_payload["req_id"]
 
 
-def test_pipeline_data_sink_consume_failed_404(requests_mock):
+def test_consume_failed_from_pipeline_data_sink_fail_with_404(requests_mock):
     sink = PipelineDataSink(
         pipeline_id="test-id",
         pipeline_access_token="test-access-token",
@@ -182,7 +182,7 @@ def test_pipeline_data_sink_consume_failed_404(requests_mock):
         sink.consume_failed()
 
 
-def test_pipeline_data_sink_consume_failed_401(requests_mock):
+def test_consume_failed_from_pipeline_data_sink_fail_with_401(requests_mock):
     sink = PipelineDataSink(
         pipeline_id="test-id",
         pipeline_access_token="test-access-token",

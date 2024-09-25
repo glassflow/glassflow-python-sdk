@@ -1,9 +1,10 @@
 import pytest
 
 from glassflow.pipeline import Pipeline
+from glassflow.models import errors
 
 
-def test_pipeline_transformation_file():
+def test_pipeline_with_transformation_file():
     try:
         p = Pipeline(
             transformation_file="tests/data/transformation.py",
@@ -14,12 +15,87 @@ def test_pipeline_transformation_file():
         pytest.fail(e)
 
 
-def test_pipeline_transformation_file_not_found():
+def test_pipeline_fail_with_file_not_found():
     with pytest.raises(FileNotFoundError):
-        Pipeline(transformation_file="fake_file.py", personal_access_token="test-token")
+        Pipeline(
+            transformation_file="fake_file.py",
+            personal_access_token="test-token"
+        )
 
 
-def test_pipeline_delete_ok(requests_mock, client):
+def test_fetch_pipeline_ok(requests_mock, pipeline_dict, access_tokens, client):
+    requests_mock.get(
+        client.glassflow_config.server_url + "/pipelines/test-id",
+        json=pipeline_dict,
+        status_code=200,
+        headers={"Content-Type": "application/json"},
+    )
+    requests_mock.get(
+        client.glassflow_config.server_url + "/pipelines/test-id/access_tokens",
+        json=access_tokens,
+        status_code=200,
+        headers={"Content-Type": "application/json"},
+    )
+
+    pipeline = Pipeline(
+        id=pipeline_dict["id"],
+        personal_access_token="test-token",
+    ).fetch()
+
+    assert pipeline.name == pipeline_dict["name"]
+
+
+def test_fetch_pipeline_fail_with_404(requests_mock, pipeline_dict, client):
+    requests_mock.get(
+        client.glassflow_config.server_url + "/pipelines/test-id",
+        json=pipeline_dict,
+        status_code=404,
+        headers={"Content-Type": "application/json"},
+    )
+
+    with pytest.raises(errors.PipelineNotFoundError):
+        Pipeline(
+            id=pipeline_dict["id"],
+            personal_access_token="test-token",
+        ).fetch()
+
+
+def test_fetch_pipeline_fail_with_401(requests_mock, pipeline_dict, client):
+    requests_mock.get(
+        client.glassflow_config.server_url + "/pipelines/test-id",
+        json=pipeline_dict,
+        status_code=401,
+        headers={"Content-Type": "application/json"},
+    )
+
+    with pytest.raises(errors.UnauthorizedError):
+        Pipeline(
+            id=pipeline_dict["id"],
+            personal_access_token="test-token",
+        ).fetch()
+
+
+def test_create_pipeline_ok(
+    requests_mock, pipeline_dict, create_pipeline_response, client
+):
+    requests_mock.post(
+        client.glassflow_config.server_url + "/pipelines",
+        json=create_pipeline_response,
+        status_code=200,
+        headers={"Content-Type": "application/json"},
+    )
+    pipeline = Pipeline(
+        name=pipeline_dict["name"],
+        space_id=create_pipeline_response["space_id"],
+        transformation_code="transformation code...",
+        personal_access_token="test-token",
+    ).create()
+
+    assert pipeline.id == "test-id"
+    assert pipeline.name == "test-name"
+
+
+def test_delete_pipeline_ok(requests_mock, client):
     requests_mock.delete(
         client.glassflow_config.server_url + "/pipelines/test-pipeline-id",
         status_code=204,
@@ -32,7 +108,7 @@ def test_pipeline_delete_ok(requests_mock, client):
     pipeline.delete()
 
 
-def test_pipeline_delete_missing_pipeline_id(client):
+def test_delete_pipeline_fail_with_missing_pipeline_id(client):
     pipeline = Pipeline(
         personal_access_token="test-token",
     )
