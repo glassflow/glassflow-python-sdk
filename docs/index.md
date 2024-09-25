@@ -11,7 +11,7 @@ You can install the GlassFlow Python SDK using pip:
 pip install glassflow
 ```
 
-## Available Operations
+## Data Operations
 
 * [publish](#publish) - Publish a new event into the pipeline
 * [consume](#consume) - Consume the transformed event from the pipeline
@@ -35,7 +35,6 @@ res = source.publish(request_body=data)
 if res.status_code == 200:
     print("Published sucessfully")
 ```
-
 
 
 ## consume
@@ -71,6 +70,7 @@ if res.status_code == 200:
     print(res.json())
 ```
 
+
 ## validate credentials
 
 Validate pipeline credentials (`pipeline_id` and `pipeline_access_token`) from source or sink
@@ -89,6 +89,117 @@ except errors.PipelineNotFoundError as e:
 except errors.PipelineAccessTokenInvalidError as e:
     print("Pipeline Access Token is invalid!")
     raise e
+```
+
+
+## Pipeline Management
+
+In order to manage your pipelines with this SDK, one needs to provide the `PERSONAL_ACCESS_TOKEN` 
+to the GlassFlow client.
+
+```python
+from glassflow import GlassFlowClient
+
+client = GlassFlowClient(personal_access_token="<your personal access token>")
+```
+
+Now you can perform CRUD operations on your pipelines:
+
+* [list_pipelines](#list_pipelines) - Returns the list of pipelines available
+* [get_pipeline](#get_pipeline) - Returns a pipeline object from a given pipeline ID
+* [create](#create) - Create a new pipeline
+* [delete](#delete) - Delete an existing pipeline
+
+## list_pipelines
+
+Returns information about the available pipelines. It can be restricted to a
+specific space by passing the `space_id`.
+
+### Example Usage
+
+```python
+from glassflow import GlassFlowClient
+
+client = GlassFlowClient(personal_access_token="<your access token>")
+res = client.list_pipelines()
+```
+
+## get_pipeline
+
+Gets information about a pipeline from a given pipeline ID. It returns a Pipeline object
+which can be used manage the Pipeline. 
+
+### Example Usage
+
+```python
+from glassflow import GlassFlowClient
+
+client = GlassFlowClient(personal_access_token="<your access token>")
+pipeline = client.get_pipeline(pipeline_id="<your pipeline id>")
+
+print("Name:", pipeline.name)
+```
+
+## create
+
+The Pipeline object has a create method that creates a new GlassFlow pipeline.
+
+### Example Usage
+
+```python
+from glassflow import Pipeline
+
+pipeline = Pipeline(
+    name="<your pipeline name>",
+    transformation_file="path/to/transformation.py",
+    space_id="<your space id>",
+    personal_access_token="<your personal access token>"
+).create()
+```
+
+In the next example we create a pipeline with Google PubSub source 
+and a webhook sink:
+
+```python
+from glassflow import Pipeline
+
+pipeline = Pipeline(
+    name="<your pipeline name>",
+    transformation_file="path/to/transformation.py",
+    space_id="<your space id>",
+    personal_access_token="<your personal access token>",
+    source_kind="google_pubsub",
+    source_config={
+        "project_id": "<your gcp project id>",
+        "subscription_id": "<your subscription id>",
+        "credentials_json": "<your credentials json>"
+    },
+    sink_kind="webhook",
+    sink_config={
+        "url": "<webhook url>",
+        "method": "<GET | POST | PUT | PATCH | DELETE>",
+        "headers": [{"header1": "header1_value"}]
+    }
+).create()
+```
+
+## delete
+
+The Pipeline object has a delete method to delete a pipeline
+
+### Example Usage
+
+```python
+from glassflow import Pipeline
+
+pipeline = Pipeline(
+    name="<your pipeline name>",
+    transformation_file="path/to/transformation.py",
+    space_id="<your space id>",
+    personal_access_token="<your personal access token>"
+).create()
+
+pipeline.delete()
 ```
 
 ## SDK Maturity
