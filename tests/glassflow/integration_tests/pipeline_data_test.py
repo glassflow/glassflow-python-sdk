@@ -29,12 +29,15 @@ def test_pipeline_data_source_validate_credentials_id_not_found(
         source_with_non_existing_id.validate_credentials()
 
 
-def test_pipeline_publish_and_consume(source, sink):
-    publish_response = source.publish({"test-key": "test-value"})
+def test_pipeline_data_source_publish(source):
+    publish_response = source.publish({"test_field": "test_value"})
     assert publish_response.status_code == 200
+
+
+def test_pipeline_data_sink_consume(sink):
     while True:
         consume_response = sink.consume()
         assert consume_response.status_code in (200, 204)
         if consume_response.status_code == 200:
-            assert consume_response.json() == {"test-key": "test-value"}
+            assert consume_response.json() == {"test_field": "test_value", "new_field": "new_value"}
             break
