@@ -5,15 +5,17 @@ from .api import (
     PipelineState,
     SinkConnector,
     SourceConnector,
+    SpacePipeline,
     UpdatePipeline,
 )
 
 __all__ = [
+    "CreatePipeline",
+    "FunctionEnvironments",
     "GetDetailedSpacePipeline",
     "PipelineState",
-    "CreatePipeline",
-    "SourceConnector",
     "SinkConnector",
-    "FunctionEnvironments",
+    "SourceConnector",
+    "SpacePipeline",
     "UpdatePipeline",
 ]

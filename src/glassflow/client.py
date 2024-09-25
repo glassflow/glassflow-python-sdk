@@ -1,9 +1,11 @@
 """GlassFlow Python Client to interact with GlassFlow API"""
+from __future__ import annotations
 
 from typing import Dict, List
 
 from .api_client import APIClient
 from .models.api import PipelineState
+from .models import errors, operations
 from .pipeline import Pipeline
 
 
@@ -113,3 +115,43 @@ class GlassFlowClient(APIClient):
             metadata=metadata,
             personal_access_token=self.personal_access_token,
         ).create()
+
+    def list_pipelines(self, space_ids: list[str] | None = None) -> operations.ListPipelinesResponse:
+        """
+        Lists all pipelines in the GlassFlow API
+
+        Args:
+            space_ids: List of Space IDs of the pipelines to list.
+                If not specified, all the pipelines will be listed.
+
+        Returns:
+            ListPipelinesResponse: Response object with the pipelines listed
+
+        Raises:
+            UnauthorizedError: User does not have permission to perform the
+        """
+        request = operations.ListPipelinesRequest(
+            space_id=space_ids,
+            organization_id=self.organization_id,
+            personal_access_token=self.personal_access_token,
+        )
+        try:
+            res = self._request(
+                method="GET",
+                endpoint=f"/pipelines",
+                request=request,
+            )
+            res_json = res.raw_response.json()
+        except errors.ClientError as e:
+            if e.status_code == 401:
+                raise errors.UnauthorizedError(e.raw_response) from e
+            else:
+                raise e
+
+        return operations.ListPipelinesResponse(
+            content_type=res.content_type,
+            status_code=res.status_code,
+            raw_response=res.raw_response,
+            total_amount=res_json["total_amount"],
+            pipelines=res_json["pipelines"],
+        )

@@ -3,63 +3,48 @@ import pytest
 from glassflow.models import errors
 
 
-def test_get_pipeline_ok(requests_mock, pipeline_dict, access_tokens, client):
+@pytest.fixture
+def list_pipelines_response():
+    return {
+        "total_amount": 1,
+        "pipelines": [
+            {
+                "name": "test-name",
+                "space_id": "test-space-id",
+                "metadata": {
+                    "additionalProp1": {}
+                },
+                "id": "test-id",
+                "created_at": "2024-09-25T13:52:17.910Z",
+                "state": "running",
+                "space_name": "test-space-name",
+            }
+        ]
+    }
+
+
+def test_list_pipelines_ok(requests_mock, list_pipelines_response, client):
     requests_mock.get(
-        client.glassflow_config.server_url + "/pipelines/test-id",
-        json=pipeline_dict,
+        client.glassflow_config.server_url + "/pipelines",
+        json=list_pipelines_response,
         status_code=200,
         headers={"Content-Type": "application/json"},
     )
+
+    res = client.list_pipelines()
+
+    assert res.status_code == 200
+    assert res.content_type == "application/json"
+    assert res.total_amount == list_pipelines_response["total_amount"]
+    assert res.pipelines == list_pipelines_response["pipelines"]
+
+
+def test_list_pipelines_fail_with_401(requests_mock, client):
     requests_mock.get(
-        client.glassflow_config.server_url + "/pipelines/test-id/access_tokens",
-        json=access_tokens,
-        status_code=200,
-        headers={"Content-Type": "application/json"},
-    )
-
-    pipeline = client.get_pipeline(pipeline_id="test-id")
-
-    assert pipeline.id == "test-id"
-
-
-def test_get_pipeline_404(requests_mock, pipeline_dict, client):
-    requests_mock.get(
-        client.glassflow_config.server_url + "/pipelines/test-id",
-        json=pipeline_dict,
-        status_code=404,
-        headers={"Content-Type": "application/json"},
-    )
-
-    with pytest.raises(errors.PipelineNotFoundError):
-        client.get_pipeline(pipeline_id="test-id")
-
-
-def test_get_pipeline_401(requests_mock, pipeline_dict, client):
-    requests_mock.get(
-        client.glassflow_config.server_url + "/pipelines/test-id",
-        json=pipeline_dict,
+        client.glassflow_config.server_url + "/pipelines",
         status_code=401,
         headers={"Content-Type": "application/json"},
     )
 
     with pytest.raises(errors.UnauthorizedError):
-        client.get_pipeline(pipeline_id="test-id")
-
-
-def test_create_pipeline_ok(
-    requests_mock, pipeline_dict, create_pipeline_response, client
-):
-    requests_mock.post(
-        client.glassflow_config.server_url + "/pipelines",
-        json=create_pipeline_response,
-        status_code=200,
-        headers={"Content-Type": "application/json"},
-    )
-    pipeline = client.create_pipeline(
-        name=create_pipeline_response["name"],
-        space_id=create_pipeline_response["space_id"],
-        transformation_code="transformation code...",
-    )
-
-    assert pipeline.id == "test-id"
-    assert pipeline.name == "test-name"
+        client.list_pipelines()

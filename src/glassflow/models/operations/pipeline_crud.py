@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import dataclasses
+from enum import Enum
 
-from ..api import CreatePipeline, GetDetailedSpacePipeline, PipelineState
+from ..api import CreatePipeline, GetDetailedSpacePipeline, PipelineState, SpacePipeline
 from .base import BaseManagementRequest, BasePipelineManagementRequest, BaseResponse
 
 
@@ -35,3 +36,22 @@ class CreatePipelineResponse(BaseResponse):
 @dataclasses.dataclass
 class DeletePipelineRequest(BasePipelineManagementRequest):
     pass
+
+
+class Order(str, Enum):
+    asc = "asc"
+    desc = "desc"
+
+
+@dataclasses.dataclass
+class ListPipelinesRequest(BaseManagementRequest):
+    space_id: list[str] | None = None
+    page_size: int = 50
+    page: int = 1
+    order_by: Order = Order.asc
+
+
+@dataclasses.dataclass
+class ListPipelinesResponse(BaseResponse):
+    total_amount: int
+    pipelines: list[SpacePipeline]
