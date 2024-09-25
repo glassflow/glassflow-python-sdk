@@ -3,10 +3,16 @@ import pytest
 from glassflow.models import errors
 
 
-def test_get_pipeline_ok(requests_mock, pipeline_dict, client):
+def test_get_pipeline_ok(requests_mock, pipeline_dict, access_tokens, client):
     requests_mock.get(
         client.glassflow_config.server_url + "/pipelines/test-id",
         json=pipeline_dict,
+        status_code=200,
+        headers={"Content-Type": "application/json"},
+    )
+    requests_mock.get(
+        client.glassflow_config.server_url + "/pipelines/test-id/access_tokens",
+        json=access_tokens,
         status_code=200,
         headers={"Content-Type": "application/json"},
     )

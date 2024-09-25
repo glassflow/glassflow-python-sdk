@@ -38,3 +38,51 @@ def test_pipeline_delete_missing_pipeline_id(client):
     )
     with pytest.raises(ValueError):
         pipeline.delete()
+
+
+def test_pipeline_get_source_ok(client, pipeline_dict, requests_mock, access_tokens):
+    requests_mock.get(
+        client.glassflow_config.server_url + "/pipelines/test-id",
+        json=pipeline_dict,
+        status_code=200,
+        headers={"Content-Type": "application/json"},
+    )
+    requests_mock.get(
+        client.glassflow_config.server_url + "/pipelines/test-id/access_tokens",
+        json=access_tokens,
+        status_code=200,
+        headers={"Content-Type": "application/json"},
+    )
+    p = client.get_pipeline("test-id")
+    source = p.get_source()
+    source2 = p.get_source(pipeline_access_token_name="token2")
+
+    assert source.pipeline_id == p.id
+    assert source.pipeline_access_token == access_tokens["access_tokens"][0]["token"]
+
+    assert source2.pipeline_id == p.id
+    assert source2.pipeline_access_token == access_tokens["access_tokens"][1]["token"]
+
+
+def test_pipeline_get_sink_ok(client, pipeline_dict, requests_mock, access_tokens):
+    requests_mock.get(
+        client.glassflow_config.server_url + "/pipelines/test-id",
+        json=pipeline_dict,
+        status_code=200,
+        headers={"Content-Type": "application/json"},
+    )
+    requests_mock.get(
+        client.glassflow_config.server_url + "/pipelines/test-id/access_tokens",
+        json=access_tokens,
+        status_code=200,
+        headers={"Content-Type": "application/json"},
+    )
+    p = client.get_pipeline("test-id")
+    sink = p.get_sink()
+    sink2 = p.get_sink(pipeline_access_token_name="token2")
+
+    assert sink.pipeline_id == p.id
+    assert sink.pipeline_access_token == access_tokens["access_tokens"][0]["token"]
+
+    assert sink2.pipeline_id == p.id
+    assert sink2.pipeline_access_token == access_tokens["access_tokens"][1]["token"]

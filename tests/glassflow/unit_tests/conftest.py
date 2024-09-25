@@ -34,3 +34,24 @@ def create_pipeline_response():
         "state": "running",
         "access_token": "string",
     }
+
+
+@pytest.fixture
+def access_tokens():
+    return {
+        "total_amount": 2,
+        "access_tokens": [
+            {
+                "name": "token1",
+                "id": "string",
+                "token": "string",
+                "created_at": "2024-09-25T10:46:18.468Z"
+            },
+            {
+                "name": "token2",
+                "id": "string",
+                "token": "string",
+                "created_at": "2024-09-26T04:28:51.782Z"
+            },
+        ]
+    }

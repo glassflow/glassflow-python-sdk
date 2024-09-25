@@ -30,17 +30,17 @@ class PipelineDataClient(APIClient):
             pipeline_id=self.pipeline_id,
             x_pipeline_access_token=self.pipeline_access_token,
         )
-        self.request(
+        self._request(
             method="GET",
             endpoint="/pipelines/{pipeline_id}/status/access_token",
             request=request,
         )
 
-    def request(
+    def _request(
         self, method: str, endpoint: str, request: BasePipelineDataRequest
     ) -> BaseResponse:
         try:
-            res = super().request(method, endpoint, request)
+            res = super()._request(method, endpoint, request)
         except errors.ClientError as e:
             if e.status_code == 401:
                 raise errors.PipelineAccessTokenInvalidError(e.raw_response) from e
@@ -72,7 +72,7 @@ class PipelineDataSource(PipelineDataClient):
             x_pipeline_access_token=self.pipeline_access_token,
             request_body=request_body,
         )
-        base_res = self.request(
+        base_res = self._request(
             method="POST",
             endpoint="/pipelines/{pipeline_id}/topics/input/events",
             request=request,
@@ -111,7 +111,7 @@ class PipelineDataSink(PipelineDataClient):
         )
 
         self._respect_retry_delay()
-        base_res = self.request(
+        base_res = self._request(
             method="POST",
             endpoint="/pipelines/{pipeline_id}/topics/output/events/consume",
             request=request,
@@ -165,7 +165,7 @@ class PipelineDataSink(PipelineDataClient):
         )
 
         self._respect_retry_delay()
-        base_res = self.request(
+        base_res = self._request(
             method="POST",
             endpoint="/pipelines/{pipeline_id}/topics/failed/events/consume",
             request=request,
