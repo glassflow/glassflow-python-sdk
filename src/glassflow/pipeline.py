@@ -22,6 +22,7 @@ class Pipeline(APIClient):
         state: api.PipelineState = "running",
         organization_id: str | None = None,
         metadata: dict | None = None,
+        created_at: str | None = None,
     ):
         """Creates a new GlassFlow pipeline object
 
@@ -48,6 +49,7 @@ class Pipeline(APIClient):
             state: State of the pipeline after creation.
                 It can be either "running" or "paused"
             metadata: Metadata of the pipeline
+            created_at: Timestamp when the pipeline was created
 
         Returns:
             Pipeline: Pipeline object to interact with the GlassFlow API
@@ -72,7 +74,7 @@ class Pipeline(APIClient):
         self.state = state
         self.organization_id = organization_id
         self.metadata = metadata if metadata is not None else {}
-        self.created_at = None
+        self.created_at = created_at
         self.access_tokens = []
 
         if self.transformation_code is None and self.transformation_file is not None:
