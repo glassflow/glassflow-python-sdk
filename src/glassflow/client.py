@@ -6,6 +6,7 @@ from .api_client import APIClient
 from .models import errors, operations
 from .models.api import PipelineState
 from .pipeline import Pipeline
+from .space import Space
 
 
 class GlassFlowClient(APIClient):
@@ -21,9 +22,9 @@ class GlassFlowClient(APIClient):
 
     """
 
-    def __init__(
-        self, personal_access_token: str = None, organization_id: str = None
-    ) -> None:
+    def __init__(self,
+                 personal_access_token: str = None,
+                 organization_id: str = None) -> None:
         """Create a new GlassFlowClient object
 
         Args:
@@ -50,9 +51,8 @@ class GlassFlowClient(APIClient):
                 requested operation
             ClientError: GlassFlow Client Error
         """
-        return Pipeline(
-            personal_access_token=self.personal_access_token, id=pipeline_id
-        ).fetch()
+        return Pipeline(personal_access_token=self.personal_access_token,
+                        id=pipeline_id).fetch()
 
     def create_pipeline(
         self,
@@ -112,11 +112,13 @@ class GlassFlowClient(APIClient):
             env_vars=env_vars,
             state=state,
             metadata=metadata,
+            organization_id=self.organization_id,
             personal_access_token=self.personal_access_token,
         ).create()
 
     def list_pipelines(
-        self, space_ids: list[str] | None = None
+        self,
+        space_ids: list[str] | None = None
     ) -> operations.ListPipelinesResponse:
         """
         Lists all pipelines in the GlassFlow API
@@ -156,3 +158,49 @@ class GlassFlowClient(APIClient):
             total_amount=res_json["total_amount"],
             pipelines=res_json["pipelines"],
         )
+
+    def list_spaces(self) -> operations.ListSpacesResponse:
+        request = operations.ListSpacesRequest(
+            organization_id=self.organization_id,
+            personal_access_token=self.personal_access_token,
+        )
+        try:
+            res = self._request(
+                method="GET",
+                endpoint="/spaces",
+                request=request,
+            )
+            res_json = res.raw_response.json()
+        except errors.ClientError as e:
+            if e.status_code == 401:
+                raise errors.UnauthorizedError(e.raw_response) from e
+            else:
+                raise e
+
+        return operations.ListSpacesResponse(
+            content_type=res.content_type,
+            status_code=res.status_code,
+            raw_response=res.raw_response,
+            total_amount=res_json["total_amount"],
+            spaces=res_json["spaces"],
+        )
+
+    def create_space(
+        self,
+        name: str,
+    ) -> operations.CreateSpaceResponse:
+        """Creates a new Space
+
+        Args:
+            name: Name of the Space
+
+        Returns:
+            Space: New space
+
+        Raises:
+            UnauthorizedError: User does not have permission to perform
+                the requested operation
+        """
+        return Space(name=name,
+                     personal_access_token=self.personal_access_token,
+                     organization_id=self.organization_id).create()
