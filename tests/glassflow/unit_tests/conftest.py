@@ -38,6 +38,15 @@ def create_pipeline_response():
 
 
 @pytest.fixture
+def create_space_response():
+    return {
+        "name": "test-space",
+        "id": "test-space-id",
+        "created_at": "2024-09-30T02:47:51.901Z"
+    }
+
+
+@pytest.fixture
 def access_tokens():
     return {
         "total_amount": 2,
