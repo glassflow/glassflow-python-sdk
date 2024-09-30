@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from .client import APIClient
-from .models import api, operations
+from .models import api, operations, errors
 
 
 class Space(APIClient):
@@ -93,3 +93,20 @@ class Space(APIClient):
             endpoint=f"/spaces/{self.id}",
             request=request,
         )
+
+    def _request(
+        self, method: str, endpoint: str, request: operations.BaseManagementRequest
+    ) -> operations.BaseResponse:
+        try:
+            return super()._request(
+                method=method,
+                endpoint=endpoint,
+                request=request,
+            )
+        except errors.ClientError as e:
+            if e.status_code == 404:
+                raise errors.SpaceNotFoundError(self.id, e.raw_response) from e
+            elif e.status_code == 401:
+                raise errors.UnauthorizedError(e.raw_response) from e
+            else:
+                raise e
