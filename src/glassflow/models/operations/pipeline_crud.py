@@ -3,7 +3,12 @@ from __future__ import annotations
 import dataclasses
 from enum import Enum
 
-from ..api import CreatePipeline, GetDetailedSpacePipeline, PipelineState, SpacePipeline, SpaceScope
+from ..api import (
+    CreatePipeline,
+    GetDetailedSpacePipeline,
+    PipelineState,
+    SpacePipeline,
+)
 from .base import BaseManagementRequest, BasePipelineManagementRequest, BaseResponse
 
 

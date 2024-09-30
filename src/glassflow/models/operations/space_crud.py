@@ -3,8 +3,8 @@ from __future__ import annotations
 import dataclasses
 from enum import Enum
 
-from ..api import SpaceScope, CreateSpace
-from .base import BaseResponse, BaseManagementRequest
+from ..api import CreateSpace, SpaceScope
+from .base import BaseManagementRequest, BaseResponse
 
 
 @dataclasses.dataclass

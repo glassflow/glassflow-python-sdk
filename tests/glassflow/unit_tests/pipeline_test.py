@@ -25,7 +25,7 @@ def test_pipeline_fail_with_missing_sink_data():
         Pipeline(
             transformation_file="tests/data/transformation.py",
             personal_access_token="test-token",
-            sink_kind="google_pubsub"
+            sink_kind="google_pubsub",
         )
     assert str(e.value) == "Both sink_kind and sink_config must be provided"
 
@@ -35,7 +35,7 @@ def test_pipeline_fail_with_missing_source_data():
         Pipeline(
             transformation_file="tests/data/transformation.py",
             personal_access_token="test-token",
-            source_kind="google_pubsub"
+            source_kind="google_pubsub",
         )
     assert str(e.value) == "Both source_kind and source_config must be provided"
 

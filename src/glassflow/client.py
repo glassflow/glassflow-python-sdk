@@ -22,9 +22,9 @@ class GlassFlowClient(APIClient):
 
     """
 
-    def __init__(self,
-                 personal_access_token: str = None,
-                 organization_id: str = None) -> None:
+    def __init__(
+        self, personal_access_token: str = None, organization_id: str = None
+    ) -> None:
         """Create a new GlassFlowClient object
 
         Args:
@@ -51,8 +51,9 @@ class GlassFlowClient(APIClient):
                 requested operation
             ClientError: GlassFlow Client Error
         """
-        return Pipeline(personal_access_token=self.personal_access_token,
-                        id=pipeline_id).fetch()
+        return Pipeline(
+            personal_access_token=self.personal_access_token, id=pipeline_id
+        ).fetch()
 
     def create_pipeline(
         self,
@@ -117,8 +118,7 @@ class GlassFlowClient(APIClient):
         ).create()
 
     def list_pipelines(
-        self,
-        space_ids: list[str] | None = None
+        self, space_ids: list[str] | None = None
     ) -> operations.ListPipelinesResponse:
         """
         Lists all pipelines in the GlassFlow API
@@ -201,6 +201,8 @@ class GlassFlowClient(APIClient):
             UnauthorizedError: User does not have permission to perform
                 the requested operation
         """
-        return Space(name=name,
-                     personal_access_token=self.personal_access_token,
-                     organization_id=self.organization_id).create()
+        return Space(
+            name=name,
+            personal_access_token=self.personal_access_token,
+            organization_id=self.organization_id,
+        ).create()

@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 from .client import APIClient
-from .models import api, errors, operations
+from .models import api, operations
 
 
 class Space(APIClient):
-
     def __init__(
         self,
         personal_access_token: str,
@@ -47,17 +46,14 @@ class Space(APIClient):
 
         """
         if self.name is None:
-            raise ValueError(
-                "Name must be provided in order to create the space")
+            raise ValueError("Name must be provided in order to create the space")
         create_space = api.CreateSpace(name=self.name)
         request = operations.CreateSpaceRequest(
             organization_id=self.organization_id,
             personal_access_token=self.personal_access_token,
             **create_space.__dict__,
         )
-        base_res = self._request(method="POST",
-                                 endpoint="/spaces",
-                                 request=request)
+        base_res = self._request(method="POST", endpoint="/spaces", request=request)
 
         res = operations.CreateSpaceResponse(
             status_code=base_res.status_code,

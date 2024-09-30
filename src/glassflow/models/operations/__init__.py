@@ -29,8 +29,12 @@ from .publishevent import (
     PublishEventResponse,
     PublishEventResponseBody,
 )
-from .space_crud import (ListSpacesResponse, ListSpacesRequest,
-                         CreateSpaceRequest, CreateSpaceResponse)
+from .space_crud import (
+    CreateSpaceRequest,
+    CreateSpaceResponse,
+    ListSpacesRequest,
+    ListSpacesResponse,
+)
 from .status_access_token import StatusAccessTokenRequest
 
 __all__ = [
