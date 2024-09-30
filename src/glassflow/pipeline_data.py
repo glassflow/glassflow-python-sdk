@@ -178,20 +178,25 @@ class PipelineDataSink(PipelineDataClient):
         )
 
         self._update_retry_delay(res.status_code)
-        if not utils.match_content_type(res.content_type, "application/json"):
-            raise errors.UnknownContentTypeError(res.raw_response)
         if res.status_code == 200:
+            if not utils.match_content_type(res.content_type, "application/json"):
+                raise errors.UnknownContentTypeError(res.raw_response)
+
             self._consume_retry_delay_current = self._consume_retry_delay_minimum
             body = utils.unmarshal_json(
                 res.raw_response.text, Optional[operations.ConsumeFailedResponseBody]
             )
             res.body = body
-
         elif res.status_code == 204:
             # No messages to be consumed. Return an empty response body
             body = operations.ConsumeFailedResponseBody("", "", {})
             res.body = body
-
+        elif res.status_code == 429:
+            # update the retry delay
+            body = operations.ConsumeEventResponseBody("", "", {})
+            res.body = body
+        elif not utils.match_content_type(res.content_type, "application/json"):
+            raise errors.UnknownContentTypeError(res.raw_response)
         return res
 
     def _update_retry_delay(self, status_code: int):
