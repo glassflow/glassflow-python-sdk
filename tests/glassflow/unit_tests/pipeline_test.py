@@ -20,6 +20,26 @@ def test_pipeline_fail_with_file_not_found():
         Pipeline(transformation_file="fake_file.py", personal_access_token="test-token")
 
 
+def test_pipeline_fail_with_missing_sink_data():
+    with pytest.raises(ValueError) as e:
+        Pipeline(
+            transformation_file="tests/data/transformation.py",
+            personal_access_token="test-token",
+            sink_kind="google_pubsub"
+        )
+    assert str(e.value) == "Both sink_kind and sink_config must be provided"
+
+
+def test_pipeline_fail_with_missing_source_data():
+    with pytest.raises(ValueError) as e:
+        Pipeline(
+            transformation_file="tests/data/transformation.py",
+            personal_access_token="test-token",
+            source_kind="google_pubsub"
+        )
+    assert str(e.value) == "Both source_kind and source_config must be provided"
+
+
 def test_fetch_pipeline_ok(requests_mock, pipeline_dict, access_tokens, client):
     requests_mock.get(
         client.glassflow_config.server_url + "/pipelines/test-id",
@@ -92,6 +112,45 @@ def test_create_pipeline_ok(
     assert pipeline.name == "test-name"
 
 
+def test_create_pipeline_fail_with_missing_name(client):
+    with pytest.raises(ValueError) as e:
+        Pipeline(
+            space_id="test-space-id",
+            transformation_code="transformation code...",
+            personal_access_token="test-token",
+        ).create()
+
+    assert e.value.__str__() == (
+        "Name must be provided in order to " "create the pipeline"
+    )
+
+
+def test_create_pipeline_fail_with_missing_space_id(client):
+    with pytest.raises(ValueError) as e:
+        Pipeline(
+            name="test-name",
+            transformation_code="transformation code...",
+            personal_access_token="test-token",
+        ).create()
+
+    assert e.value.__str__() == (
+        "Space_id must be provided in order to " "create the pipeline"
+    )
+
+
+def test_create_pipeline_fail_with_missing_transformation(client):
+    with pytest.raises(ValueError) as e:
+        Pipeline(
+            name="test-name",
+            space_id="test-space-id",
+            personal_access_token="test-token",
+        ).create()
+
+    assert e.value.__str__() == (
+        "Either transformation_code or " "transformation_file must be provided"
+    )
+
+
 def test_delete_pipeline_ok(requests_mock, client):
     requests_mock.delete(
         client.glassflow_config.server_url + "/pipelines/test-pipeline-id",
@@ -113,7 +172,9 @@ def test_delete_pipeline_fail_with_missing_pipeline_id(client):
         pipeline.delete()
 
 
-def test_pipeline_get_source_ok(client, pipeline_dict, requests_mock, access_tokens):
+def test_get_source_from_pipeline_ok(
+    client, pipeline_dict, requests_mock, access_tokens
+):
     requests_mock.get(
         client.glassflow_config.server_url + "/pipelines/test-id",
         json=pipeline_dict,
@@ -137,7 +198,15 @@ def test_pipeline_get_source_ok(client, pipeline_dict, requests_mock, access_tok
     assert source2.pipeline_access_token == access_tokens["access_tokens"][1]["token"]
 
 
-def test_pipeline_get_sink_ok(client, pipeline_dict, requests_mock, access_tokens):
+def test_get_source_from_pipeline_fail_with_missing_id(client):
+    pipeline = Pipeline(personal_access_token="test-token")
+    with pytest.raises(ValueError) as e:
+        pipeline.get_source()
+
+    assert e.value.__str__() == "Pipeline id must be provided in the constructor"
+
+
+def test_get_sink_from_pipeline_ok(client, pipeline_dict, requests_mock, access_tokens):
     requests_mock.get(
         client.glassflow_config.server_url + "/pipelines/test-id",
         json=pipeline_dict,
