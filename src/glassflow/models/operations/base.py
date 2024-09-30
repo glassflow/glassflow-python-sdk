@@ -71,7 +71,17 @@ class BasePipelineDataRequest(BasePipelineRequest):
 
 
 @dataclasses.dataclass
+class BaseSpaceRequest(BaseRequest):
+    space_id: str
+
+
+@dataclasses.dataclass
 class BasePipelineManagementRequest(BaseManagementRequest, BasePipelineRequest):
+    pass
+
+
+@dataclasses.dataclass
+class BaseSpaceManagementDataRequest(BaseManagementRequest, BaseSpaceRequest):
     pass
 
 

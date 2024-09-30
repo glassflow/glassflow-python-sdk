@@ -1,6 +1,7 @@
 from .base import (
     BaseManagementRequest,
     BasePipelineManagementRequest,
+    BaseSpaceManagementDataRequest,
     BaseRequest,
     BaseResponse,
 )
@@ -32,6 +33,7 @@ from .publishevent import (
 from .space_crud import (
     CreateSpaceRequest,
     CreateSpaceResponse,
+    DeleteSpaceRequest,
     ListSpacesRequest,
     ListSpacesResponse,
 )
@@ -42,6 +44,7 @@ __all__ = [
     "BasePipelineManagementRequest",
     "BaseRequest",
     "BaseResponse",
+    "BaseSpaceManagementDataRequest",
     "ConsumeEventRequest",
     "ConsumeEventResponse",
     "ConsumeEventResponseBody",
@@ -51,6 +54,7 @@ __all__ = [
     "CreatePipelineRequest",
     "CreatePipelineResponse",
     "DeletePipelineRequest",
+    "DeleteSpaceRequest",
     "GetPipelineRequest",
     "ListPipelinesRequest",
     "ListPipelinesResponse",

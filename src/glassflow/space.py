@@ -66,3 +66,30 @@ class Space(APIClient):
         self.created_at = res.created_at
         self.name = res.name
         return self
+
+    def delete(self) -> None:
+        """
+        Deletes a GlassFlow space
+
+        Returns:
+
+        Raises:
+            ValueError: If ID is not provided in the constructor
+            SpaceNotFoundError: If ID provided does not match any
+                existing space in GlassFlow
+            UnauthorizedError: If the Personal Access Token is not
+                provided or is invalid
+        """
+        if self.id is None:
+            raise ValueError("Space id must be provided in the constructor")
+
+        request = operations.DeleteSpaceRequest(
+            space_id=self.id,
+            organization_id=self.organization_id,
+            personal_access_token=self.personal_access_token,
+        )
+        self._request(
+            method="DELETE",
+            endpoint=f"/spaces/{self.id}",
+            request=request,
+        )

@@ -4,7 +4,7 @@ import dataclasses
 from enum import Enum
 
 from ..api import CreateSpace, SpaceScope
-from .base import BaseManagementRequest, BaseResponse
+from .base import BaseManagementRequest, BaseResponse, BaseSpaceManagementDataRequest
 
 
 @dataclasses.dataclass
@@ -35,3 +35,8 @@ class CreateSpaceResponse(BaseResponse):
     name: str
     id: str
     created_at: str
+
+
+@dataclasses.dataclass
+class DeleteSpaceRequest(BaseSpaceManagementDataRequest):
+    pass
