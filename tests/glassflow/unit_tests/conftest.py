@@ -9,6 +9,55 @@ def client():
 
 
 @pytest.fixture
+def get_pipeline_request_mock(client, requests_mock, fetch_pipeline_response):
+    return requests_mock.get(
+        client.glassflow_config.server_url + "/pipelines/test-id",
+        json=fetch_pipeline_response,
+        status_code=200,
+        headers={"Content-Type": "application/json"},
+    )
+
+
+@pytest.fixture
+def get_access_token_request_mock(
+    client, requests_mock, fetch_pipeline_response, access_tokens_response
+):
+    return requests_mock.get(
+        client.glassflow_config.server_url
+        + f"/pipelines/{fetch_pipeline_response['id']}/access_tokens",
+        json=access_tokens_response,
+        status_code=200,
+        headers={"Content-Type": "application/json"},
+    )
+
+
+@pytest.fixture
+def get_pipeline_function_source_request_mock(
+    client, requests_mock, fetch_pipeline_response, function_source_response
+):
+    return requests_mock.get(
+        client.glassflow_config.server_url
+        + f"/pipelines/{fetch_pipeline_response['id']}/functions/main/source",
+        json=function_source_response,
+        status_code=200,
+        headers={"Content-Type": "application/json"},
+    )
+
+
+@pytest.fixture
+def update_pipeline_request_mock(
+    client, requests_mock, fetch_pipeline_response, update_pipeline_response
+):
+    return requests_mock.put(
+        client.glassflow_config.server_url
+        + f"/pipelines/{fetch_pipeline_response['id']}",
+        json=update_pipeline_response,
+        status_code=200,
+        headers={"Content-Type": "application/json"},
+    )
+
+
+@pytest.fixture
 def fetch_pipeline_response():
     return {
         "id": "test-id",
@@ -42,6 +91,13 @@ def fetch_pipeline_response():
 
 
 @pytest.fixture
+def update_pipeline_response(fetch_pipeline_response):
+    fetch_pipeline_response["name"] = "updated name"
+    fetch_pipeline_response["source_connector"] = None
+    return fetch_pipeline_response
+
+
+@pytest.fixture
 def create_pipeline_response():
     return {
         "name": "test-name",
@@ -64,7 +120,7 @@ def create_space_response():
 
 
 @pytest.fixture
-def access_tokens():
+def access_tokens_response():
     return {
         "total_amount": 2,
         "access_tokens": [
@@ -81,4 +137,13 @@ def access_tokens():
                 "created_at": "2024-09-26T04:28:51.782Z",
             },
         ],
+    }
+
+
+@pytest.fixture
+def function_source_response():
+    return {
+        "files": [{"name": "string", "content": "string"}],
+        "transformation_function": "string",
+        "requirements_txt": "string",
     }

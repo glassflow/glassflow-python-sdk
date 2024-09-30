@@ -41,26 +41,24 @@ def test_pipeline_fail_with_missing_source_data():
 
 
 def test_fetch_pipeline_ok(
-    requests_mock, fetch_pipeline_response, access_tokens, client
+    get_pipeline_request_mock,
+    get_access_token_request_mock,
+    get_pipeline_function_source_request_mock,
+    fetch_pipeline_response,
+    function_source_response,
 ):
-    requests_mock.get(
-        client.glassflow_config.server_url + "/pipelines/test-id",
-        json=fetch_pipeline_response,
-        status_code=200,
-        headers={"Content-Type": "application/json"},
-    )
-    requests_mock.get(
-        client.glassflow_config.server_url + "/pipelines/test-id/access_tokens",
-        json=access_tokens,
-        status_code=200,
-        headers={"Content-Type": "application/json"},
-    )
     pipeline = Pipeline(
         id=fetch_pipeline_response["id"],
         personal_access_token="test-token",
     ).fetch()
 
     assert pipeline.name == fetch_pipeline_response["name"]
+    assert len(pipeline.access_tokens) > 0
+    assert (
+        pipeline.transformation_code
+        == function_source_response["transformation_function"]
+    )
+    assert pipeline.requirements == function_source_response["requirements_txt"]
 
 
 def test_fetch_pipeline_fail_with_404(requests_mock, fetch_pipeline_response, client):
@@ -153,47 +151,21 @@ def test_create_pipeline_fail_with_missing_transformation(client):
 
 
 def test_update_pipeline_ok(
-    requests_mock, fetch_pipeline_response, access_tokens, client
+    get_pipeline_request_mock,
+    get_access_token_request_mock,
+    get_pipeline_function_source_request_mock,
+    update_pipeline_request_mock,
+    fetch_pipeline_response,
+    update_pipeline_response,
 ):
-    update_pipeline_details = fetch_pipeline_response.copy()
-    update_pipeline_details["name"] = "updated name"
-    update_pipeline_details["source_connector"] = None
-
-    # Mock fetch pipeline request
-    requests_mock.get(
-        client.glassflow_config.server_url
-        + f"/pipelines/{fetch_pipeline_response['id']}",
-        json=fetch_pipeline_response,
-        status_code=200,
-        headers={"Content-Type": "application/json"},
-    )
-
-    # Mock get access tokens
-    requests_mock.get(
-        client.glassflow_config.server_url
-        + f"/pipelines/{fetch_pipeline_response['id']}/access_tokens",
-        json=access_tokens,
-        status_code=200,
-        headers={"Content-Type": "application/json"},
-    )
-
-    # Mock update pipeline request
-    requests_mock.put(
-        client.glassflow_config.server_url
-        + f"/pipelines/{fetch_pipeline_response['id']}",
-        json=update_pipeline_details,
-        status_code=200,
-        headers={"Content-Type": "application/json"},
-    )
-
     pipeline = (
         Pipeline(personal_access_token="test-token")
         ._fill_pipeline_details(fetch_pipeline_response)
         .update()
     )
 
-    assert pipeline.name == "updated name"
-    assert pipeline.source_connector is None
+    assert pipeline.name == update_pipeline_response["name"]
+    assert pipeline.source_connector == update_pipeline_response["source_connector"]
 
 
 def test_delete_pipeline_ok(requests_mock, client):
@@ -218,29 +190,28 @@ def test_delete_pipeline_fail_with_missing_pipeline_id(client):
 
 
 def test_get_source_from_pipeline_ok(
-    client, fetch_pipeline_response, requests_mock, access_tokens
+    client,
+    fetch_pipeline_response,
+    get_pipeline_request_mock,
+    get_access_token_request_mock,
+    get_pipeline_function_source_request_mock,
+    access_tokens_response,
 ):
-    requests_mock.get(
-        client.glassflow_config.server_url + "/pipelines/test-id",
-        json=fetch_pipeline_response,
-        status_code=200,
-        headers={"Content-Type": "application/json"},
-    )
-    requests_mock.get(
-        client.glassflow_config.server_url + "/pipelines/test-id/access_tokens",
-        json=access_tokens,
-        status_code=200,
-        headers={"Content-Type": "application/json"},
-    )
-    p = client.get_pipeline("test-id")
+    p = client.get_pipeline(fetch_pipeline_response["id"])
     source = p.get_source()
     source2 = p.get_source(pipeline_access_token_name="token2")
 
     assert source.pipeline_id == p.id
-    assert source.pipeline_access_token == access_tokens["access_tokens"][0]["token"]
+    assert (
+        source.pipeline_access_token
+        == access_tokens_response["access_tokens"][0]["token"]
+    )
 
     assert source2.pipeline_id == p.id
-    assert source2.pipeline_access_token == access_tokens["access_tokens"][1]["token"]
+    assert (
+        source2.pipeline_access_token
+        == access_tokens_response["access_tokens"][1]["token"]
+    )
 
 
 def test_get_source_from_pipeline_fail_with_missing_id(client):
@@ -252,26 +223,25 @@ def test_get_source_from_pipeline_fail_with_missing_id(client):
 
 
 def test_get_sink_from_pipeline_ok(
-    client, fetch_pipeline_response, requests_mock, access_tokens
+    client,
+    fetch_pipeline_response,
+    get_pipeline_request_mock,
+    get_access_token_request_mock,
+    get_pipeline_function_source_request_mock,
+    access_tokens_response,
 ):
-    requests_mock.get(
-        client.glassflow_config.server_url + "/pipelines/test-id",
-        json=fetch_pipeline_response,
-        status_code=200,
-        headers={"Content-Type": "application/json"},
-    )
-    requests_mock.get(
-        client.glassflow_config.server_url + "/pipelines/test-id/access_tokens",
-        json=access_tokens,
-        status_code=200,
-        headers={"Content-Type": "application/json"},
-    )
-    p = client.get_pipeline("test-id")
+    p = client.get_pipeline(fetch_pipeline_response["id"])
     sink = p.get_sink()
     sink2 = p.get_sink(pipeline_access_token_name="token2")
 
     assert sink.pipeline_id == p.id
-    assert sink.pipeline_access_token == access_tokens["access_tokens"][0]["token"]
+    assert (
+        sink.pipeline_access_token
+        == access_tokens_response["access_tokens"][0]["token"]
+    )
 
     assert sink2.pipeline_id == p.id
-    assert sink2.pipeline_access_token == access_tokens["access_tokens"][1]["token"]
+    assert (
+        sink2.pipeline_access_token
+        == access_tokens_response["access_tokens"][1]["token"]
+    )
