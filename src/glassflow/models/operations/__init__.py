@@ -29,6 +29,8 @@ from .publishevent import (
     PublishEventResponse,
     PublishEventResponseBody,
 )
+from .space_crud import (ListSpacesResponse, ListSpacesRequest,
+                         CreateSpaceRequest, CreateSpaceResponse)
 from .status_access_token import StatusAccessTokenRequest
 
 __all__ = [
@@ -54,4 +56,8 @@ __all__ = [
     "PublishEventResponse",
     "PublishEventResponseBody",
     "StatusAccessTokenRequest",
+    "ListSpacesResponse",
+    "ListSpacesRequest",
+    "CreateSpaceRequest",
+    "CreateSpaceResponse",
 ]
