@@ -32,16 +32,16 @@ def test_update_pipeline_ok(creating_pipeline):
         sink_config={
             "url": "www.test-url.com",
             "method": "GET",
-            "headers": [{"name": "header1", "value": "header1"}]
-        }
+            "headers": [{"name": "header1", "value": "header1"}],
+        },
     )
     assert updated_pipeline.name == "new_name"
     assert updated_pipeline.sink_kind == "webhook"
     assert updated_pipeline.sink_config == {
-            "url": "www.test-url.com",
-            "method": "GET",
-            "headers": [{"name": "header1", "value": "header1"}]
-        }
+        "url": "www.test-url.com",
+        "method": "GET",
+        "headers": [{"name": "header1", "value": "header1"}],
+    }
 
 
 def test_delete_pipeline_fail_with_404(pipeline_with_random_id):

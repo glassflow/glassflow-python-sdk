@@ -273,7 +273,9 @@ class Pipeline(APIClient):
             **update_pipeline.__dict__,
         )
 
-        base_res = self._request(method="PUT", endpoint=f"/pipelines/{self.id}", request=request)
+        base_res = self._request(
+            method="PUT", endpoint=f"/pipelines/{self.id}", request=request
+        )
         self._fill_pipeline_details(base_res.raw_response.json())
         return self
 
