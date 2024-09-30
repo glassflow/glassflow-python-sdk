@@ -11,8 +11,7 @@ def test_create_space_ok(requests_mock, create_space_response, client):
         headers={"Content-Type": "application/json"},
     )
     space = Space(
-        name=create_space_response["name"],
-        personal_access_token="test-token"
+        name=create_space_response["name"], personal_access_token="test-token"
     ).create()
 
     assert space.name == create_space_response["name"]
@@ -24,9 +23,7 @@ def test_create_space_fail_with_missing_name(client):
     with pytest.raises(ValueError) as e:
         Space(personal_access_token="test-token").create()
 
-    assert str(e.value) == (
-        "Name must be provided in order to create the space"
-    )
+    assert str(e.value) == ("Name must be provided in order to create the space")
 
 
 def test_delete_space_ok(requests_mock, client):

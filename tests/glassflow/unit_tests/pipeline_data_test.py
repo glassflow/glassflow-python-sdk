@@ -27,7 +27,8 @@ def test_validate_credentials_ok(requests_mock):
         pipeline_access_token="test-token",
     )
     requests_mock.get(
-        data_client.glassflow_config.server_url + "/pipelines/test-id/status/access_token",
+        data_client.glassflow_config.server_url
+        + "/pipelines/test-id/status/access_token",
         status_code=200,
         headers={
             "Content-Type": "application/json",
@@ -245,7 +246,9 @@ def test_consume_failed_from_pipeline_data_sink_ok_with_empty_response(requests_
     assert res.body.event == {}
 
 
-def test_consume_failed_from_pipeline_data_sink_ok_with_too_many_requests(requests_mock):
+def test_consume_failed_from_pipeline_data_sink_ok_with_too_many_requests(
+    requests_mock,
+):
     sink = PipelineDataSink(
         pipeline_id="test-id",
         pipeline_access_token="test-access-token",

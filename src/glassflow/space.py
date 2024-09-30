@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from .client import APIClient
-from .models import api, operations, errors
+from .models import api, errors, operations
 
 
 class Space(APIClient):
