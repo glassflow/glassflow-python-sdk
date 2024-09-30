@@ -134,7 +134,10 @@ class Pipeline(APIClient):
         self._fill_pipeline_details(base_res.raw_response.json())
 
         # Fetch Pipeline Access Tokens
-        self.get_access_tokens()
+        self._get_access_tokens()
+
+        # Fetch function source
+        self._get_function_source()
 
         return self
 
@@ -306,7 +309,7 @@ class Pipeline(APIClient):
             request=request,
         )
 
-    def get_access_tokens(self) -> Pipeline:
+    def _get_access_tokens(self) -> Pipeline:
         request = operations.PipelineGetAccessTokensRequest(
             organization_id=self.organization_id,
             personal_access_token=self.personal_access_token,
@@ -319,6 +322,28 @@ class Pipeline(APIClient):
         )
         res_json = base_res.raw_response.json()
         self.access_tokens = res_json["access_tokens"]
+        return self
+
+    def _get_function_source(self) -> Pipeline:
+        """
+        Fetch pipeline function source
+
+        Returns:
+            self: Pipeline with function source details
+        """
+        request = operations.PipelineGetFunctionSourceRequest(
+            organization_id=self.organization_id,
+            personal_access_token=self.personal_access_token,
+            pipeline_id=self.id,
+        )
+        base_res = self._request(
+            method="GET",
+            endpoint=f"/pipelines/{self.id}/functions/main/source",
+            request=request,
+        )
+        res_json = base_res.raw_response.json()
+        self.transformation_code = res_json["transformation_function"]
+        self.requirements = res_json["requirements_txt"]
         return self
 
     def get_source(
@@ -365,7 +390,7 @@ class Pipeline(APIClient):
         if self.id is None:
             raise ValueError("Pipeline id must be provided in the constructor")
         elif len(self.access_tokens) == 0:
-            self.get_access_tokens()
+            self._get_access_tokens()
 
         if pipeline_access_token_name is not None:
             for t in self.access_tokens:
