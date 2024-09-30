@@ -21,8 +21,11 @@ from .pipeline_crud import (
     CreatePipelineResponse,
     DeletePipelineRequest,
     GetPipelineRequest,
+    GetPipelineResponse,
     ListPipelinesRequest,
     ListPipelinesResponse,
+    UpdatePipelineRequest,
+    UpdatePipelineResponse,
 )
 from .publishevent import (
     PublishEventRequest,
@@ -56,6 +59,7 @@ __all__ = [
     "DeletePipelineRequest",
     "DeleteSpaceRequest",
     "GetPipelineRequest",
+    "GetPipelineResponse",
     "ListPipelinesRequest",
     "ListPipelinesResponse",
     "PipelineGetAccessTokensRequest",
@@ -68,4 +72,6 @@ __all__ = [
     "ListSpacesRequest",
     "CreateSpaceRequest",
     "CreateSpaceResponse",
+    "UpdatePipelineRequest",
+    "UpdatePipelineResponse",
 ]

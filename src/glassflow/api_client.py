@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 import sys
-from typing import Optional
 
 import requests as requests_http
 
@@ -17,7 +18,7 @@ class APIClient:
         self.client = requests_http.Session()
 
     def _get_headers(
-        self, request: BaseRequest, req_content_type: Optional[str] = None
+        self, request: BaseRequest, req_content_type: str | None = None
     ) -> dict:
         headers = utils.get_req_specific_headers(request)
         headers["Accept"] = "application/json"

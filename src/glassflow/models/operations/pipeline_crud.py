@@ -8,6 +8,7 @@ from ..api import (
     GetDetailedSpacePipeline,
     PipelineState,
     SpacePipeline,
+    UpdatePipeline,
 )
 from .base import BaseManagementRequest, BasePipelineManagementRequest, BaseResponse
 
@@ -25,6 +26,16 @@ class GetPipelineResponse(BaseResponse):
 @dataclasses.dataclass
 class CreatePipelineRequest(BaseManagementRequest, CreatePipeline):
     pass
+
+
+@dataclasses.dataclass
+class UpdatePipelineRequest(BaseManagementRequest, UpdatePipeline):
+    pass
+
+
+@dataclasses.dataclass
+class UpdatePipelineResponse(BaseResponse):
+    pipeline: GetDetailedSpacePipeline | None = dataclasses.field(default=None)
 
 
 @dataclasses.dataclass

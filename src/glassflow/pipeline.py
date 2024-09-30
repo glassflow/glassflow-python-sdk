@@ -79,14 +79,10 @@ class Pipeline(APIClient):
         self.access_tokens = []
 
         if self.transformation_code is None and self.transformation_file is not None:
-            try:
-                with open(self.transformation_file) as f:
-                    self.transformation_code = f.read()
-            except FileNotFoundError:
-                raise
+            self._read_transformation_file()
 
         if source_kind is not None and self.source_config is not None:
-            self.source_connector = api.SourceConnector(
+            self.source_connector = dict(
                 kind=self.source_kind,
                 config=self.source_config,
             )
@@ -96,7 +92,7 @@ class Pipeline(APIClient):
             raise ValueError("Both source_kind and source_config must be provided")
 
         if self.sink_kind is not None and self.sink_config is not None:
-            self.sink_connector = api.SinkConnector(
+            self.sink_connector = dict(
                 kind=sink_kind,
                 config=sink_config,
             )
@@ -130,23 +126,12 @@ class Pipeline(APIClient):
             personal_access_token=self.personal_access_token,
         )
 
-        res = self._request(
+        base_res = self._request(
             method="GET",
             endpoint=f"/pipelines/{self.id}",
             request=request,
         )
-        res_json = res.raw_response.json()
-
-        self.name = res_json["name"]
-        self.space_id = res_json["space_id"]
-        if res_json["source_connector"]:
-            self.source_kind = res_json["source_connector"]["kind"]
-            self.source_config = res_json["source_connector"]["config"]
-        if res_json["sink_connector"]:
-            self.sink_kind = res_json["sink_connector"]["kind"]
-            self.sink_config = res_json["sink_connector"]["config"]
-        self.created_at = res_json["created_at"]
-        self.env_vars = res_json["environments"]
+        self._fill_pipeline_details(base_res.raw_response.json())
 
         # Fetch Pipeline Access Tokens
         self.get_access_tokens()
@@ -205,6 +190,91 @@ class Pipeline(APIClient):
         self.id = res.id
         self.created_at = res.created_at
         self.access_tokens.append({"name": "default", "token": res.access_token})
+        return self
+
+    def update(
+        self,
+        name: str | None = None,
+        transformation_code: str | None = None,
+        transformation_file: str | None = None,
+        requirements: str | None = None,
+        metadata: dict | None = None,
+        source_kind: str | None = None,
+        source_config: dict | None = None,
+        sink_kind: str | None = None,
+        sink_config: dict | None = None,
+        env_vars: list[dict[str, str]] | None = None,
+    ) -> Pipeline:
+        """
+        Updates a GlassFlow pipeline
+
+        Args:
+
+            name: Name of the pipeline
+            transformation_code: String with the transformation function of the
+                pipeline. Either transformation_code or transformation_file
+                must be provided.
+            transformation_file: Path to file with transformation function of
+                the pipeline. Either transformation_code or transformation_file
+                must be provided.
+            requirements: Requirements.txt of the pipeline
+            source_kind: Kind of source for the pipeline. If no source is
+                provided, the default source will be SDK
+            source_config: Configuration of the pipeline's source
+            sink_kind: Kind of sink for the pipeline. If no sink is provided,
+                the default sink will be SDK
+            sink_config: Configuration of the pipeline's sink
+            env_vars: Environment variables to pass to the pipeline
+            metadata: Metadata of the pipeline
+
+        Returns:
+            self: Updated pipeline
+
+        """
+
+        # Fetch current pipeline data
+        self.fetch()
+
+        if transformation_file is not None:
+            self._read_transformation_file()
+        elif transformation_code is not None:
+            self.transformation_code = transformation_code
+
+        if source_kind is not None:
+            source_connector = dict(
+                kind=source_kind,
+                config=source_config,
+            )
+        else:
+            source_connector = self.source_connector
+
+        if sink_kind is not None:
+            sink_connector = dict(
+                kind=sink_kind,
+                config=sink_config,
+            )
+        else:
+            sink_connector = self.sink_connector
+
+        update_pipeline = api.UpdatePipeline(
+            name=name if name is not None else self.name,
+            transformation_function=self.transformation_code,
+            requirements_txt=requirements
+            if requirements is not None
+            else self.requirements,
+            metadata=metadata if metadata is not None else self.metadata,
+            source_connector=source_connector,
+            sink_connector=sink_connector,
+            environments=env_vars if env_vars is not None else self.env_vars,
+        )
+        request = operations.UpdatePipelineRequest(
+            organization_id=self.organization_id,
+            personal_access_token=self.personal_access_token,
+            **update_pipeline.__dict__,
+        )
+
+        base_res = self._request(method="PUT", endpoint=f"/pipelines/{self.id}", request=request)
+        self._fill_pipeline_details(base_res.raw_response.json())
         return self
 
     def delete(self) -> None:
@@ -336,3 +406,25 @@ class Pipeline(APIClient):
                 raise errors.UnauthorizedError(e.raw_response) from e
             else:
                 raise e
+
+    def _read_transformation_file(self):
+        try:
+            with open(self.transformation_file) as f:
+                self.transformation_code = f.read()
+        except FileNotFoundError:
+            raise
+
+    def _fill_pipeline_details(self, pipeline_details: dict) -> Pipeline:
+        self.id = pipeline_details["id"]
+        self.name = pipeline_details["name"]
+        self.space_id = pipeline_details["space_id"]
+        if pipeline_details["source_connector"]:
+            self.source_kind = pipeline_details["source_connector"]["kind"]
+            self.source_config = pipeline_details["source_connector"]["config"]
+        if pipeline_details["sink_connector"]:
+            self.sink_kind = pipeline_details["sink_connector"]["kind"]
+            self.sink_config = pipeline_details["sink_connector"]["config"]
+        self.created_at = pipeline_details["created_at"]
+        self.env_vars = pipeline_details["environments"]
+
+        return self

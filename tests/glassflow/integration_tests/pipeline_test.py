@@ -25,6 +25,25 @@ def test_fetch_pipeline_fail_with_401(pipeline_with_random_id_and_invalid_token)
         pipeline_with_random_id_and_invalid_token.fetch()
 
 
+def test_update_pipeline_ok(creating_pipeline):
+    updated_pipeline = creating_pipeline.update(
+        name="new_name",
+        sink_kind="webhook",
+        sink_config={
+            "url": "www.test-url.com",
+            "method": "GET",
+            "headers": [{"name": "header1", "value": "header1"}]
+        }
+    )
+    assert updated_pipeline.name == "new_name"
+    assert updated_pipeline.sink_kind == "webhook"
+    assert updated_pipeline.sink_config == {
+            "url": "www.test-url.com",
+            "method": "GET",
+            "headers": [{"name": "header1", "value": "header1"}]
+        }
+
+
 def test_delete_pipeline_fail_with_404(pipeline_with_random_id):
     with pytest.raises(errors.PipelineNotFoundError):
         pipeline_with_random_id.delete()

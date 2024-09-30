@@ -9,18 +9,35 @@ def client():
 
 
 @pytest.fixture
-def pipeline_dict():
+def fetch_pipeline_response():
     return {
         "id": "test-id",
         "name": "test-name",
         "space_id": "test-space-id",
         "metadata": {},
-        "created_at": "",
+        "created_at": "2024-09-23T10:08:45.529Z",
         "state": "running",
         "space_name": "test-space-name",
-        "source_connector": {},
-        "sink_connector": {},
-        "environments": [],
+        "source_connector": {
+            "kind": "google_pubsub",
+            "config": {
+                "project_id": "test-project",
+                "subscription_id": "test-subscription",
+                "credentials_json": "credentials.json",
+            },
+        },
+        "sink_connector": {
+            "kind": "webhook",
+            "config": {
+                "url": "www.test-url.com",
+                "method": "GET",
+                "headers": [
+                    {"name": "header1", "value": "header1"},
+                    {"name": "header2", "value": "header2"},
+                ],
+            },
+        },
+        "environments": [{"test-var": "test-var"}],
     }
 
 

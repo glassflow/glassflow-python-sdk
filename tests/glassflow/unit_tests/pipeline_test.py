@@ -40,10 +40,12 @@ def test_pipeline_fail_with_missing_source_data():
     assert str(e.value) == "Both source_kind and source_config must be provided"
 
 
-def test_fetch_pipeline_ok(requests_mock, pipeline_dict, access_tokens, client):
+def test_fetch_pipeline_ok(
+    requests_mock, fetch_pipeline_response, access_tokens, client
+):
     requests_mock.get(
         client.glassflow_config.server_url + "/pipelines/test-id",
-        json=pipeline_dict,
+        json=fetch_pipeline_response,
         status_code=200,
         headers={"Content-Type": "application/json"},
     )
@@ -53,47 +55,46 @@ def test_fetch_pipeline_ok(requests_mock, pipeline_dict, access_tokens, client):
         status_code=200,
         headers={"Content-Type": "application/json"},
     )
-
     pipeline = Pipeline(
-        id=pipeline_dict["id"],
+        id=fetch_pipeline_response["id"],
         personal_access_token="test-token",
     ).fetch()
 
-    assert pipeline.name == pipeline_dict["name"]
+    assert pipeline.name == fetch_pipeline_response["name"]
 
 
-def test_fetch_pipeline_fail_with_404(requests_mock, pipeline_dict, client):
+def test_fetch_pipeline_fail_with_404(requests_mock, fetch_pipeline_response, client):
     requests_mock.get(
         client.glassflow_config.server_url + "/pipelines/test-id",
-        json=pipeline_dict,
+        json=fetch_pipeline_response,
         status_code=404,
         headers={"Content-Type": "application/json"},
     )
 
     with pytest.raises(errors.PipelineNotFoundError):
         Pipeline(
-            id=pipeline_dict["id"],
+            id=fetch_pipeline_response["id"],
             personal_access_token="test-token",
         ).fetch()
 
 
-def test_fetch_pipeline_fail_with_401(requests_mock, pipeline_dict, client):
+def test_fetch_pipeline_fail_with_401(requests_mock, fetch_pipeline_response, client):
     requests_mock.get(
         client.glassflow_config.server_url + "/pipelines/test-id",
-        json=pipeline_dict,
+        json=fetch_pipeline_response,
         status_code=401,
         headers={"Content-Type": "application/json"},
     )
 
     with pytest.raises(errors.UnauthorizedError):
         Pipeline(
-            id=pipeline_dict["id"],
+            id=fetch_pipeline_response["id"],
             personal_access_token="test-token",
         ).fetch()
 
 
 def test_create_pipeline_ok(
-    requests_mock, pipeline_dict, create_pipeline_response, client
+    requests_mock, fetch_pipeline_response, create_pipeline_response, client
 ):
     requests_mock.post(
         client.glassflow_config.server_url + "/pipelines",
@@ -102,7 +103,7 @@ def test_create_pipeline_ok(
         headers={"Content-Type": "application/json"},
     )
     pipeline = Pipeline(
-        name=pipeline_dict["name"],
+        name=fetch_pipeline_response["name"],
         space_id=create_pipeline_response["space_id"],
         transformation_code="transformation code...",
         personal_access_token="test-token",
@@ -151,6 +152,50 @@ def test_create_pipeline_fail_with_missing_transformation(client):
     )
 
 
+def test_update_pipeline_ok(
+    requests_mock, fetch_pipeline_response, access_tokens, client
+):
+    update_pipeline_details = fetch_pipeline_response.copy()
+    update_pipeline_details["name"] = "updated name"
+    update_pipeline_details["source_connector"] = None
+
+    # Mock fetch pipeline request
+    requests_mock.get(
+        client.glassflow_config.server_url
+        + f"/pipelines/{fetch_pipeline_response['id']}",
+        json=fetch_pipeline_response,
+        status_code=200,
+        headers={"Content-Type": "application/json"},
+    )
+
+    # Mock get access tokens
+    requests_mock.get(
+        client.glassflow_config.server_url
+        + f"/pipelines/{fetch_pipeline_response['id']}/access_tokens",
+        json=access_tokens,
+        status_code=200,
+        headers={"Content-Type": "application/json"},
+    )
+
+    # Mock update pipeline request
+    requests_mock.put(
+        client.glassflow_config.server_url
+        + f"/pipelines/{fetch_pipeline_response['id']}",
+        json=update_pipeline_details,
+        status_code=200,
+        headers={"Content-Type": "application/json"},
+    )
+
+    pipeline = (
+        Pipeline(personal_access_token="test-token")
+        ._fill_pipeline_details(fetch_pipeline_response)
+        .update()
+    )
+
+    assert pipeline.name == "updated name"
+    assert pipeline.source_connector is None
+
+
 def test_delete_pipeline_ok(requests_mock, client):
     requests_mock.delete(
         client.glassflow_config.server_url + "/pipelines/test-pipeline-id",
@@ -173,11 +218,11 @@ def test_delete_pipeline_fail_with_missing_pipeline_id(client):
 
 
 def test_get_source_from_pipeline_ok(
-    client, pipeline_dict, requests_mock, access_tokens
+    client, fetch_pipeline_response, requests_mock, access_tokens
 ):
     requests_mock.get(
         client.glassflow_config.server_url + "/pipelines/test-id",
-        json=pipeline_dict,
+        json=fetch_pipeline_response,
         status_code=200,
         headers={"Content-Type": "application/json"},
     )
@@ -206,10 +251,12 @@ def test_get_source_from_pipeline_fail_with_missing_id(client):
     assert e.value.__str__() == "Pipeline id must be provided in the constructor"
 
 
-def test_get_sink_from_pipeline_ok(client, pipeline_dict, requests_mock, access_tokens):
+def test_get_sink_from_pipeline_ok(
+    client, fetch_pipeline_response, requests_mock, access_tokens
+):
     requests_mock.get(
         client.glassflow_config.server_url + "/pipelines/test-id",
-        json=pipeline_dict,
+        json=fetch_pipeline_response,
         status_code=200,
         headers={"Content-Type": "application/json"},
     )
