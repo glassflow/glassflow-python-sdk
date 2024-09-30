@@ -188,7 +188,7 @@ class GlassFlowClient(APIClient):
     def create_space(
         self,
         name: str,
-    ) -> operations.CreateSpaceResponse:
+    ) -> Space:
         """Creates a new Space
 
         Args:
