@@ -2,6 +2,7 @@ import pytest
 
 from glassflow import PipelineDataSink, PipelineDataSource
 from glassflow.models import errors
+from glassflow.pipeline_data import PipelineDataClient
 
 
 @pytest.fixture
@@ -18,6 +19,22 @@ def consume_payload():
         "status": "string",
         "response": {},
     }
+
+
+def test_validate_credentials_ok(requests_mock):
+    data_client = PipelineDataClient(
+        pipeline_id="test-id",
+        pipeline_access_token="test-token",
+    )
+    requests_mock.get(
+        data_client.glassflow_config.server_url + "/pipelines/test-id/status/access_token",
+        status_code=200,
+        headers={
+            "Content-Type": "application/json",
+            "X-pipeline-access-token": data_client.pipeline_access_token,
+        },
+    )
+    data_client.validate_credentials()
 
 
 def test_push_to_pipeline_data_source_ok(requests_mock):
@@ -139,6 +156,50 @@ def test_consume_from_pipeline_data_sink_fail_with_401(requests_mock):
         sink.consume()
 
 
+def test_consume_from_pipeline_data_sink_ok_with_empty_response(requests_mock):
+    sink = PipelineDataSink(
+        pipeline_id="test-id",
+        pipeline_access_token="test-access-token",
+    )
+    requests_mock.post(
+        sink.glassflow_config.server_url
+        + "/pipelines/test-id/topics/output/events/consume",
+        status_code=204,
+        headers={
+            "Content-Type": "application/json",
+            "X-pipeline-access-token": "test-access-token",
+        },
+    )
+
+    res = sink.consume()
+
+    assert res.status_code == 204
+    assert res.content_type == "application/json"
+    assert res.body.event == {}
+
+
+def test_consume_from_pipeline_data_sink_ok_with_too_many_requests(requests_mock):
+    sink = PipelineDataSink(
+        pipeline_id="test-id",
+        pipeline_access_token="test-access-token",
+    )
+    requests_mock.post(
+        sink.glassflow_config.server_url
+        + "/pipelines/test-id/topics/output/events/consume",
+        status_code=429,
+        headers={
+            "Content-Type": "application/json",
+            "X-pipeline-access-token": "test-access-token",
+        },
+    )
+
+    res = sink.consume()
+
+    assert res.status_code == 429
+    assert res.content_type == "application/json"
+    assert res.body.event == {}
+
+
 def test_consume_failed_from_pipeline_data_sink_ok(requests_mock, consume_payload):
     sink = PipelineDataSink(
         pipeline_id="test-id",
@@ -160,6 +221,50 @@ def test_consume_failed_from_pipeline_data_sink_ok(requests_mock, consume_payloa
     assert res.status_code == 200
     assert res.content_type == "application/json"
     assert res.body.req_id == consume_payload["req_id"]
+
+
+def test_consume_failed_from_pipeline_data_sink_ok_with_empty_response(requests_mock):
+    sink = PipelineDataSink(
+        pipeline_id="test-id",
+        pipeline_access_token="test-access-token",
+    )
+    requests_mock.post(
+        sink.glassflow_config.server_url
+        + "/pipelines/test-id/topics/failed/events/consume",
+        status_code=204,
+        headers={
+            "Content-Type": "application/json",
+            "X-pipeline-access-token": "test-access-token",
+        },
+    )
+
+    res = sink.consume_failed()
+
+    assert res.status_code == 204
+    assert res.content_type == "application/json"
+    assert res.body.event == {}
+
+
+def test_consume_failed_from_pipeline_data_sink_ok_with_too_many_requests(requests_mock):
+    sink = PipelineDataSink(
+        pipeline_id="test-id",
+        pipeline_access_token="test-access-token",
+    )
+    requests_mock.post(
+        sink.glassflow_config.server_url
+        + "/pipelines/test-id/topics/failed/events/consume",
+        status_code=429,
+        headers={
+            "Content-Type": "application/json",
+            "X-pipeline-access-token": "test-access-token",
+        },
+    )
+
+    res = sink.consume_failed()
+
+    assert res.status_code == 429
+    assert res.content_type == "application/json"
+    assert res.body.event == {}
 
 
 def test_consume_failed_from_pipeline_data_sink_fail_with_404(requests_mock):
