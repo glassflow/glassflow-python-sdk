@@ -20,7 +20,7 @@ def client():
 @pytest.fixture
 def space(client):
     return Space(
-        name="Integration Tests", personal_access_token=client.personal_access_token
+        name="integration-tests", personal_access_token=client.personal_access_token
     )
 
 

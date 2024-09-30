@@ -40,3 +40,10 @@ def test_delete_space_ok(requests_mock, client):
         personal_access_token="test-token",
     )
     space.delete()
+
+
+def test_delete_space_fail_with_missing_id(client):
+    with pytest.raises(ValueError) as e:
+        Space(personal_access_token="test-token").delete()
+
+    assert str(e.value) == "Space id must be provided in the constructor"
