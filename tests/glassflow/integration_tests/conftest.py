@@ -4,7 +4,7 @@ import uuid
 import pytest
 
 from glassflow import GlassFlowClient, PipelineDataSink, PipelineDataSource
-from glassflow.pipeline import Pipeline
+from glassflow import Pipeline, Space
 
 
 @pytest.fixture
@@ -13,10 +13,25 @@ def client():
 
 
 @pytest.fixture
-def pipeline(client):
+def space(client):
+    return Space(
+        name="Integration Tests",
+        personal_access_token=client.personal_access_token
+    )
+
+
+@pytest.fixture
+def creating_space(space):
+    space.create()
+    yield space
+    space.delete()
+
+
+@pytest.fixture
+def pipeline(client, creating_space):
     return Pipeline(
         name="test_pipeline",
-        space_id=os.getenv("SPACE_ID"),
+        space_id=creating_space.id,
         transformation_file="tests/data/transformation.py",
         personal_access_token=client.personal_access_token,
     )
