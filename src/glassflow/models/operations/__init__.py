@@ -1,9 +1,9 @@
 from .base import (
     BaseManagementRequest,
     BasePipelineManagementRequest,
-    BaseSpaceManagementDataRequest,
     BaseRequest,
     BaseResponse,
+    BaseSpaceManagementDataRequest,
 )
 from .consumeevent import (
     ConsumeEventRequest,
