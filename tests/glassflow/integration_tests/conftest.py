@@ -32,6 +32,22 @@ def creating_space(space):
 
 
 @pytest.fixture
+def space_with_random_id(client):
+    return Space(
+        id=str(uuid.uuid4()),
+        personal_access_token=client.personal_access_token,
+    )
+
+
+@pytest.fixture
+def space_with_random_id_and_invalid_token(client):
+    return Space(
+        id=str(uuid.uuid4()),
+        personal_access_token="invalid-token",
+    )
+
+
+@pytest.fixture
 def pipeline(client, creating_space):
     return Pipeline(
         name="test_pipeline",
@@ -42,7 +58,7 @@ def pipeline(client, creating_space):
 
 
 @pytest.fixture
-def pipeline_with_id(client):
+def pipeline_with_random_id(client):
     return Pipeline(
         id=str(uuid.uuid4()),
         personal_access_token=client.personal_access_token,
@@ -50,7 +66,7 @@ def pipeline_with_id(client):
 
 
 @pytest.fixture
-def pipeline_with_id_and_invalid_token():
+def pipeline_with_random_id_and_invalid_token():
     return Pipeline(
         id=str(uuid.uuid4()),
         personal_access_token="invalid-token",

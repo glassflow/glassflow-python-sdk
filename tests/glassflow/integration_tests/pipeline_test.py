@@ -15,21 +15,21 @@ def test_fetch_pipeline_ok(creating_pipeline):
     assert creating_pipeline.created_at is not None
 
 
-def test_fetch_pipeline_fail_with_404(pipeline_with_id):
+def test_fetch_pipeline_fail_with_404(pipeline_with_random_id):
     with pytest.raises(errors.PipelineNotFoundError):
-        pipeline_with_id.fetch()
+        pipeline_with_random_id.fetch()
 
 
-def test_fetch_pipeline_fail_with_401(pipeline_with_id_and_invalid_token):
+def test_fetch_pipeline_fail_with_401(pipeline_with_random_id_and_invalid_token):
     with pytest.raises(errors.UnauthorizedError):
-        pipeline_with_id_and_invalid_token.fetch()
+        pipeline_with_random_id_and_invalid_token.fetch()
 
 
-def test_delete_pipeline_fail_with_404(pipeline_with_id):
+def test_delete_pipeline_fail_with_404(pipeline_with_random_id):
     with pytest.raises(errors.PipelineNotFoundError):
-        pipeline_with_id.delete()
+        pipeline_with_random_id.delete()
 
 
-def test_delete_pipeline_fail_with_401(pipeline_with_id_and_invalid_token):
+def test_delete_pipeline_fail_with_401(pipeline_with_random_id_and_invalid_token):
     with pytest.raises(errors.UnauthorizedError):
-        pipeline_with_id_and_invalid_token.delete()
+        pipeline_with_random_id_and_invalid_token.delete()
