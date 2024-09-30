@@ -19,7 +19,7 @@ class Pipeline(APIClient):
         requirements: str | None = None,
         transformation_code: str | None = None,
         transformation_file: str | None = None,
-        env_vars: list[str] | None = None,
+        env_vars: list[dict[str, str]] | None = None,
         state: api.PipelineState = "running",
         organization_id: str | None = None,
         metadata: dict | None = None,
