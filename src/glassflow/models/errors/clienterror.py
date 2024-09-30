@@ -63,6 +63,18 @@ class PipelineNotFoundError(ClientError):
         )
 
 
+class SpaceNotFoundError(ClientError):
+    """Error caused by a pipeline ID not found."""
+
+    def __init__(self, space_id: str, raw_response: requests_http.Response):
+        super().__init__(
+            detail=f"Space ID {space_id} does not exist",
+            status_code=404,
+            body=raw_response.text,
+            raw_response=raw_response,
+        )
+
+
 class UnauthorizedError(ClientError):
     """Error caused by a user not authorized."""
 
