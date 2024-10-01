@@ -5,15 +5,17 @@ build-backend = "setuptools.build_meta"
 [tool.pytest.ini_options]
 addopts = """
     --import-mode=importlib \
-    --cov=src/glassflow \
-    --skip-covered \
     --junitxml=tests/reports/pytest.xml \
+    --cov=src/glassflow \
     --cov-report xml:tests/reports/coverage.xml \
     -ra -q
 """
 testpaths = [
     "tests",
 ]
+
+[tool.coverage.html]
+skip_covered = true
 
 [tool.ruff.lint]
 select = [
