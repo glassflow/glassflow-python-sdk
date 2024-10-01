@@ -346,7 +346,9 @@ class Pipeline(APIClient):
             request=request,
         )
         base_res_json = base_res.raw_response.json()
-        logs = [api.FunctionLogEntry.from_dict(l) for l in base_res_json["logs"]]
+        logs = [
+            api.FunctionLogEntry.from_dict(entry) for entry in base_res_json["logs"]
+        ]
         return operations.PipelineFunctionsGetLogsResponse(
             status_code=base_res.status_code,
             content_type=base_res.content_type,
