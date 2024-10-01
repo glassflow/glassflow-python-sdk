@@ -4,27 +4,32 @@
 #   version:   0.26.0
 
 from __future__ import annotations
+from dataclasses_json import dataclass_json
 
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
 
+@dataclass_json
 @dataclass
 class Error:
     detail: str
 
 
+@dataclass_json
 @dataclass
 class CreateOrganization:
     name: str
 
 
+@dataclass_json
 @dataclass
 class Organization(CreateOrganization):
     id: str
 
 
+@dataclass_json
 @dataclass
 class OrganizationScope(Organization):
     role: str
@@ -33,12 +38,14 @@ class OrganizationScope(Organization):
 OrganizationScopes = List[OrganizationScope]
 
 
+@dataclass_json
 @dataclass
 class SignUp:
     access_token: str
     id_token: str
 
 
+@dataclass_json
 @dataclass
 class BasePipeline:
     name: str
@@ -46,11 +53,12 @@ class BasePipeline:
     metadata: Dict[str, Any]
 
 
-class PipelineState(Enum):
+class PipelineState(str, Enum):
     running = "running"
     paused = "paused"
 
 
+@dataclass_json
 @dataclass
 class FunctionEnvironment:
     name: str
@@ -60,10 +68,11 @@ class FunctionEnvironment:
 FunctionEnvironments = Optional[List[FunctionEnvironment]]
 
 
-class Kind(Enum):
+class Kind(str, Enum):
     google_pubsub = "google_pubsub"
 
 
+@dataclass_json
 @dataclass
 class Config:
     project_id: str
@@ -71,16 +80,18 @@ class Config:
     credentials_json: str
 
 
+@dataclass_json
 @dataclass
 class SourceConnector1:
     kind: Kind
     config: Config
 
 
-class Kind1(Enum):
+class Kind1(str, Enum):
     amazon_sqs = "amazon_sqs"
 
 
+@dataclass_json
 @dataclass
 class Config1:
     queue_url: str
@@ -89,6 +100,7 @@ class Config1:
     aws_secret_key: str
 
 
+@dataclass_json
 @dataclass
 class SourceConnector2:
     kind: Kind1
@@ -98,11 +110,11 @@ class SourceConnector2:
 SourceConnector = Optional[Union[SourceConnector1, SourceConnector2]]
 
 
-class Kind2(Enum):
+class Kind2(str, Enum):
     webhook = "webhook"
 
 
-class Method(Enum):
+class Method(str, Enum):
     get = "GET"
     post = "POST"
     put = "PUT"
@@ -110,12 +122,14 @@ class Method(Enum):
     delete = "DELETE"
 
 
+@dataclass_json
 @dataclass
 class Header:
     name: str
     value: str
 
 
+@dataclass_json
 @dataclass
 class Config2:
     url: str
@@ -123,16 +137,18 @@ class Config2:
     headers: List[Header]
 
 
+@dataclass_json
 @dataclass
 class SinkConnector1:
     kind: Kind2
     config: Config2
 
 
-class Kind3(Enum):
+class Kind3(str, Enum):
     clickhouse = "clickhouse"
 
 
+@dataclass_json
 @dataclass
 class Config3:
     addr: str
@@ -142,6 +158,7 @@ class Config3:
     table: str
 
 
+@dataclass_json
 @dataclass
 class SinkConnector2:
     kind: Kind3
@@ -151,6 +168,7 @@ class SinkConnector2:
 SinkConnector = Optional[Union[SinkConnector1, SinkConnector2]]
 
 
+@dataclass_json
 @dataclass
 class Pipeline(BasePipeline):
     id: str
@@ -158,11 +176,13 @@ class Pipeline(BasePipeline):
     state: PipelineState
 
 
+@dataclass_json
 @dataclass
 class SpacePipeline(Pipeline):
     space_name: str
 
 
+@dataclass_json
 @dataclass
 class GetDetailedSpacePipeline(SpacePipeline):
     source_connector: SourceConnector
@@ -170,6 +190,7 @@ class GetDetailedSpacePipeline(SpacePipeline):
     environments: FunctionEnvironments
 
 
+@dataclass_json
 @dataclass
 class PipelineFunctionOutput:
     environments: FunctionEnvironments
@@ -178,22 +199,26 @@ class PipelineFunctionOutput:
 SpacePipelines = List[SpacePipeline]
 
 
+@dataclass_json
 @dataclass
 class CreateSpace:
     name: str
 
 
+@dataclass_json
 @dataclass
 class UpdateSpace:
     name: str
 
 
+@dataclass_json
 @dataclass
 class Space(CreateSpace):
     id: str
     created_at: str
 
 
+@dataclass_json
 @dataclass
 class SpaceScope(Space):
     permission: str
@@ -202,12 +227,13 @@ class SpaceScope(Space):
 SpaceScopes = List[SpaceScope]
 
 
+@dataclass_json
 @dataclass
 class Payload:
     message: str
 
 
-class SeverityCodeInput(Enum):
+class SeverityCodeInput(int, Enum):
     integer_100 = 100
     integer_200 = 200
     integer_400 = 400
@@ -217,11 +243,13 @@ class SeverityCodeInput(Enum):
 SeverityCode = int
 
 
+@dataclass_json
 @dataclass
 class CreateAccessToken:
     name: str
 
 
+@dataclass_json
 @dataclass
 class AccessToken(CreateAccessToken):
     id: str
@@ -232,11 +260,13 @@ class AccessToken(CreateAccessToken):
 AccessTokens = List[AccessToken]
 
 
+@dataclass_json
 @dataclass
 class PaginationResponse:
     total_amount: int
 
 
+@dataclass_json
 @dataclass
 class SourceFile:
     name: str
@@ -246,6 +276,7 @@ class SourceFile:
 SourceFiles = List[SourceFile]
 
 
+@dataclass_json
 @dataclass
 class EventContext:
     request_id: str
@@ -256,6 +287,7 @@ class EventContext:
 PersonalAccessToken = str
 
 
+@dataclass_json
 @dataclass
 class Profile:
     id: str
@@ -264,13 +296,16 @@ class Profile:
     email: str
     provider: str
     external_settings: Dict[str, Any]
+    subscriber_id: str
 
 
+@dataclass_json
 @dataclass
 class ListOrganizationScopes(PaginationResponse):
     organizations: OrganizationScopes
 
 
+@dataclass_json
 @dataclass
 class UpdatePipeline:
     name: str
@@ -283,6 +318,7 @@ class UpdatePipeline:
     environments: Optional[FunctionEnvironments] = None
 
 
+@dataclass_json
 @dataclass
 class CreatePipeline(BasePipeline):
     transformation_function: Optional[str] = None
@@ -294,16 +330,19 @@ class CreatePipeline(BasePipeline):
     state: Optional[PipelineState] = None
 
 
+@dataclass_json
 @dataclass
 class ListPipelines(PaginationResponse):
     pipelines: SpacePipelines
 
 
+@dataclass_json
 @dataclass
 class ListSpaceScopes(PaginationResponse):
     spaces: SpaceScopes
 
 
+@dataclass_json
 @dataclass
 class FunctionLogEntry:
     level: str
@@ -312,11 +351,13 @@ class FunctionLogEntry:
     payload: Payload
 
 
+@dataclass_json
 @dataclass
 class ListAccessTokens(PaginationResponse):
     access_tokens: AccessTokens
 
 
+@dataclass_json
 @dataclass
 class ConsumeEvent:
     payload: Dict[str, Any]
@@ -327,6 +368,7 @@ class ConsumeEvent:
     receive_time: Optional[str] = None
 
 
+@dataclass_json
 @dataclass
 class ListPersonalAccessTokens:
     tokens: List[PersonalAccessToken]
