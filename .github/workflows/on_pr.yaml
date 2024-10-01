@@ -36,10 +36,10 @@ jobs:
           PERSONAL_ACCESS_TOKEN: ${{ secrets.INTEGRATION_PERSONAL_ACCESS_TOKEN }}
 
       - name: Upload coverage report
-        uses: actions/upload-artifact@master
+        uses: actions/upload-artifact@v4
         with:
           name: coverageReport
-          path: tests/reports/coverage.xml
+          path: tests/reports/
 
   checks:
     name: Run code checks
@@ -75,7 +75,7 @@ jobs:
           fetch-depth: 0 # otherwise, you will fail to push refs to dest repo
 
       - name: Download coverage report
-        uses: actions/download-artifact@master
+        uses: actions/download-artifact@v4
         with:
           name: coverageReport
 
@@ -84,6 +84,7 @@ jobs:
         uses: MishaKav/pytest-coverage-comment@main
         with:
           pytest-xml-coverage-path: ./coverage.xml
+          junitxml-path: ./pytest.xml
 
       - name: Update Readme with Coverage Html
         if: ${{ github.ref == 'refs/heads/main' }}
