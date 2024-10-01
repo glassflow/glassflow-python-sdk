@@ -78,14 +78,13 @@ jobs:
         uses: actions/download-artifact@master
         with:
           name: coverageReport
-          path: tests/reports/coverage.xml
 
       - name: Pytest coverage comment
         id: coverageComment
         uses: MishaKav/pytest-coverage-comment@main
         with:
           hide-comment: true
-          pytest-xml-coverage-path: ./tests/reports/coverage.xml
+          pytest-xml-coverage-path: ./coverage.xml
 
       - name: Update Readme with Coverage Html
         if: ${{ github.ref == 'refs/heads/main' }}
