@@ -6,6 +6,7 @@ build-backend = "setuptools.build_meta"
 addopts = """
     --import-mode=importlib \
     --cov=src/glassflow \
+    --skip-covered \
     --cov-report xml:tests/reports/coverage.xml \
     -ra -q
 """
