@@ -35,7 +35,12 @@ def test_publish_to_pipeline_data_source_ok(source):
 
 
 def test_consume_from_pipeline_data_sink_ok(sink):
+    n_tries = 0
+    max_tries = 10
     while True:
+        if n_tries == max_tries:
+            pytest.fail("Max tries exceeded")
+
         consume_response = sink.consume()
         assert consume_response.status_code in (200, 204)
         if consume_response.status_code == 200:
@@ -44,3 +49,5 @@ def test_consume_from_pipeline_data_sink_ok(sink):
                 "new_field": "new_value",
             }
             break
+        else:
+            n_tries += 1

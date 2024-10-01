@@ -55,10 +55,20 @@ def test_delete_pipeline_fail_with_401(pipeline_with_random_id_and_invalid_token
 
 
 def test_get_logs_from_pipeline_ok(creating_pipeline):
+    import time
+
+    n_tries = 0
+    max_tries = 10
     while True:
+        if n_tries == max_tries:
+            pytest.fail("Max tries reached")
+
         logs = creating_pipeline.get_logs()
         if len(logs.logs) >= 2:
             break
+        else:
+            n_tries += 1
+            time.sleep(1)
 
     assert logs.status_code == 200
     assert logs.content_type == "application/json"
