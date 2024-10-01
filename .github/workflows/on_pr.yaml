@@ -83,7 +83,6 @@ jobs:
         id: coverageComment
         uses: MishaKav/pytest-coverage-comment@main
         with:
-          hide-comment: true
           pytest-xml-coverage-path: ./coverage.xml
 
       - name: Update Readme with Coverage Html
