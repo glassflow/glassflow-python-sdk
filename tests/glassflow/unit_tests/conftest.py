@@ -157,20 +157,14 @@ def get_logs_response():
                 "level": "INFO",
                 "severity_code": 0,
                 "timestamp": "2024-09-30T16:04:08.211Z",
-                "payload": {
-                    "message": "Info Message Log",
-                    "additionalProp1": {}
-                }
+                "payload": {"message": "Info Message Log", "additionalProp1": {}},
             },
             {
                 "level": "ERROR",
                 "severity_code": 500,
                 "timestamp": "2024-09-30T16:04:08.211Z",
-                "payload": {
-                    "message": "Error Message Log",
-                    "additionalProp1": {}
-                }
-            }
+                "payload": {"message": "Error Message Log", "additionalProp1": {}},
+            },
         ],
-        "next": "string"
+        "next": "string",
     }
