@@ -12,7 +12,7 @@ from glassflow import (
 )
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def client():
     return GlassFlowClient(os.getenv("PERSONAL_ACCESS_TOKEN"))
 

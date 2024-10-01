@@ -52,3 +52,17 @@ def test_delete_pipeline_fail_with_404(pipeline_with_random_id):
 def test_delete_pipeline_fail_with_401(pipeline_with_random_id_and_invalid_token):
     with pytest.raises(errors.UnauthorizedError):
         pipeline_with_random_id_and_invalid_token.delete()
+
+
+def test_get_logs_from_pipeline_ok(creating_pipeline):
+    while True:
+        logs = creating_pipeline.get_logs()
+        if len(logs.logs) >= 2:
+            break
+
+    assert logs.status_code == 200
+    assert logs.content_type == "application/json"
+    assert logs.logs[0].payload.message == "Function is uploaded"
+    assert logs.logs[0].level == "INFO"
+    assert logs.logs[1].payload.message == "Pipeline is created"
+    assert logs.logs[1].level == "INFO"

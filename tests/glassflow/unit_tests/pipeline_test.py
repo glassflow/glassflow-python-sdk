@@ -245,3 +245,27 @@ def test_get_sink_from_pipeline_ok(
         sink2.pipeline_access_token
         == access_tokens_response["access_tokens"][1]["token"]
     )
+
+
+def test_get_logs_from_pipeline_ok(client, requests_mock, get_logs_response):
+    pipeline_id = "test-pipeline-id"
+    requests_mock.get(
+        client.glassflow_config.server_url
+        + f"/pipelines/{pipeline_id}/functions/main/logs",
+        json=get_logs_response,
+        status_code=200,
+        headers={"Content-Type": "application/json"},
+    )
+    pipeline = Pipeline(
+        id=pipeline_id,
+        personal_access_token="test-token"
+    )
+    logs = pipeline.get_logs()
+
+    assert logs.status_code == 200
+    assert logs.content_type == "application/json"
+    assert logs.next == get_logs_response["next"]
+    for idx, log in enumerate(logs.logs):
+        assert log.level == get_logs_response["logs"][idx]["level"]
+        assert log.severity_code == get_logs_response["logs"][idx]["severity_code"]
+        assert log.payload.message == get_logs_response["logs"][idx]["payload"]["message"]
