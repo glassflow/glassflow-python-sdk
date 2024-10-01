@@ -33,7 +33,6 @@ jobs:
       - name: Run Tests
         run: pytest
         env:
-          SPACE_ID: ${{ secrets.INTEGRATION_SPACE_ID }}
           PERSONAL_ACCESS_TOKEN: ${{ secrets.INTEGRATION_PERSONAL_ACCESS_TOKEN }}
 
       - name: Upload coverage report
