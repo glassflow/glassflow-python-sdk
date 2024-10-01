@@ -163,9 +163,7 @@ class Pipeline(APIClient):
         if self.name is None:
             raise ValueError("Name must be provided in order to create the pipeline")
         if self.space_id is None:
-            raise ValueError(
-                "Argument space_id must be provided in the constructor"
-            )
+            raise ValueError("Argument space_id must be provided in the constructor")
         if self.transformation_file is None:
             raise ValueError(
                 "Argument transformation_file must be provided in the constructor"

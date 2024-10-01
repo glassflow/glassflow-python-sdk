@@ -18,7 +18,9 @@ def test_pipeline_with_transformation_file():
 
 def test_pipeline_fail_with_file_not_found():
     with pytest.raises(FileNotFoundError):
-        p = Pipeline(transformation_file="fake_file.py", personal_access_token="test-token")
+        p = Pipeline(
+            transformation_file="fake_file.py", personal_access_token="test-token"
+        )
         p._read_transformation_file()
 
 
@@ -134,9 +136,7 @@ def test_create_pipeline_fail_with_missing_space_id(client):
             personal_access_token="test-token",
         ).create()
 
-    assert str(e.value) == (
-        "Argument space_id must be provided in the constructor"
-    )
+    assert str(e.value) == ("Argument space_id must be provided in the constructor")
 
 
 def test_create_pipeline_fail_with_missing_transformation(client):
