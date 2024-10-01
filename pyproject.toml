@@ -41,5 +41,6 @@ use-title-as-name = true
 disable-timestamp = true
 enable-version-header = true
 use-double-quotes = true
+use-subclass-enum=true
 input-file-type = "openapi"
 output-model-type = "dataclasses.dataclass"
