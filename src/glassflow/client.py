@@ -59,7 +59,6 @@ class GlassFlowClient(APIClient):
         self,
         name: str,
         space_id: str,
-        transformation_code: str = None,
         transformation_file: str = None,
         requirements: str = None,
         source_kind: str = None,
@@ -75,12 +74,8 @@ class GlassFlowClient(APIClient):
         Args:
             name: Name of the pipeline
             space_id: ID of the GlassFlow Space you want to create the pipeline in
-            transformation_code: String with the transformation function of the
-                pipeline. Either transformation_code or transformation_file
-                must be provided.
             transformation_file: Path to file with transformation function of
-                the pipeline. Either transformation_code or transformation_file
-                must be provided.
+                the pipeline.
             requirements: Requirements.txt of the pipeline
             source_kind: Kind of source for the pipeline. If no source is
                 provided, the default source will be SDK
@@ -103,7 +98,6 @@ class GlassFlowClient(APIClient):
         return Pipeline(
             name=name,
             space_id=space_id,
-            transformation_code=transformation_code,
             transformation_file=transformation_file,
             requirements=requirements,
             source_kind=source_kind,

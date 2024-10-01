@@ -147,12 +147,17 @@ The Pipeline object has a create method that creates a new GlassFlow pipeline.
 ### Example Usage
 
 ```python
-from glassflow import Pipeline
+from glassflow import Pipeline, Space
+
+space = Space(
+    name="examples",
+    personal_access_token="<your personal access token>"
+).create()
 
 pipeline = Pipeline(
     name="<your pipeline name>",
     transformation_file="path/to/transformation.py",
-    space_id="<your space id>",
+    space_id=space.id,
     personal_access_token="<your personal access token>"
 ).create()
 ```
@@ -161,12 +166,17 @@ In the next example we create a pipeline with Google PubSub source
 and a webhook sink:
 
 ```python
-from glassflow import Pipeline
+from glassflow import Pipeline, Space
+
+space = Space(
+    name="examples",
+    personal_access_token="<your personal access token>"
+).create()
 
 pipeline = Pipeline(
     name="<your pipeline name>",
     transformation_file="path/to/transformation.py",
-    space_id="<your space id>",
+    space_id=space.id,
     personal_access_token="<your personal access token>",
     source_kind="google_pubsub",
     source_config={
@@ -190,12 +200,17 @@ The Pipeline object has a delete method to delete a pipeline
 ### Example Usage
 
 ```python
-from glassflow import Pipeline
+from glassflow import Pipeline, Space
+
+space = Space(
+    name="examples",
+    personal_access_token="<your personal access token>"
+).create()
 
 pipeline = Pipeline(
     name="<your pipeline name>",
     transformation_file="path/to/transformation.py",
-    space_id="<your space id>",
+    space_id=space.id,
     personal_access_token="<your personal access token>"
 ).create()
 

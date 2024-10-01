@@ -10,6 +10,7 @@ def test_pipeline_with_transformation_file():
             transformation_file="tests/data/transformation.py",
             personal_access_token="test-token",
         )
+        p._read_transformation_file()
         assert p.transformation_code is not None
     except Exception as e:
         pytest.fail(e)
@@ -17,7 +18,8 @@ def test_pipeline_with_transformation_file():
 
 def test_pipeline_fail_with_file_not_found():
     with pytest.raises(FileNotFoundError):
-        Pipeline(transformation_file="fake_file.py", personal_access_token="test-token")
+        p = Pipeline(transformation_file="fake_file.py", personal_access_token="test-token")
+        p._read_transformation_file()
 
 
 def test_pipeline_fail_with_missing_sink_data():
@@ -103,7 +105,7 @@ def test_create_pipeline_ok(
     pipeline = Pipeline(
         name=fetch_pipeline_response["name"],
         space_id=create_pipeline_response["space_id"],
-        transformation_code="transformation code...",
+        transformation_file="tests/data/transformation.py",
         personal_access_token="test-token",
     ).create()
 
@@ -115,7 +117,7 @@ def test_create_pipeline_fail_with_missing_name(client):
     with pytest.raises(ValueError) as e:
         Pipeline(
             space_id="test-space-id",
-            transformation_code="transformation code...",
+            transformation_file="tests/data/transformation.py",
             personal_access_token="test-token",
         ).create()
 
@@ -128,12 +130,12 @@ def test_create_pipeline_fail_with_missing_space_id(client):
     with pytest.raises(ValueError) as e:
         Pipeline(
             name="test-name",
-            transformation_code="transformation code...",
+            transformation_file="tests/data/transformation.py",
             personal_access_token="test-token",
         ).create()
 
-    assert e.value.__str__() == (
-        "Space_id must be provided in order to " "create the pipeline"
+    assert str(e.value) == (
+        "Argument space_id must be provided in the constructor"
     )
 
 
@@ -145,8 +147,8 @@ def test_create_pipeline_fail_with_missing_transformation(client):
             personal_access_token="test-token",
         ).create()
 
-    assert e.value.__str__() == (
-        "Either transformation_code or " "transformation_file must be provided"
+    assert str(e.value) == (
+        "Argument transformation_file must be provided in the constructor"
     )
 
 

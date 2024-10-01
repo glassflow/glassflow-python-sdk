@@ -17,7 +17,6 @@ class Pipeline(APIClient):
         sink_kind: str | None = None,
         sink_config: dict | None = None,
         requirements: str | None = None,
-        transformation_code: str | None = None,
         transformation_file: str | None = None,
         env_vars: list[dict[str, str]] | None = None,
         state: api.PipelineState = "running",
@@ -33,12 +32,8 @@ class Pipeline(APIClient):
             id: Pipeline ID
             name: Name of the pipeline
             space_id: ID of the GlassFlow Space you want to create the pipeline in
-            transformation_code: String with the transformation function of the
-                pipeline. Either transformation_code or transformation_file
-                must be provided.
             transformation_file: Path to file with transformation function of
-                the pipeline. Either transformation_code or transformation_file
-                must be provided.
+                the pipeline.
             requirements: Requirements.txt of the pipeline
             source_kind: Kind of source for the pipeline. If no source is
                 provided, the default source will be SDK
@@ -69,7 +64,7 @@ class Pipeline(APIClient):
         self.sink_kind = sink_kind
         self.sink_config = sink_config
         self.requirements = requirements
-        self.transformation_code = transformation_code
+        self.transformation_code = None
         self.transformation_file = transformation_file
         self.env_vars = env_vars
         self.state = state
@@ -78,7 +73,7 @@ class Pipeline(APIClient):
         self.created_at = created_at
         self.access_tokens = []
 
-        if self.transformation_code is None and self.transformation_file is not None:
+        if self.transformation_file is not None:
             self._read_transformation_file()
 
         if source_kind is not None and self.source_config is not None:
@@ -151,8 +146,8 @@ class Pipeline(APIClient):
         Raises:
             ValueError: If name is not provided in the constructor
             ValueError: If space_id is not provided in the constructor
-            ValueError: If transformation_code or transformation_file are
-                not provided in the constructor
+            ValueError: If transformation_file is not provided
+                in the constructor
         """
         create_pipeline = api.CreatePipeline(
             name=self.name,
@@ -169,12 +164,14 @@ class Pipeline(APIClient):
             raise ValueError("Name must be provided in order to create the pipeline")
         if self.space_id is None:
             raise ValueError(
-                "Space_id must be provided in order to create the pipeline"
+                "Argument space_id must be provided in the constructor"
             )
-        if self.transformation_code is None and self.transformation_file is None:
+        if self.transformation_file is None:
             raise ValueError(
-                "Either transformation_code or transformation_file must be provided"
+                "Argument transformation_file must be provided in the constructor"
             )
+        else:
+            self._read_transformation_file()
 
         request = operations.CreatePipelineRequest(
             organization_id=self.organization_id,
@@ -198,7 +195,6 @@ class Pipeline(APIClient):
     def update(
         self,
         name: str | None = None,
-        transformation_code: str | None = None,
         transformation_file: str | None = None,
         requirements: str | None = None,
         metadata: dict | None = None,
@@ -214,12 +210,8 @@ class Pipeline(APIClient):
         Args:
 
             name: Name of the pipeline
-            transformation_code: String with the transformation function of the
-                pipeline. Either transformation_code or transformation_file
-                must be provided.
             transformation_file: Path to file with transformation function of
-                the pipeline. Either transformation_code or transformation_file
-                must be provided.
+                the pipeline.
             requirements: Requirements.txt of the pipeline
             source_kind: Kind of source for the pipeline. If no source is
                 provided, the default source will be SDK
@@ -240,8 +232,6 @@ class Pipeline(APIClient):
 
         if transformation_file is not None:
             self._read_transformation_file()
-        elif transformation_code is not None:
-            self.transformation_code = transformation_code
 
         if source_kind is not None:
             source_connector = dict(
