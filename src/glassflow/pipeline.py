@@ -309,6 +309,52 @@ class Pipeline(APIClient):
             request=request,
         )
 
+    def get_logs(
+        self,
+        page_size: int = 50,
+        page_token: str | None = None,
+        severity_code: api.SeverityCodeInput = api.SeverityCodeInput.integer_100,
+        start_time: str | None = None,
+        end_time: str | None = None,
+    ) -> operations.PipelineFunctionsGetLogsResponse:
+        """
+        Get the pipeline's logs
+
+        Args:
+            page_size: Pagination size
+            page_token: Page token filter (use for pagination)
+            severity_code: Severity code filter
+            start_time: Start time filter
+            end_time: End time filter
+
+        Returns:
+            PipelineFunctionsGetLogsResponse: Response with the logs
+        """
+        request = operations.PipelineFunctionsGetLogsRequest(
+            organization_id=self.organization_id,
+            personal_access_token=self.personal_access_token,
+            pipeline_id=self.id,
+            page_size=page_size,
+            page_token=page_token,
+            severity_code=severity_code,
+            start_time=start_time,
+            end_time=end_time,
+        )
+        base_res = self._request(
+            method="GET",
+            endpoint=f"/pipelines/{self.id}/functions/main/logs",
+            request=request,
+        )
+        base_res_json = base_res.raw_response.json()
+        logs = [api.FunctionLogEntry.from_dict(l) for l in base_res_json["logs"]]
+        return operations.PipelineFunctionsGetLogsResponse(
+            status_code=base_res.status_code,
+            content_type=base_res.content_type,
+            raw_response=base_res.raw_response,
+            logs=logs,
+            next=base_res_json["next"],
+        )
+
     def _get_access_tokens(self) -> Pipeline:
         request = operations.PipelineGetAccessTokensRequest(
             organization_id=self.organization_id,
@@ -331,7 +377,7 @@ class Pipeline(APIClient):
         Returns:
             self: Pipeline with function source details
         """
-        request = operations.PipelineGetFunctionSourceRequest(
+        request = operations.PipelineFunctionsGetSourceRequest(
             organization_id=self.organization_id,
             personal_access_token=self.personal_access_token,
             pipeline_id=self.id,

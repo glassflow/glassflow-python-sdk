@@ -27,7 +27,11 @@ from .pipeline_crud import (
     UpdatePipelineRequest,
     UpdatePipelineResponse,
 )
-from .pipeline_function import PipelineGetFunctionSourceRequest
+from .pipeline_function import (
+    PipelineFunctionsGetLogsRequest,
+    PipelineFunctionsGetLogsResponse,
+    PipelineFunctionsGetSourceRequest,
+)
 from .publishevent import (
     PublishEventRequest,
     PublishEventRequestBody,
@@ -68,7 +72,9 @@ __all__ = [
     "PublishEventRequestBody",
     "PublishEventResponse",
     "PublishEventResponseBody",
-    "PipelineGetFunctionSourceRequest",
+    "PipelineFunctionsGetSourceRequest",
+    "PipelineFunctionsGetLogsRequest",
+    "PipelineFunctionsGetLogsResponse",
     "StatusAccessTokenRequest",
     "ListSpacesResponse",
     "ListSpacesRequest",
