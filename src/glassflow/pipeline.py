@@ -229,6 +229,7 @@ class Pipeline(APIClient):
         self.fetch()
 
         if transformation_file is not None:
+            self.transformation_file = transformation_file
             self._read_transformation_file()
 
         if source_kind is not None:
