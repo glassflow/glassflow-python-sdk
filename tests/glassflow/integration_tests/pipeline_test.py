@@ -48,6 +48,15 @@ def test_update_pipeline_ok(creating_pipeline):
         "method": "GET",
         "headers": [{"name": "header1", "value": "header1"}],
     }
+    assert updated_pipeline.env_vars == [
+        {"name": "env1", "value": "env1"},
+        {"name": "env2", "value": "env2"},
+    ]
+    with open("tests/data/transformation_2.py") as f:
+        assert updated_pipeline.transformation_code == f.read()
+
+    assert updated_pipeline.source_kind == creating_pipeline.source_kind
+    assert updated_pipeline.source_config == creating_pipeline.source_config
 
 
 def test_delete_pipeline_fail_with_404(pipeline_with_random_id):

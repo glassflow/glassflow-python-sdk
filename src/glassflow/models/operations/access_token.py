@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 
-from .base import BasePipelineDataRequest
+from .base import BasePipelineDataRequest, BasePipelineManagementRequest
 
 
 @dataclasses.dataclass
@@ -17,3 +17,9 @@ class StatusAccessTokenRequest(BasePipelineDataRequest):
     """
 
     pass
+
+
+@dataclasses.dataclass
+class ListAccessTokensRequest(BasePipelineManagementRequest):
+    page_size: int = 50
+    page: int = 1

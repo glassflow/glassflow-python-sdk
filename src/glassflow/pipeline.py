@@ -129,10 +129,10 @@ class Pipeline(APIClient):
         self._fill_pipeline_details(base_res.raw_response.json())
 
         # Fetch Pipeline Access Tokens
-        self._get_access_tokens()
+        self._list_access_tokens()
 
         # Fetch function source
-        self._get_function_source()
+        self._get_function_artifact()
 
         return self
 
@@ -248,6 +248,9 @@ class Pipeline(APIClient):
         else:
             sink_connector = self.sink_connector
 
+        if env_vars is not None:
+            self._update_function(env_vars)
+
         update_pipeline = api.UpdatePipeline(
             name=name if name is not None else self.name,
             transformation_function=self.transformation_code,
@@ -257,7 +260,6 @@ class Pipeline(APIClient):
             metadata=metadata if metadata is not None else self.metadata,
             source_connector=source_connector,
             sink_connector=sink_connector,
-            environments=env_vars if env_vars is not None else self.env_vars,
         )
         request = operations.UpdatePipelineRequest(
             organization_id=self.organization_id,
@@ -266,7 +268,7 @@ class Pipeline(APIClient):
         )
 
         base_res = self._request(
-            method="PUT", endpoint=f"/pipelines/{self.id}", request=request
+            method="PATCH", endpoint=f"/pipelines/{self.id}", request=request
         )
         self._fill_pipeline_details(base_res.raw_response.json())
         return self
@@ -305,7 +307,7 @@ class Pipeline(APIClient):
         severity_code: api.SeverityCodeInput = api.SeverityCodeInput.integer_100,
         start_time: str | None = None,
         end_time: str | None = None,
-    ) -> operations.PipelineFunctionsGetLogsResponse:
+    ) -> operations.GetFunctionLogsResponse:
         """
         Get the pipeline's logs
 
@@ -319,7 +321,7 @@ class Pipeline(APIClient):
         Returns:
             PipelineFunctionsGetLogsResponse: Response with the logs
         """
-        request = operations.PipelineFunctionsGetLogsRequest(
+        request = operations.GetFunctionLogsRequest(
             organization_id=self.organization_id,
             personal_access_token=self.personal_access_token,
             pipeline_id=self.id,
@@ -338,7 +340,7 @@ class Pipeline(APIClient):
         logs = [
             api.FunctionLogEntry.from_dict(entry) for entry in base_res_json["logs"]
         ]
-        return operations.PipelineFunctionsGetLogsResponse(
+        return operations.GetFunctionLogsResponse(
             status_code=base_res.status_code,
             content_type=base_res.content_type,
             raw_response=base_res.raw_response,
@@ -346,8 +348,8 @@ class Pipeline(APIClient):
             next=base_res_json["next"],
         )
 
-    def _get_access_tokens(self) -> Pipeline:
-        request = operations.PipelineGetAccessTokensRequest(
+    def _list_access_tokens(self) -> Pipeline:
+        request = operations.ListAccessTokensRequest(
             organization_id=self.organization_id,
             personal_access_token=self.personal_access_token,
             pipeline_id=self.id,
@@ -361,26 +363,51 @@ class Pipeline(APIClient):
         self.access_tokens = res_json["access_tokens"]
         return self
 
-    def _get_function_source(self) -> Pipeline:
+    def _get_function_artifact(self) -> Pipeline:
         """
         Fetch pipeline function source
 
         Returns:
             self: Pipeline with function source details
         """
-        request = operations.PipelineFunctionsGetSourceRequest(
+        request = operations.GetArtifactRequest(
             organization_id=self.organization_id,
             personal_access_token=self.personal_access_token,
             pipeline_id=self.id,
         )
         base_res = self._request(
             method="GET",
-            endpoint=f"/pipelines/{self.id}/functions/main/source",
+            endpoint=f"/pipelines/{self.id}/functions/main/artifacts/latest",
             request=request,
         )
         res_json = base_res.raw_response.json()
         self.transformation_code = res_json["transformation_function"]
         self.requirements = res_json["requirements_txt"]
+        return self
+
+    def _update_function(self, env_vars):
+        """
+        Patch pipeline function
+
+        Args:
+            env_vars: Environment variables to update
+
+        Returns:
+            self: Pipeline with updated function
+        """
+        request = operations.UpdateFunctionRequest(
+            organization_id=self.organization_id,
+            personal_access_token=self.personal_access_token,
+            pipeline_id=self.id,
+            environments=env_vars,
+        )
+        base_res = self._request(
+            method="PATCH",
+            endpoint=f"/pipelines/{self.id}/functions/main",
+            request=request,
+        )
+        res_json = base_res.raw_response.json()
+        self.env_vars = res_json["environments"]
         return self
 
     def get_source(
@@ -427,7 +454,7 @@ class Pipeline(APIClient):
         if self.id is None:
             raise ValueError("Pipeline id must be provided in the constructor")
         elif len(self.access_tokens) == 0:
-            self._get_access_tokens()
+            self._list_access_tokens()
 
         if pipeline_access_token_name is not None:
             for t in self.access_tokens:

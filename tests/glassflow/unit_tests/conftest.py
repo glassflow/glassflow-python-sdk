@@ -37,7 +37,7 @@ def get_pipeline_function_source_request_mock(
 ):
     return requests_mock.get(
         client.glassflow_config.server_url
-        + f"/pipelines/{fetch_pipeline_response['id']}/functions/main/source",
+        + f"/pipelines/{fetch_pipeline_response['id']}/functions/main/artifacts/latest",
         json=function_source_response,
         status_code=200,
         headers={"Content-Type": "application/json"},
@@ -48,7 +48,7 @@ def get_pipeline_function_source_request_mock(
 def update_pipeline_request_mock(
     client, requests_mock, fetch_pipeline_response, update_pipeline_response
 ):
-    return requests_mock.put(
+    return requests_mock.patch(
         client.glassflow_config.server_url
         + f"/pipelines/{fetch_pipeline_response['id']}",
         json=update_pipeline_response,
