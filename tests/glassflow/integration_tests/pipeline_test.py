@@ -39,7 +39,7 @@ def test_update_pipeline_ok(creating_pipeline):
         env_vars=[
             {"name": "env1", "value": "env1"},
             {"name": "env2", "value": "env2"},
-        ]
+        ],
     )
     assert updated_pipeline.name == "new_name"
     assert updated_pipeline.sink_kind == "webhook"
