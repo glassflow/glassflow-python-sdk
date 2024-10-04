@@ -110,3 +110,15 @@ class UnknownContentTypeError(ClientError):
             body=raw_response.text,
             raw_response=raw_response,
         )
+
+
+class SpaceIsNotEmptyError(ClientError):
+    """Error caused by trying to delete a space that is not empty."""
+
+    def __init__(self, raw_response: requests_http.Response):
+        super().__init__(
+            detail=raw_response.json()["msg"],
+            status_code=409,
+            body=raw_response.text,
+            raw_response=raw_response,
+        )

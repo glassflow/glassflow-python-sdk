@@ -108,5 +108,7 @@ class Space(APIClient):
                 raise errors.SpaceNotFoundError(self.id, e.raw_response) from e
             elif e.status_code == 401:
                 raise errors.UnauthorizedError(e.raw_response) from e
+            elif e.status_code == 409:
+                raise errors.SpaceIsNotEmptyError(e.raw_response) from e
             else:
                 raise e
