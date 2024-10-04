@@ -7,8 +7,9 @@ from ..api import (
     CreatePipeline,
     GetDetailedSpacePipeline,
     PipelineState,
+    SinkConnector,
+    SourceConnector,
     SpacePipeline,
-    UpdatePipeline,
 )
 from .base import BaseManagementRequest, BasePipelineManagementRequest, BaseResponse
 
@@ -29,8 +30,12 @@ class CreatePipelineRequest(BaseManagementRequest, CreatePipeline):
 
 
 @dataclasses.dataclass
-class UpdatePipelineRequest(BaseManagementRequest, UpdatePipeline):
-    pass
+class UpdatePipelineRequest(BaseManagementRequest):
+    name: str | None = dataclasses.field(default=None)
+    state: PipelineState | None = dataclasses.field(default=None)
+    metadata: dict | None = dataclasses.field(default=None)
+    source_connector: SourceConnector | None = dataclasses.field(default=None)
+    sink_connector: SinkConnector | None = dataclasses.field(default=None)
 
 
 @dataclasses.dataclass

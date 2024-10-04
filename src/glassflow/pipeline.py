@@ -193,6 +193,7 @@ class Pipeline(APIClient):
     def update(
         self,
         name: str | None = None,
+        state: api.PipelineState | None = None,
         transformation_file: str | None = None,
         requirements: str | None = None,
         metadata: dict | None = None,
@@ -208,6 +209,8 @@ class Pipeline(APIClient):
         Args:
 
             name: Name of the pipeline
+            state: State of the pipeline after creation.
+                It can be either "running" or "paused"
             transformation_file: Path to file with transformation function of
                 the pipeline.
             requirements: Requirements.txt of the pipeline
@@ -228,9 +231,19 @@ class Pipeline(APIClient):
         # Fetch current pipeline data
         self.fetch()
 
-        if transformation_file is not None:
-            self.transformation_file = transformation_file
-            self._read_transformation_file()
+        if transformation_file is not None or requirements is not None:
+            if transformation_file is not None:
+                with open(transformation_file) as f:
+                    file = f.read()
+            else:
+                file = self.transformation_code
+
+            if requirements is None:
+                requirements = self.requirements
+
+            self._upload_function_artifact(file, requirements)
+            self.requirements = requirements
+            self.transformation_code = file
 
         if source_kind is not None:
             source_connector = dict(
@@ -251,20 +264,14 @@ class Pipeline(APIClient):
         if env_vars is not None:
             self._update_function(env_vars)
 
-        update_pipeline = api.UpdatePipeline(
-            name=name if name is not None else self.name,
-            transformation_function=self.transformation_code,
-            requirements_txt=requirements
-            if requirements is not None
-            else self.requirements,
-            metadata=metadata if metadata is not None else self.metadata,
-            source_connector=source_connector,
-            sink_connector=sink_connector,
-        )
         request = operations.UpdatePipelineRequest(
             organization_id=self.organization_id,
             personal_access_token=self.personal_access_token,
-            **update_pipeline.__dict__,
+            name=name if name is not None else self.name,
+            state=state if state is not None else self.state,
+            metadata=metadata if metadata is not None else self.metadata,
+            source_connector=source_connector,
+            sink_connector=sink_connector,
         )
 
         base_res = self._request(
@@ -384,6 +391,28 @@ class Pipeline(APIClient):
         self.transformation_code = res_json["transformation_function"]
         self.requirements = res_json["requirements_txt"]
         return self
+
+    def _upload_function_artifact(self, file: str, requirements: str) -> None:
+        request = operations.PostArtifactRequest(
+            pipeline_id=self.id,
+            organization_id=self.organization_id,
+            personal_access_token=self.personal_access_token,
+            file=file,
+            requirementsTxt=requirements,
+        )
+        try:
+            self._request(
+                method="POST",
+                endpoint=f"/pipelines/{self.id}/functions/main/artifacts",
+                request=request,
+                serialization_method="multipart",
+            )
+        except errors.ClientError as e:
+            if e.status_code == 425:
+                # TODO: Figure out appropriate behaviour
+                print("Update still in progress")
+            else:
+                raise e
 
     def _update_function(self, env_vars):
         """
@@ -511,6 +540,7 @@ class Pipeline(APIClient):
         self.id = pipeline_details["id"]
         self.name = pipeline_details["name"]
         self.space_id = pipeline_details["space_id"]
+        self.state = pipeline_details["state"]
         if pipeline_details["source_connector"]:
             self.source_kind = pipeline_details["source_connector"]["kind"]
             self.source_config = pipeline_details["source_connector"]["config"]

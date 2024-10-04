@@ -7,11 +7,6 @@ from .base import BasePipelineManagementRequest, BaseResponse
 
 
 @dataclasses.dataclass
-class GetArtifactRequest(BasePipelineManagementRequest):
-    pass
-
-
-@dataclasses.dataclass
 class GetFunctionLogsRequest(BasePipelineManagementRequest):
     page_size: int = 50
     page_token: str = None
@@ -33,4 +28,4 @@ class FetchFunctionRequest(BasePipelineManagementRequest):
 
 @dataclasses.dataclass
 class UpdateFunctionRequest(BasePipelineManagementRequest):
-    environments: FunctionEnvironments | None = None
+    environments: FunctionEnvironments | None = dataclasses.field(default=None)

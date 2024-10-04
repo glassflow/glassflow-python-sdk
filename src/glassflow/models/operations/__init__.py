@@ -1,4 +1,8 @@
 from .access_token import ListAccessTokensRequest, StatusAccessTokenRequest
+from .artifact import (
+    GetArtifactRequest,
+    PostArtifactRequest,
+)
 from .base import (
     BaseManagementRequest,
     BasePipelineManagementRequest,
@@ -18,7 +22,6 @@ from .consumefailed import (
 )
 from .function import (
     FetchFunctionRequest,
-    GetArtifactRequest,
     GetFunctionLogsRequest,
     GetFunctionLogsResponse,
     UpdateFunctionRequest,
@@ -85,4 +88,5 @@ __all__ = [
     "UpdatePipelineResponse",
     "UpdateFunctionRequest",
     "FetchFunctionRequest",
+    "PostArtifactRequest",
 ]

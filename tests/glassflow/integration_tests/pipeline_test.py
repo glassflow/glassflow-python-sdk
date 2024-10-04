@@ -1,6 +1,6 @@
 import pytest
 
-from glassflow.models import errors
+from glassflow.models import api, errors
 
 
 def test_create_pipeline_ok(creating_pipeline):
@@ -29,6 +29,7 @@ def test_update_pipeline_ok(creating_pipeline):
     updated_pipeline = creating_pipeline.update(
         name="new_name",
         sink_kind="webhook",
+        state="paused",
         sink_config={
             "url": "www.test-url.com",
             "method": "GET",
@@ -57,6 +58,7 @@ def test_update_pipeline_ok(creating_pipeline):
 
     assert updated_pipeline.source_kind == creating_pipeline.source_kind
     assert updated_pipeline.source_config == creating_pipeline.source_config
+    assert updated_pipeline.state == api.PipelineState.paused
 
 
 def test_delete_pipeline_fail_with_404(pipeline_with_random_id):
