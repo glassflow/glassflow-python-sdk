@@ -95,13 +95,15 @@ class Space(APIClient):
         )
 
     def _request(
-        self, method: str, endpoint: str, request: operations.BaseManagementRequest
+        self,
+        method: str,
+        endpoint: str,
+        request: operations.BaseManagementRequest,
+        **kwargs,
     ) -> operations.BaseResponse:
         try:
             return super()._request(
-                method=method,
-                endpoint=endpoint,
-                request=request,
+                method=method, endpoint=endpoint, request=request, **kwargs
             )
         except errors.ClientError as e:
             if e.status_code == 404:

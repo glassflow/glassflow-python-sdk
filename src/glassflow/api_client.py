@@ -39,7 +39,11 @@ class APIClient:
         return headers
 
     def _request(
-        self, method: str, endpoint: str, request: BaseRequest
+        self,
+        method: str,
+        endpoint: str,
+        request: BaseRequest,
+        serialization_method: str = "json",
     ) -> BaseResponse:
         request_type = type(request)
 
@@ -51,7 +55,12 @@ class APIClient:
         )
 
         req_content_type, data, form = utils.serialize_request_body(
-            request, request_type, "request_body", False, True, "json"
+            request=request,
+            request_type=request_type,
+            request_field_name="request_body",
+            nullable=False,
+            optional=True,
+            serialization_method=serialization_method,
         )
         if method == "GET":
             data = None

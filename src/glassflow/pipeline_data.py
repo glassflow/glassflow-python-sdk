@@ -37,10 +37,10 @@ class PipelineDataClient(APIClient):
         )
 
     def _request(
-        self, method: str, endpoint: str, request: BasePipelineDataRequest
+        self, method: str, endpoint: str, request: BasePipelineDataRequest, **kwargs
     ) -> BaseResponse:
         try:
-            res = super()._request(method, endpoint, request)
+            res = super()._request(method, endpoint, request, **kwargs)
         except errors.ClientError as e:
             if e.status_code == 401:
                 raise errors.PipelineAccessTokenInvalidError(e.raw_response) from e
