@@ -21,9 +21,7 @@ extra:
 
 nav:
   - Home: index.md
-  - Python SDK Docs: reference.md
-  - "User Guide ↗️" : 'https://learn.glassflow.dev/docs'
-  - "GlassFlow Blog ↗️" : 'https://learn.glassflow.dev/blog'
+  - Reference: reference.md
   - "User Guide ↗️" : 'https://docs.glassflow.dev/'
   - "GlassFlow Blog ↗️" : 'https://www.glassflow.dev/blog'
 
