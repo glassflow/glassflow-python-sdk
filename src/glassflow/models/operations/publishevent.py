@@ -3,9 +3,8 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Optional
 
-import requests as requests_http
+from .base import BasePipelineDataRequest, BaseResponse
 
 
 @dataclasses.dataclass
@@ -14,7 +13,7 @@ class PublishEventRequestBody:
 
 
 @dataclasses.dataclass
-class PublishEventRequest:
+class PublishEventRequest(BasePipelineDataRequest):
     """Request to publish an event to a pipeline topic
 
     Attributes:
@@ -24,35 +23,6 @@ class PublishEventRequest:
         request_body: The request body / event that should be published to the pipeline
     """
 
-    pipeline_id: str = dataclasses.field(
-        metadata={
-            "path_param": {
-                "field_name": "pipeline_id",
-                "style": "simple",
-                "explode": False,
-            }
-        }
-    )
-    organization_id: Optional[str] = dataclasses.field(
-        default=None,
-        metadata={
-            "query_param": {
-                "field_name": "organization_id",
-                "style": "form",
-                "explode": True,
-            }
-        },
-    )
-    x_pipeline_access_token: str = dataclasses.field(
-        default=None,
-        metadata={
-            "header": {
-                "field_name": "X-PIPELINE-ACCESS-TOKEN",
-                "style": "simple",
-                "explode": False,
-            }
-        },
-    )
     request_body: dict = dataclasses.field(
         default=None, metadata={"request": {"media_type": "application/json"}}
     )
@@ -64,7 +34,7 @@ class PublishEventResponseBody:
 
 
 @dataclasses.dataclass
-class PublishEventResponse:
+class PublishEventResponse(BaseResponse):
     """Response object for publish event operation
 
     Attributes:
@@ -75,7 +45,4 @@ class PublishEventResponse:
 
     """
 
-    content_type: str = dataclasses.field()
-    status_code: int = dataclasses.field()
-    raw_response: requests_http.Response = dataclasses.field()
-    object: Optional[PublishEventResponseBody] = dataclasses.field(default=None)
+    object: PublishEventResponseBody | None = dataclasses.field(default=None)

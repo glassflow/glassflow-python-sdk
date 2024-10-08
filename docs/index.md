@@ -1,6 +1,6 @@
 # Welcome to GlassFlow Python SDK Docs
 
-The [GlassFlow](https://www.glassflow.dev/) Python SDK provides a convenient way to interact with the GlassFlow API in your Python applications. The SDK is used to publish and consume events to your [GlassFlow pipelines](https://learn.glassflow.dev/docs/concepts/pipeline-configuration).
+The [GlassFlow](https://www.glassflow.dev/) Python SDK provides a convenient way to interact with the GlassFlow API in your Python applications. The SDK is used to publish and consume events to your [GlassFlow pipelines](https://docs.glassflow.dev/concepts/pipeline).
 
 
 ## Installation
@@ -11,100 +11,11 @@ You can install the GlassFlow Python SDK using pip:
 pip install glassflow
 ```
 
-## Available Operations
+## Content
 
-* [publish](#publish) - Publish a new event into the pipeline
-* [consume](#consume) - Consume the transformed event from the pipeline
-* [consume failed](#consume-failed) - Consume the events that failed from the pipeline
-* [is access token valid](#is-access-token-valid) - Validates Pipeline Access Token
-* [is_valid](#is-valid) - Check if pipeline credentials are valid
+* [Publish and Consume Events](publish_and_consume.md) - Learn how to publish and consume events to/from a pipeline.
+* [Pipeline Management](pipeline_management.md) - Learn how to manage your pipelines from the SDK.
 
-
-## publish
-
-Publish a new event into the pipeline
-
-### Example Usage
-
-```python
-import glassflow
-
-client = glassflow.GlassFlowClient()
-pipeline_client = client.pipeline_client(pipeline_id="<str value", pipeline_access_token="<str token>")
-data = {} # your json event
-res = pipeline_client.publish(request_body=data)
-
-if res.status_code == 200:
-    print("Published sucessfully")
-```
-
-
-
-## consume
-
-Consume the transformed event from the pipeline
-
-### Example Usage
-
-```python
-import glassflow
-
-client = glassflow.GlassFlowClient()
-pipeline_client = client.pipeline_client(pipeline_id="<str value", pipeline_access_token="<str value>")
-res = pipeline_client.consume()
-
-if res.status_code == 200:
-    print(res.json())
-```
-
-
-## consume failed
-
-If the transformation failed for any event, they are available in a failed queue. You can consume those events from the pipeline
-
-### Example Usage
-
-```python
-import glassflow
-
-client = glassflow.GlassFlowClient()
-pipeline_client = client.pipeline_client(pipeline_id="<str value", pipeline_access_token="<str value>")
-res = pipeline_client.consume_failed()
-
-if res.status_code == 200:
-    print(res.json())
-```
-
-## is access token valid
-
-Check if the access token provided is valid
-
-### Example Usage
-
-```python
-import glassflow
-
-client = glassflow.GlassFlowClient()
-pipeline_client = client.pipeline_client(pipeline_id="<str value", pipeline_access_token="<str value>")
-
-if pipeline_client.is_access_token_valid():
-    print("Pipeline Access Token invalid! Generate a new one from the Webapp!")
-```
-
-## is valid
-Checks if the pipeline credentials are valid.
-
-### Example Usage
-
-```python
-import glassflow
-
-client = glassflow.GlassFlowClient()
-pipeline_client = client.pipeline_client(pipeline_id="<str value", pipeline_access_token="<str value>")
-
-if pipeline_client.is_valid():
-    print("Pipeline credentials are valid")
-```
 
 ## SDK Maturity
 
@@ -113,7 +24,7 @@ Please note that the GlassFlow Python SDK is currently in beta and is subject to
 
 ## User Guides
 
-For more detailed information on how to use the GlassFlow Python SDK, please refer to the [GlassFlow Documentation](https://learn.glassflow.dev). The documentation provides comprehensive guides, tutorials, and examples to help you get started with GlassFlow and make the most out of the SDK.
+For more detailed information on how to use the GlassFlow Python SDK, please refer to the [GlassFlow Documentation](https://docs.glassflow.dev). The documentation provides comprehensive guides, tutorials, and examples to help you get started with GlassFlow and make the most out of the SDK.
 
 ## Contributing
 

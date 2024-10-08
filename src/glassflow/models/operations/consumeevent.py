@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Optional
 
-import requests as requests_http
 from dataclasses_json import config, dataclass_json
+
+from .base import BasePipelineDataRequest, BaseResponse
 
 
 @dataclasses.dataclass
-class ConsumeEventRequest:
+class ConsumeEventRequest(BasePipelineDataRequest):
     """Request to consume an event from a pipeline topic
 
     Attributes:
@@ -20,35 +20,7 @@ class ConsumeEventRequest:
 
     """
 
-    pipeline_id: str = dataclasses.field(
-        metadata={
-            "path_param": {
-                "field_name": "pipeline_id",
-                "style": "simple",
-                "explode": False,
-            }
-        }
-    )
-    organization_id: Optional[str] = dataclasses.field(
-        default=None,
-        metadata={
-            "query_param": {
-                "field_name": "organization_id",
-                "style": "form",
-                "explode": True,
-            }
-        },
-    )
-    x_pipeline_access_token: str = dataclasses.field(
-        default=None,
-        metadata={
-            "header": {
-                "field_name": "X-PIPELINE-ACCESS-TOKEN",
-                "style": "simple",
-                "explode": False,
-            }
-        },
-    )
+    pass
 
 
 @dataclass_json
@@ -69,7 +41,7 @@ class ConsumeEventResponseBody:
 
 
 @dataclasses.dataclass
-class ConsumeEventResponse:
+class ConsumeEventResponse(BaseResponse):
     """Response to consume an event from a pipeline topic
 
     Attributes:
@@ -80,14 +52,11 @@ class ConsumeEventResponse:
 
     """
 
-    content_type: str = dataclasses.field()
-    status_code: int = dataclasses.field()
-    raw_response: requests_http.Response = dataclasses.field()
-    body: Optional[ConsumeEventResponseBody] = dataclasses.field(default=None)
+    body: ConsumeEventResponseBody | None = dataclasses.field(default=None)
 
     def json(self):
         """Return the response body as a JSON object.
-        This method is to have cmopatibility with the requests.Response.json() method
+        This method is to have compatibility with the requests.Response.json() method
 
         Returns:
             dict: The transformed event as a JSON object
