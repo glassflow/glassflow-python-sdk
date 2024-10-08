@@ -126,6 +126,7 @@ class GlassFlowClient(APIClient):
 
         Raises:
             UnauthorizedError: User does not have permission to perform the
+                requested operation
         """
         request = operations.ListPipelinesRequest(
             space_id=space_ids,
@@ -154,6 +155,16 @@ class GlassFlowClient(APIClient):
         )
 
     def list_spaces(self) -> operations.ListSpacesResponse:
+        """
+        Lists all GlassFlow spaces in the GlassFlow API
+
+        Returns:
+            ListSpacesResponse: Response object with the spaces listed
+
+        Raises:
+            UnauthorizedError: User does not have permission to perform the
+                requested operation
+        """
         request = operations.ListSpacesRequest(
             organization_id=self.organization_id,
             personal_access_token=self.personal_access_token,

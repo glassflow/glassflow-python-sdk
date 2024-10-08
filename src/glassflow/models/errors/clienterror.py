@@ -37,7 +37,7 @@ class ClientError(Exception):
         self.body = body
         self.raw_response = raw_response
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return a string representation of the error
 
         Returns:

@@ -54,7 +54,7 @@ class ConsumeFailedResponse(BaseResponse):
 
     body: ConsumeFailedResponseBody | None = dataclasses.field(default=None)
 
-    def json(self):
+    def json(self) -> dict:
         """Return the response body as a JSON object.
         This method is to have compatibility with the requests.Response.json() method
 
