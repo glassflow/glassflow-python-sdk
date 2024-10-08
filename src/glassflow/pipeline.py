@@ -47,9 +47,6 @@ class Pipeline(APIClient):
             metadata: Metadata of the pipeline
             created_at: Timestamp when the pipeline was created
 
-        Returns:
-            Pipeline: Pipeline object to interact with the GlassFlow API
-
         Raises:
             FailNotFoundError: If the transformation file is provided and
                 does not exist

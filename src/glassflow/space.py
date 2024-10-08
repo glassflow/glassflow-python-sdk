@@ -22,10 +22,6 @@ class Space(APIClient):
             id: ID of the GlassFlow Space you want to create the pipeline in
             created_at: Timestamp when the space was created
 
-        Returns:
-            Space: Space object to interact with the GlassFlow API
-
-        Raises:
         """
         super().__init__()
         self.name = name
