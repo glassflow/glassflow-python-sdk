@@ -93,3 +93,12 @@ def test_get_logs_from_pipeline_ok(creating_pipeline):
     assert logs.logs[0].level == "INFO"
     assert logs.logs[1].payload.message == "Pipeline is created"
     assert logs.logs[1].level == "INFO"
+
+
+def test_test_pipeline_ok(creating_pipeline):
+    test_message = {"message": "test"}
+    response = creating_pipeline.test(test_message)
+
+    assert response.status_code == 200
+    assert response.content_type == "application/json"
+    assert response.payload == test_message

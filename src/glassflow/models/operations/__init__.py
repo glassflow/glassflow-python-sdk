@@ -25,6 +25,8 @@ from .function import (
     GetFunctionLogsRequest,
     GetFunctionLogsResponse,
     UpdateFunctionRequest,
+    TestFunctionRequest,
+    TestFunctionResponse,
 )
 from .pipeline_crud import (
     CreatePipelineRequest,
@@ -89,4 +91,6 @@ __all__ = [
     "UpdateFunctionRequest",
     "FetchFunctionRequest",
     "PostArtifactRequest",
+    "TestFunctionRequest",
+    "TestFunctionResponse",
 ]

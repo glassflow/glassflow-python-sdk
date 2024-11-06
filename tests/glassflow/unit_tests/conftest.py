@@ -168,3 +168,21 @@ def get_logs_response():
         ],
         "next": "string",
     }
+
+
+@pytest.fixture
+def test_pipeline_response():
+    return {
+        "req_id": "string",
+        "receive_time": "2024-11-06T09:37:46.310Z",
+        "payload": {"message": "Test Message"},
+        "event_context": {
+            "request_id": "string",
+            "receive_time": "2024-11-06T09:37:46.310Z",
+            "started_at": "2024-11-06T09:37:46.310Z",
+            "executed_at": "2024-11-06T09:37:46.310Z",
+            "exec_time_sec": "0.00012s",
+        },
+        "status": "string",
+        "response": {"message": "Test Response"}
+    }

@@ -1,6 +1,7 @@
 from .api import (
     CreatePipeline,
     CreateSpace,
+    EventContext,
     FunctionEnvironments,
     FunctionLogEntry,
     FunctionLogs,
@@ -28,4 +29,5 @@ __all__ = [
     "UpdatePipeline",
     "SpaceScope",
     "CreateSpace",
+    "EventContext",
 ]

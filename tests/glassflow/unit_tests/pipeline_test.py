@@ -270,3 +270,22 @@ def test_get_logs_from_pipeline_ok(client, requests_mock, get_logs_response):
         assert (
             log.payload.message == get_logs_response["logs"][idx]["payload"]["message"]
         )
+
+
+def test_test_pipeline_ok(client, requests_mock, test_pipeline_response):
+    pipeline_id = "test-pipeline-id"
+    requests_mock.post(
+        client.glassflow_config.server_url
+        + f"/pipelines/{pipeline_id}/functions/main/test",
+        json=test_pipeline_response,
+        status_code=200,
+        headers={"Content-Type": "application/json"},
+    )
+    pipeline = Pipeline(id=pipeline_id, personal_access_token="test-token")
+    response = pipeline.test(test_pipeline_response["payload"])
+
+    assert response.status_code == 200
+    assert response.content_type == "application/json"
+    assert response.event_context.to_dict() == test_pipeline_response["event_context"]
+    assert response.status == test_pipeline_response["status"]
+    assert response.response == test_pipeline_response["response"]
