@@ -24,9 +24,9 @@ from .function import (
     FetchFunctionRequest,
     GetFunctionLogsRequest,
     GetFunctionLogsResponse,
-    UpdateFunctionRequest,
     TestFunctionRequest,
     TestFunctionResponse,
+    UpdateFunctionRequest,
 )
 from .pipeline_crud import (
     CreatePipelineRequest,

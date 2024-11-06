@@ -184,5 +184,5 @@ def test_pipeline_response():
             "exec_time_sec": "0.00012s",
         },
         "status": "string",
-        "response": {"message": "Test Response"}
+        "response": {"message": "Test Response"},
     }

@@ -563,7 +563,7 @@ class Pipeline(APIClient):
             pipeline_id=self.id,
             organization_id=self.organization_id,
             personal_access_token=self.personal_access_token,
-            request_body=data
+            request_body=data,
         )
 
         base_res = self._request(

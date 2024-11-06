@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 
-from ..api import FunctionEnvironments, FunctionLogs, SeverityCodeInput, EventContext
+from ..api import EventContext, FunctionEnvironments, FunctionLogs, SeverityCodeInput
 from .base import BasePipelineManagementRequest, BaseResponse
 
 
