@@ -386,7 +386,9 @@ class Pipeline(APIClient):
         )
         res_json = base_res.raw_response.json()
         self.transformation_code = res_json["transformation_function"]
-        self.requirements = res_json["requirements_txt"]
+
+        if "requirements_txt" in res_json:
+            self.requirements = res_json["requirements_txt"]
         return self
 
     def _upload_function_artifact(self, file: str, requirements: str) -> None:
