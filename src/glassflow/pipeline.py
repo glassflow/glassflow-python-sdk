@@ -386,7 +386,9 @@ class Pipeline(APIClient):
         )
         res_json = base_res.raw_response.json()
         self.transformation_code = res_json["transformation_function"]
-        self.requirements = res_json["requirements_txt"]
+
+        if "requirements_txt" in res_json:
+            self.requirements = res_json["requirements_txt"]
         return self
 
     def _upload_function_artifact(self, file: str, requirements: str) -> None:
@@ -548,3 +550,43 @@ class Pipeline(APIClient):
         self.env_vars = pipeline_details["environments"]
 
         return self
+
+    def test(self, data: dict) -> operations.TestFunctionResponse:
+        """
+        Test a pipeline's function with a sample input JSON
+
+        Args:
+            data: Input JSON
+
+        Returns:
+            TestFunctionResponse: Test function response
+        """
+        request = operations.TestFunctionRequest(
+            pipeline_id=self.id,
+            organization_id=self.organization_id,
+            personal_access_token=self.personal_access_token,
+            request_body=data,
+        )
+
+        base_res = self._request(
+            method="POST",
+            endpoint=f"/pipelines/{self.id}/functions/main/test",
+            request=request,
+        )
+        base_res_json = base_res.raw_response.json()
+
+        return operations.TestFunctionResponse(
+            status_code=base_res.status_code,
+            content_type=base_res.content_type,
+            raw_response=base_res.raw_response,
+            payload=base_res_json["payload"],
+            event_context=api.EventContext(
+                request_id=base_res_json["event_context"]["request_id"],
+                receive_time=base_res_json["event_context"]["receive_time"],
+                started_at=base_res_json["event_context"]["started_at"],
+                executed_at=base_res_json["event_context"]["executed_at"],
+                exec_time_sec=base_res_json["event_context"]["exec_time_sec"],
+            ),
+            status=base_res_json["status"],
+            response=base_res_json["response"],
+        )

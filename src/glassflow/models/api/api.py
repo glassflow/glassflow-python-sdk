@@ -281,7 +281,9 @@ SourceFiles = List[SourceFile]
 class EventContext:
     request_id: str
     receive_time: str
-    external_id: Optional[str] = None
+    started_at: str
+    executed_at: str
+    exec_time_sec: str
 
 
 PersonalAccessToken = str

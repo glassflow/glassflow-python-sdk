@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 
-from ..api import FunctionEnvironments, FunctionLogs, SeverityCodeInput
+from ..api import EventContext, FunctionEnvironments, FunctionLogs, SeverityCodeInput
 from .base import BasePipelineManagementRequest, BaseResponse
 
 
@@ -29,3 +29,18 @@ class FetchFunctionRequest(BasePipelineManagementRequest):
 @dataclasses.dataclass
 class UpdateFunctionRequest(BasePipelineManagementRequest):
     environments: FunctionEnvironments | None = dataclasses.field(default=None)
+
+
+@dataclasses.dataclass
+class TestFunctionRequest(BasePipelineManagementRequest):
+    request_body: dict = dataclasses.field(
+        default=None, metadata={"request": {"media_type": "application/json"}}
+    )
+
+
+@dataclasses.dataclass
+class TestFunctionResponse(BaseResponse):
+    payload: str
+    event_context: EventContext
+    status: str
+    response: dict
