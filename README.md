@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://docs.glassflow.dev/~gitbook/image?url=https%3A%2F%2F1082326815-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-x-prod.appspot.com%2Fo%2Forganizations%252FaR82XtsD8fLEkzPmMtb7%252Fsites%252Fsite_8vNM9%252Flogo%252Fft4nLD8mKhRmqTJjDp3i%252Flogo-color.png%3Falt%3Dmedia%26token%3Deb19e3bf-195b-413f-9965-4c76112953a3&width=128&dpr=3&quality=100&sign=10efaa8d&sv=1" /><br /><br />
+  <img src="https://gfassets.fra1.cdn.digitaloceanspaces.com/logo/logo-color.png" /><br /><br />
 </div>
 <p align="center">
         <a href="https://github.com/glassflow/glassflow-python-sdk/blob/main/LICENSE.md">
@@ -14,7 +14,7 @@
 
 # GlassFlow Python SDK
 
-The [GlassFlow](https://www.glassflow.dev/) Python SDK provides a convenient way to interact with the GlassFlow API in your Python applications. The SDK is used to publish and consume events to your [GlassFlow pipelines](https://docs.glassflow.dev/concepts/pipeline).
+The [GlassFlow](https://www.glassflow.dev/) Python SDK provides a convenient way to interact with the GlassFlow API in your Python applications. The SDK is used to publish and consume events to your [GlassFlow pipelines](https://www.glassflow.dev/docs/concepts/pipeline).
 
 ## Installation
 
@@ -217,7 +217,7 @@ pipeline.delete()
 
 ## Quickstart
 
-Follow the quickstart guide [here](https://docs.glassflow.dev/get-started/quickstart)
+Follow the quickstart guide [here](https://www.glassflow.dev/docs)
 
 ## Code Samples
 
@@ -230,7 +230,7 @@ Please note that the GlassFlow Python SDK is currently in beta and is subject to
 
 ## User Guides
 
-For more detailed information on how to use the GlassFlow Python SDK, please refer to the [GlassFlow Documentation](https://docs.glassflow.dev). The documentation provides comprehensive guides, tutorials, and examples to help you get started with GlassFlow and make the most out of the SDK.
+For more detailed information on how to use the GlassFlow Python SDK, please refer to the [GlassFlow Documentation](https://www.glassflow.dev/docs). The documentation provides comprehensive guides, tutorials, and examples to help you get started with GlassFlow and make the most out of the SDK.
 
 ## Contributing
 

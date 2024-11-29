@@ -33,7 +33,7 @@ nav:
     - Welcome to GlassFlow: index.md
     - Pipeline and Space Management: pipeline_management.md
     - Publish and Consume events: publish_and_consume.md
-    - "User Guide ↗️" : 'https://docs.glassflow.dev/'
+    - "User Guide ↗️" : 'https://www.glassflow.dev/docs'
     - "GlassFlow Blog ↗️" : 'https://www.glassflow.dev/blog'
   - API Reference:
     - reference.md

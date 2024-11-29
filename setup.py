@@ -11,7 +11,7 @@ setuptools.setup(
     version="2.0.6",
     author="glassflow",
     description="GlassFlow Python Client SDK",
-    url="https://learn.glassflow.dev/docs",
+    url="https://www.glassflow.dev/docs",
     project_urls={
         "Source": "https://github.com/glassflow/glassflow-python-sdk",
     },
