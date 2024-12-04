@@ -2,7 +2,12 @@ from __future__ import annotations
 
 import dataclasses
 
-from ..api import EventContext, FunctionEnvironments, FunctionLogs, SeverityCodeInput
+from ..api import (
+    FunctionEnvironments,
+    FunctionLogs,
+    SeverityCodeInput,
+    ConsumeOutputEvent
+)
 from .base import BasePipelineManagementRequest, BaseResponse
 
 
@@ -39,8 +44,5 @@ class TestFunctionRequest(BasePipelineManagementRequest):
 
 
 @dataclasses.dataclass
-class TestFunctionResponse(BaseResponse):
-    payload: str
-    event_context: EventContext
-    status: str
-    response: dict
+class TestFunctionResponse(ConsumeOutputEvent, BaseResponse):
+    pass
