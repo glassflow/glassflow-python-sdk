@@ -581,5 +581,5 @@ class Pipeline(APIClient):
             status_code=base_res.status_code,
             content_type=base_res.content_type,
             raw_response=base_res.raw_response,
-            **base_res_json
+            **base_res_json,
         )

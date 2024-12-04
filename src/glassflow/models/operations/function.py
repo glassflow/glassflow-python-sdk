@@ -3,10 +3,10 @@ from __future__ import annotations
 import dataclasses
 
 from ..api import (
+    ConsumeOutputEvent,
     FunctionEnvironments,
     FunctionLogs,
     SeverityCodeInput,
-    ConsumeOutputEvent
 )
 from .base import BasePipelineManagementRequest, BaseResponse
 
