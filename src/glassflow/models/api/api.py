@@ -107,10 +107,36 @@ class SourceConnector2:
     config: Config1
 
 
-SourceConnector = Optional[Union[SourceConnector1, SourceConnector2]]
-
-
 class Kind2(str, Enum):
+    postgres = "postgres"
+
+
+@dataclass_json
+@dataclass
+class Config2:
+    db_host: str
+    db_user: str
+    db_pass: str
+    db_name: str
+    replication_slot: str
+    db_port: Optional[str] = "5432"
+    db_sslmode: Optional[str] = None
+    publication: Optional[str] = None
+    replication_output_plugin_name: Optional[str] = "wal2json"
+    replication_output_plugin_args: Optional[List[str]] = None
+
+
+@dataclass_json
+@dataclass
+class SourceConnector3:
+    kind: Kind2
+    config: Config2
+
+
+SourceConnector = Optional[Union[SourceConnector1, SourceConnector2, SourceConnector3]]
+
+
+class Kind3(str, Enum):
     webhook = "webhook"
 
 
@@ -131,7 +157,7 @@ class Header:
 
 @dataclass_json
 @dataclass
-class Config2:
+class Config3:
     url: str
     method: Method
     headers: List[Header]
@@ -140,17 +166,17 @@ class Config2:
 @dataclass_json
 @dataclass
 class SinkConnector1:
-    kind: Kind2
-    config: Config2
+    kind: Kind3
+    config: Config3
 
 
-class Kind3(str, Enum):
+class Kind4(str, Enum):
     clickhouse = "clickhouse"
 
 
 @dataclass_json
 @dataclass
-class Config3:
+class Config4:
     addr: str
     database: str
     username: str
@@ -161,11 +187,59 @@ class Config3:
 @dataclass_json
 @dataclass
 class SinkConnector2:
-    kind: Kind3
-    config: Config3
+    kind: Kind4
+    config: Config4
 
 
-SinkConnector = Optional[Union[SinkConnector1, SinkConnector2]]
+class Kind5(str, Enum):
+    amazon_s3 = "amazon_s3"
+
+
+@dataclass_json
+@dataclass
+class Config5:
+    s3_bucket: str
+    s3_key: str
+    aws_region: str
+    aws_access_key: str
+    aws_secret_key: str
+
+
+@dataclass_json
+@dataclass
+class SinkConnector3:
+    kind: Kind5
+    config: Config5
+
+
+class Kind6(str, Enum):
+    snowflake_cdc_json = "snowflake_cdc_json"
+
+
+@dataclass_json
+@dataclass
+class Config6:
+    account: str
+    warehouse: str
+    db_user: str
+    db_pass: str
+    db_name: str
+    db_schema: str
+    db_host: Optional[str] = None
+    db_port: Optional[str] = "443"
+    db_role: Optional[str] = None
+
+
+@dataclass_json
+@dataclass
+class SinkConnector4:
+    kind: Kind6
+    config: Config6
+
+
+SinkConnector = Optional[
+    Union[SinkConnector1, SinkConnector2, SinkConnector3, SinkConnector4]
+]
 
 
 @dataclass_json
@@ -281,12 +355,13 @@ SourceFiles = List[SourceFile]
 class EventContext:
     request_id: str
     receive_time: str
-    started_at: str
-    executed_at: str
-    exec_time_sec: str
+    external_id: Optional[str] = None
 
 
 PersonalAccessToken = str
+
+
+QueryRangeMatrix = Optional[Any]
 
 
 @dataclass_json
@@ -297,7 +372,7 @@ class Profile:
     name: str
     email: str
     provider: str
-    external_settings: Dict[str, Any]
+    external_settings: Any
     subscriber_id: str
 
 
@@ -361,19 +436,37 @@ class ListAccessTokens(PaginationResponse):
 
 @dataclass_json
 @dataclass
-class ConsumeEvent:
-    payload: Dict[str, Any]
+class ConsumeInputEvent:
+    payload: Any
     event_context: EventContext
-    status: str
-    response: Dict[str, Any]
     req_id: Optional[str] = None
     receive_time: Optional[str] = None
 
 
 @dataclass_json
 @dataclass
+class ConsumeOutputEvent:
+    payload: Any
+    event_context: EventContext
+    status: str
+    req_id: Optional[str] = None
+    receive_time: Optional[str] = None
+    response: Optional[Any] = None
+    error_details: Optional[str] = None
+    stack_trace: Optional[str] = None
+
+
+@dataclass_json
+@dataclass
 class ListPersonalAccessTokens:
     tokens: List[PersonalAccessToken]
+
+
+@dataclass_json
+@dataclass
+class PipelineInputQueueRelativeLatencyMetricsResponse:
+    input_queue_total_push_events: QueryRangeMatrix
+    input_queue_latency: QueryRangeMatrix
 
 
 FunctionLogs = List[FunctionLogEntry]
