@@ -5,6 +5,7 @@ from enum import Enum
 
 from ..api import CreateSpace, SpaceScope
 from .base import BaseManagementRequest, BaseResponse, BaseSpaceManagementDataRequest
+from ...utils import generate_metadata_for_query_parameters
 
 
 @dataclasses.dataclass
@@ -20,9 +21,18 @@ class Order(str, Enum):
 
 @dataclasses.dataclass
 class ListSpacesRequest(BaseManagementRequest):
-    page_size: int = 50
-    page: int = 1
-    order_by: Order = Order.asc
+    page_size: int = dataclasses.field(
+        default=50,
+        metadata=generate_metadata_for_query_parameters("page_size"),
+    )
+    page: int = dataclasses.field(
+        default=1,
+        metadata=generate_metadata_for_query_parameters("page"),
+    )
+    order_by: Order = dataclasses.field(
+        default=Order.asc,
+        metadata=generate_metadata_for_query_parameters("order_by"),
+    )
 
 
 @dataclasses.dataclass

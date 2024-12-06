@@ -7,6 +7,7 @@ from .utils import (
     match_content_type,
     serialize_request_body,
     unmarshal_json,
+    generate_metadata_for_query_parameters,
 )
 
 __all__ = [
@@ -18,4 +19,5 @@ __all__ = [
     "get_req_specific_headers",
     "get_field_name",
     "marshal_json",
+    "generate_metadata_for_query_parameters"
 ]

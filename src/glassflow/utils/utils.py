@@ -14,6 +14,16 @@ from dataclasses_json import DataClassJsonMixin
 from typing_inspect import is_optional_type
 
 
+def generate_metadata_for_query_parameters(param_name):
+    return {
+        "query_param": {
+            "field_name": param_name,
+            "style": "form",
+            "explode": True,
+        }
+    }
+
+
 def generate_url(
     clazz: type,
     server_url: str,
@@ -153,7 +163,7 @@ def get_query_params(
                     **_get_deep_object_query_params(metadata, f_name, value),
                 }
             elif style == "form":
-                params = {
+                 params = {
                     **params,
                     **_get_delimited_query_params(metadata, f_name, value, ","),
                 }
