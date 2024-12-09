@@ -3,6 +3,7 @@ from __future__ import annotations
 import dataclasses
 from enum import Enum
 
+from ...utils import generate_metadata_for_query_parameters
 from ..api import (
     CreatePipeline,
     GetDetailedSpacePipeline,
@@ -66,10 +67,22 @@ class Order(str, Enum):
 
 @dataclasses.dataclass
 class ListPipelinesRequest(BaseManagementRequest):
-    space_id: list[str] | None = None
-    page_size: int = 50
-    page: int = 1
-    order_by: Order = Order.asc
+    space_id: list[str] | None = dataclasses.field(
+        default=None,
+        metadata=generate_metadata_for_query_parameters("space_id"),
+    )
+    page_size: int = dataclasses.field(
+        default=50,
+        metadata=generate_metadata_for_query_parameters("page_size"),
+    )
+    page: int = dataclasses.field(
+        default=1,
+        metadata=generate_metadata_for_query_parameters("page"),
+    )
+    order_by: Order = dataclasses.field(
+        default=Order.asc,
+        metadata=generate_metadata_for_query_parameters("order_by"),
+    )
 
 
 @dataclasses.dataclass

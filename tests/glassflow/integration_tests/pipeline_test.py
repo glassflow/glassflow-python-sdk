@@ -36,7 +36,7 @@ def test_update_pipeline_ok(creating_pipeline):
             "headers": [{"name": "header1", "value": "header1"}],
         },
         transformation_file="tests/data/transformation_2.py",
-        requirements="requests,pandas",
+        requirements="requests\npandas",
         env_vars=[
             {"name": "env1", "value": "env1"},
             {"name": "env2", "value": "env2"},
@@ -80,7 +80,7 @@ def test_get_logs_from_pipeline_ok(creating_pipeline):
         if n_tries == max_tries:
             pytest.fail("Max tries reached")
 
-        logs = creating_pipeline.get_logs()
+        logs = creating_pipeline.get_logs(severity_code=100)
         if len(logs.logs) >= 2:
             break
         else:

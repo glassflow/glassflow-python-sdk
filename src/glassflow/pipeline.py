@@ -574,19 +574,12 @@ class Pipeline(APIClient):
             request=request,
         )
         base_res_json = base_res.raw_response.json()
-
+        base_res_json["event_context"] = api.EventContext(
+            **base_res_json["event_context"]
+        )
         return operations.TestFunctionResponse(
             status_code=base_res.status_code,
             content_type=base_res.content_type,
             raw_response=base_res.raw_response,
-            payload=base_res_json["payload"],
-            event_context=api.EventContext(
-                request_id=base_res_json["event_context"]["request_id"],
-                receive_time=base_res_json["event_context"]["receive_time"],
-                started_at=base_res_json["event_context"]["started_at"],
-                executed_at=base_res_json["event_context"]["executed_at"],
-                exec_time_sec=base_res_json["event_context"]["exec_time_sec"],
-            ),
-            status=base_res_json["status"],
-            response=base_res_json["response"],
+            **base_res_json,
         )
