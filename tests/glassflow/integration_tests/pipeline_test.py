@@ -80,7 +80,7 @@ def test_get_logs_from_pipeline_ok(creating_pipeline):
         if n_tries == max_tries:
             pytest.fail("Max tries reached")
 
-        logs = creating_pipeline.get_logs()
+        logs = creating_pipeline.get_logs(severity_code=100)
         if len(logs.logs) >= 2:
             break
         else:
