@@ -36,7 +36,7 @@ def test_update_pipeline_ok(creating_pipeline):
             "headers": [{"name": "header1", "value": "header1"}],
         },
         transformation_file="tests/data/transformation_2.py",
-        requirements="requests,pandas",
+        requirements="requests\npandas",
         env_vars=[
             {"name": "env1", "value": "env1"},
             {"name": "env2", "value": "env2"},
