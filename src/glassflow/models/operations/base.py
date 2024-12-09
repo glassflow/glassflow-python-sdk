@@ -3,6 +3,8 @@ from typing import Optional
 
 from requests import Response
 
+from ...utils import generate_metadata_for_query_parameters
+
 
 @dataclasses.dataclass()
 class BaseRequest:
@@ -13,13 +15,7 @@ class BaseRequest:
 class BaseManagementRequest(BaseRequest):
     organization_id: Optional[str] = dataclasses.field(
         default=None,
-        metadata={
-            "query_param": {
-                "field_name": "organization_id",
-                "style": "form",
-                "explode": True,
-            }
-        },
+        metadata=generate_metadata_for_query_parameters("organization_id"),
     )
     personal_access_token: str = dataclasses.field(
         default=None,
@@ -46,13 +42,7 @@ class BasePipelineRequest(BaseRequest):
     )
     organization_id: Optional[str] = dataclasses.field(
         default=None,
-        metadata={
-            "query_param": {
-                "field_name": "organization_id",
-                "style": "form",
-                "explode": True,
-            }
-        },
+        metadata=generate_metadata_for_query_parameters("organization_id"),
     )
 
 

@@ -259,7 +259,7 @@ def test_get_logs_from_pipeline_ok(client, requests_mock, get_logs_response):
         headers={"Content-Type": "application/json"},
     )
     pipeline = Pipeline(id=pipeline_id, personal_access_token="test-token")
-    logs = pipeline.get_logs()
+    logs = pipeline.get_logs(page_size=50, severity_code=100)
 
     assert logs.status_code == 200
     assert logs.content_type == "application/json"

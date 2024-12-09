@@ -28,7 +28,7 @@ from .function import (
     TestFunctionResponse,
     UpdateFunctionRequest,
 )
-from .pipeline_crud import (
+from .pipeline import (
     CreatePipelineRequest,
     CreatePipelineResponse,
     DeletePipelineRequest,
@@ -45,7 +45,7 @@ from .publishevent import (
     PublishEventResponse,
     PublishEventResponseBody,
 )
-from .space_crud import (
+from .space import (
     CreateSpaceRequest,
     CreateSpaceResponse,
     DeleteSpaceRequest,
