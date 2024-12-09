@@ -3,6 +3,7 @@ from __future__ import annotations
 import dataclasses
 from enum import Enum
 
+from ...utils import generate_metadata_for_query_parameters
 from ..api import (
     CreatePipeline,
     GetDetailedSpacePipeline,
@@ -12,7 +13,6 @@ from ..api import (
     SpacePipeline,
 )
 from .base import BaseManagementRequest, BasePipelineManagementRequest, BaseResponse
-from ...utils import generate_metadata_for_query_parameters
 
 
 @dataclasses.dataclass

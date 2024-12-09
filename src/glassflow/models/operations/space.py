@@ -3,9 +3,9 @@ from __future__ import annotations
 import dataclasses
 from enum import Enum
 
+from ...utils import generate_metadata_for_query_parameters
 from ..api import CreateSpace, SpaceScope
 from .base import BaseManagementRequest, BaseResponse, BaseSpaceManagementDataRequest
-from ...utils import generate_metadata_for_query_parameters
 
 
 @dataclasses.dataclass

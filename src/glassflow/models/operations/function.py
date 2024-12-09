@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import dataclasses
 
+from ...utils import generate_metadata_for_query_parameters
 from ..api import EventContext, FunctionEnvironments, FunctionLogs, SeverityCodeInput
 from .base import BasePipelineManagementRequest, BaseResponse
-from ...utils import generate_metadata_for_query_parameters
 
 
 @dataclasses.dataclass

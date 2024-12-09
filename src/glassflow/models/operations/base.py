@@ -2,6 +2,7 @@ import dataclasses
 from typing import Optional
 
 from requests import Response
+
 from ...utils import generate_metadata_for_query_parameters
 
 

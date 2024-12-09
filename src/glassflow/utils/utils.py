@@ -163,7 +163,7 @@ def get_query_params(
                     **_get_deep_object_query_params(metadata, f_name, value),
                 }
             elif style == "form":
-                 params = {
+                params = {
                     **params,
                     **_get_delimited_query_params(metadata, f_name, value, ","),
                 }
