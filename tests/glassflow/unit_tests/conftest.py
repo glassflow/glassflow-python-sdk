@@ -179,10 +179,10 @@ def test_pipeline_response():
         "event_context": {
             "request_id": "string",
             "receive_time": "2024-11-06T09:37:46.310Z",
-            "started_at": "2024-11-06T09:37:46.310Z",
-            "executed_at": "2024-11-06T09:37:46.310Z",
-            "exec_time_sec": "0.00012s",
+            "external_id": "2141513fa4ed38wyfphce",
         },
         "status": "string",
         "response": {"message": "Test Response"},
+        "error_details": "Error message",
+        "stack_trace": "Error Stack trace",
     }

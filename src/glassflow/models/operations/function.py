@@ -3,7 +3,12 @@ from __future__ import annotations
 import dataclasses
 
 from ...utils import generate_metadata_for_query_parameters
-from ..api import EventContext, FunctionEnvironments, FunctionLogs, SeverityCodeInput
+from ..api import (
+    ConsumeOutputEvent,
+    FunctionEnvironments,
+    FunctionLogs,
+    SeverityCodeInput,
+)
 from .base import BasePipelineManagementRequest, BaseResponse
 
 
@@ -55,8 +60,5 @@ class TestFunctionRequest(BasePipelineManagementRequest):
 
 
 @dataclasses.dataclass
-class TestFunctionResponse(BaseResponse):
-    payload: str
-    event_context: EventContext
-    status: str
-    response: dict
+class TestFunctionResponse(ConsumeOutputEvent, BaseResponse):
+    pass

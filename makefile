@@ -18,3 +18,16 @@ add-dataclass-json-decorators: add-noqa
 	sed  -i'' -e '/@dataclass/ i\'$$'\n''@dataclass_json\'$$'\n''' ./src/glassflow/models/api/api.py
 
 generate: add-dataclass-json-decorators
+
+include .env
+export
+checks: lint formatter test
+
+test:
+	pytest tests
+
+lint:
+	ruff check .
+
+formatter:
+	ruff format --check .
