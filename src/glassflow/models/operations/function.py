@@ -2,17 +2,38 @@ from __future__ import annotations
 
 import dataclasses
 
-from ..api import EventContext, FunctionEnvironments, FunctionLogs, SeverityCodeInput
+from ...utils import generate_metadata_for_query_parameters
+from ..api import (
+    ConsumeOutputEvent,
+    FunctionEnvironments,
+    FunctionLogs,
+    SeverityCodeInput,
+)
 from .base import BasePipelineManagementRequest, BaseResponse
 
 
 @dataclasses.dataclass
 class GetFunctionLogsRequest(BasePipelineManagementRequest):
-    page_size: int = 50
-    page_token: str = None
-    severity_code: SeverityCodeInput | None = None
-    start_time: str | None = None
-    end_time: str | None = None
+    page_size: int = dataclasses.field(
+        default=50,
+        metadata=generate_metadata_for_query_parameters("page_size"),
+    )
+    page_token: str = dataclasses.field(
+        default=None,
+        metadata=generate_metadata_for_query_parameters("page_token"),
+    )
+    severity_code: SeverityCodeInput | None = dataclasses.field(
+        default=None,
+        metadata=generate_metadata_for_query_parameters("severity_code"),
+    )
+    start_time: str | None = dataclasses.field(
+        default=None,
+        metadata=generate_metadata_for_query_parameters("start_time"),
+    )
+    end_time: str | None = dataclasses.field(
+        default=None,
+        metadata=generate_metadata_for_query_parameters("end_time"),
+    )
 
 
 @dataclasses.dataclass
@@ -39,8 +60,5 @@ class TestFunctionRequest(BasePipelineManagementRequest):
 
 
 @dataclasses.dataclass
-class TestFunctionResponse(BaseResponse):
-    payload: str
-    event_context: EventContext
-    status: str
-    response: dict
+class TestFunctionResponse(ConsumeOutputEvent, BaseResponse):
+    pass

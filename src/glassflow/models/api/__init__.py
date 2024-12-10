@@ -1,4 +1,5 @@
 from .api import (
+    ConsumeOutputEvent,
     CreatePipeline,
     CreateSpace,
     EventContext,
@@ -30,4 +31,5 @@ __all__ = [
     "SpaceScope",
     "CreateSpace",
     "EventContext",
+    "ConsumeOutputEvent",
 ]

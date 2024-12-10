@@ -1,4 +1,5 @@
 from .utils import (
+    generate_metadata_for_query_parameters,
     generate_url,
     get_field_name,
     get_query_params,
@@ -18,4 +19,5 @@ __all__ = [
     "get_req_specific_headers",
     "get_field_name",
     "marshal_json",
+    "generate_metadata_for_query_parameters",
 ]
