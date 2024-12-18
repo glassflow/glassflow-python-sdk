@@ -237,8 +237,38 @@ class SinkConnector4:
     config: Config6
 
 
+class Kind7(str, Enum):
+    pinecone_json = "pinecone_json"
+
+
+@dataclass_json
+@dataclass
+class ClientHeader:
+    name: str
+    value: str
+
+
+@dataclass_json
+@dataclass
+class Config7:
+    api_key: str
+    api_host: str
+    index_host: str
+    api_source_tag: Optional[str] = None
+    client_headers: Optional[List[ClientHeader]] = None
+
+
+@dataclass_json
+@dataclass
+class SinkConnector5:
+    kind: Kind7
+    config: Config7
+
+
 SinkConnector = Optional[
-    Union[SinkConnector1, SinkConnector2, SinkConnector3, SinkConnector4]
+    Union[
+        SinkConnector1, SinkConnector2, SinkConnector3, SinkConnector4, SinkConnector5
+    ]
 ]
 
 
