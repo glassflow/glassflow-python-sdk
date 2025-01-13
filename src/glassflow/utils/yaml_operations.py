@@ -10,7 +10,7 @@ from glassflow import GlassFlowClient
 from glassflow import Pipeline as GlassFlowPipeline
 from glassflow.utils.yaml_models import Pipeline
 
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+logging.basicConfig(stream=sys.stdout, level=logging.INFO, format="%(message)s")
 log = logging.getLogger(__name__)
 
 # TODO: handle deleted pipelines
@@ -174,7 +174,10 @@ Expected changes on your GlassFlow pipelines:
 
 
 def push_to_cloud(
-    files_changed: list[Path], pipeline_id: Path, client: GlassFlowClient
+    files_changed: list[Path],
+    pipeline_id: Path,
+    client: GlassFlowClient,
+    auto_approve: bool = False,
 ):
     yaml_files_to_update = get_yaml_files_with_changes(
         filter_dir=pipeline_id, files=files_changed
@@ -185,10 +188,11 @@ def push_to_cloud(
     ]
 
     get_changes_summary(pipelines)
-    update = query_yes_no("Do you want to proceed?", default="no")
-    if not update:
-        sys.stdout.write("Pipelines update cancelled!\n")
-        exit(0)
+    if not auto_approve:
+        update = query_yes_no("Do you want to proceed?", default="no")
+        if not update:
+            log.info("Pipelines update cancelled!\n")
+            exit(0)
 
     for pipeline, yaml_file in zip(pipelines, yaml_files_to_update):
         if pipeline.id is None:
@@ -231,10 +235,18 @@ def main():
         help="GlassFlow Personal Access Token.",
         type=str,
     )
+    parser.add_argument(
+        "-y",
+        "--auto-approve",
+        action="store_true",
+        default=False,
+        required=False,
+        help="Automatically approve pipelines without prompting for input.",
+    )
     args = parser.parse_args()
 
     client = GlassFlowClient(personal_access_token=args.personal_access_token)
-    push_to_cloud(args.files, args.dir, client)
+    push_to_cloud(args.files, args.dir, client, args.auto_approve)
 
 
 if __name__ == "__main__":
