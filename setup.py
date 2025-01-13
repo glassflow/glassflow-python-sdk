@@ -34,6 +34,9 @@ setuptools.setup(
         "typing-inspect>=0.9.0",
         "typing_extensions>=4.7.1",
         "python-dotenv==1.0.1",
+        "pyyaml>=6.0.2",
+        "pydantic>=2.10.5",
+        "eval_type_backport>=0.2.0",
     ],
     extras_require={
         "dev": [
@@ -49,4 +52,9 @@ setuptools.setup(
     package_dir={"": "src"},
     python_requires=">=3.8",
     package_data={"glassflow": ["py.typed"]},
+    entry_points={
+        "console_scripts": [
+            "glassflow-push-pipelines=glassflow.utils.yaml_operations:main",
+        ]
+    },
 )
