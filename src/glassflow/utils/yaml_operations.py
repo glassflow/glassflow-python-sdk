@@ -32,10 +32,10 @@ def yaml_file_to_pipeline(
     yaml_file_dir = yaml_path.parent
     p = load_yaml_file(yaml_path)
 
-    # We have one source, transformer and sink blocks
-    source = [b for b in p.blocks if b.type == "source"][0]
-    transformer = [b for b in p.blocks if b.type == "transformer"][0]
-    sink = [b for b in p.blocks if b.type == "sink"][0]
+    # We have one source, transformer and sink components
+    source = [c for c in p.components if c.type == "source"][0]
+    transformer = [c for c in p.components if c.type == "transformer"][0]
+    sink = [c for c in p.components if c.type == "sink"][0]
 
     if transformer.requirements is not None:
         if transformer.requirements.value is not None:
@@ -101,9 +101,9 @@ def map_yaml_to_files(path: Path) -> dict[Path, list[Path]]:
     mapping = {}
     for file in yml_files:
         mapping[file] = []
-        for b in load_yaml_file(file).blocks:
-            if b.type == "transformer":
-                transformer = b
+        for c in load_yaml_file(file).components:
+            if c.type == "transformer":
+                transformer = c
                 break
         else:
             continue

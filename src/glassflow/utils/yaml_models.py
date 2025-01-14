@@ -18,24 +18,25 @@ class Pipeline(BaseModel):
     name: str
     pipeline_id: uuid.UUID | None = Field(None)
     space_id: uuid.UUID
-    blocks: list[Block]
+    components: list[Component]
 
     @model_validator(mode="after")
-    def check_blocks(self):
+    def check_components(self):
         """Validate pipeline has source, transformer and sink"""
 
-        assert len(self.blocks) == 3
+        assert len(self.components) == 3
 
-        source = [b for b in self.blocks if b.type == "source"]
-        transformer = [b for b in self.blocks if b.type == "transformer"]
-        sink = [b for b in self.blocks if b.type == "sink"]
+        source = [c for c in self.components if c.type == "source"]
+        transformer = [c for c in self.components if c.type == "transformer"]
+        sink = [c for c in self.components if c.type == "sink"]
 
         assert len(source) == 1
         assert len(transformer) == 1
         assert len(sink) == 1
 
-        assert source[0].next_block_id == transformer[0].id
-        assert transformer[0].next_block_id == sink[0].id
+        assert transformer[0].inputs[0] == source[0].id
+        assert sink[0].inputs[0] == transformer[0].id
+
         return self
 
 
@@ -73,23 +74,23 @@ class Transformation(BaseModel):
         return self
 
 
-class BaseBlock(BaseModel):
+class BaseComponent(BaseModel):
     id: str
     name: str
     type: str
 
 
-class TransformerBlock(BaseBlock):
+class TransformerComponent(BaseComponent):
     type: Literal["transformer"]
     requirements: Requirements
     transformation: Transformation
-    next_block_id: str
+    inputs: list[str]
     env_vars: list[EnvironmentVariable]
 
 
-class SourceBlock(BaseBlock):
+class SourceComponent(BaseComponent):
     type: Literal["source"]
-    next_block_id: str
+    inputs: list[str]
     kind: str | None = Field(None)
     config: dict | None = Field(None)
     config_secret_ref: str | None = Field(None)
@@ -105,11 +106,12 @@ class SourceBlock(BaseBlock):
         return self
 
 
-class SinkBlock(BaseBlock):
+class SinkComponent(BaseComponent):
     type: Literal["sink"]
     kind: str | None = Field(None)
     config: dict | None = Field(None)
     config_secret_ref: str | None = Field(None)
+    inputs: list[str]
 
     @model_validator(mode="after")
     def check_filled(self):
@@ -122,6 +124,7 @@ class SinkBlock(BaseBlock):
         return self
 
 
-Block = Annotated[
-    Union[TransformerBlock, SourceBlock, SinkBlock], Field(discriminator="type")
+Component = Annotated[
+    Union[TransformerComponent, SourceComponent, SinkComponent],
+    Field(discriminator="type"),
 ]
