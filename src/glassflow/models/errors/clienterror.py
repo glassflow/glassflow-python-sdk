@@ -51,6 +51,17 @@ class ClientError(Exception):
         return f"{self.detail}: Status {self.status_code}{body}"
 
 
+class PipelineUnknownError(ClientError):
+    """Error caused by a unknown error."""
+
+    def __init__(self, pipeline_id: str, raw_response: requests_http.Response):
+        super().__init__(
+            detail=f"Error with {pipeline_id} request",
+            status_code=raw_response.status_code,
+            body=raw_response.text,
+            raw_response=raw_response,
+        )
+
 class PipelineNotFoundError(ClientError):
     """Error caused by a pipeline ID not found."""
 

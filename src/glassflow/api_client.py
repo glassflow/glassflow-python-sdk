@@ -17,6 +17,27 @@ class APIClient:
         super().__init__()
         self.client = requests_http.Session()
 
+    def _get_headers2(
+        self, req_content_type: str | None = None
+    ) -> dict:
+        headers = {}
+        headers["Accept"] = "application/json"
+        headers["Gf-Client"] = self.glassflow_config.glassflow_client
+        headers["User-Agent"] = self.glassflow_config.user_agent
+        headers["Gf-Python-Version"] = (
+            f"{sys.version_info.major}."
+            f"{sys.version_info.minor}."
+            f"{sys.version_info.micro}"
+        )
+
+        if req_content_type and req_content_type not in (
+            "multipart/form-data",
+            "multipart/mixed",
+        ):
+            headers["content-type"] = req_content_type
+
+        return headers
+
     def _get_headers(
         self, request: BaseRequest, req_content_type: str | None = None
     ) -> dict:

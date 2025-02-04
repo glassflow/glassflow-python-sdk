@@ -13,3 +13,4 @@ build
 .env
 tests/reports
 .coverage
+.idea/

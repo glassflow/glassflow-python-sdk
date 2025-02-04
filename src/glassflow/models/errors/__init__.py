@@ -6,6 +6,7 @@ from .clienterror import (
     SpaceNotFoundError,
     UnauthorizedError,
     UnknownContentTypeError,
+    PipelineUnknownError,
 )
 from .error import Error
 
@@ -18,4 +19,5 @@ __all__ = [
     "UnknownContentTypeError",
     "UnauthorizedError",
     "SpaceIsNotEmptyError",
+    "PipelineUnknownError",
 ]

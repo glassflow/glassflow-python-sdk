@@ -1,11 +1,10 @@
 import random
 import time
-from typing import Optional
-
 from .api_client import APIClient
-from .models import errors, operations
-from .models.operations.base import BasePipelineDataRequest, BaseResponse
-from .utils import utils
+from .models import errors
+from .models.operations.v2 import ConsumeEventResponse, ConsumeFailedResponse, PublishEventResponse
+from pathlib import PurePosixPath
+import requests
 
 
 class PipelineDataClient(APIClient):
@@ -21,40 +20,47 @@ class PipelineDataClient(APIClient):
         super().__init__()
         self.pipeline_id = pipeline_id
         self.pipeline_access_token = pipeline_access_token
+        self.request_headers = {
+            "X-PIPELINE-ACCESS-TOKEN": self.pipeline_access_token
+        }
 
     def validate_credentials(self) -> None:
         """
         Check if the pipeline credentials are valid and raise an error if not
         """
-        request = operations.StatusAccessTokenRequest(
-            pipeline_id=self.pipeline_id,
-            x_pipeline_access_token=self.pipeline_access_token,
-        )
-        self._request(
-            method="GET",
-            endpoint="/pipelines/{pipeline_id}/status/access_token",
-            request=request,
-        )
 
-    def _request(
-        self, method: str, endpoint: str, request: BasePipelineDataRequest, **kwargs
-    ) -> BaseResponse:
+        endpoint = "pipelines/{pipeline_id}/status/access_token".format(pipeline_id=self.pipeline_id)
+        return self._request2(method="GET", endpoint=endpoint)
+
+    def _request2(self, method, endpoint, request_headers=None, body=None, query_params=None):
+        # updated request method that knows the request details and does not use utils
+        # Do the https request. check for errors. if no errors, return the raw response http object that the caller can
+        # map to a pydantic object
+
+        headers = self._get_headers2()
+        headers.update(self.request_headers)
+        if request_headers:
+            headers.update(request_headers)
+        url = f"{self.glassflow_config.server_url.rstrip('/')}/{PurePosixPath(endpoint)}"
         try:
-            res = super()._request(method, endpoint, request, **kwargs)
-        except errors.ClientError as e:
-            if e.status_code == 401:
-                raise errors.PipelineAccessTokenInvalidError(e.raw_response) from e
-            elif e.status_code == 404:
+            http_res = self.client.request(
+                method, url=url, params=query_params, headers=headers, json=body
+            )
+            http_res.raise_for_status()
+            return http_res
+        except requests.exceptions.HTTPError as http_err:
+            if http_err.response.status_code == 401:
+                 raise errors.PipelineAccessTokenInvalidError(http_err.response)
+            if http_err.response.status_code == 404:
                 raise errors.PipelineNotFoundError(
-                    self.pipeline_id, e.raw_response
-                ) from e
-            else:
-                raise e
-        return res
+                    self.pipeline_id, http_err.response
+                )
+            if http_err.response.status_code in [400, 500]:
+                errors.PipelineUnknownError(self.pipeline_id, http_err.response)
 
 
 class PipelineDataSource(PipelineDataClient):
-    def publish(self, request_body: dict) -> operations.PublishEventResponse:
+    def publish(self, request_body: dict) -> PublishEventResponse:
         """Push a new message into the pipeline
 
         Args:
@@ -67,21 +73,14 @@ class PipelineDataSource(PipelineDataClient):
         Raises:
             ClientError: If an error occurred while publishing the event
         """
-        request = operations.PublishEventRequest(
-            pipeline_id=self.pipeline_id,
-            x_pipeline_access_token=self.pipeline_access_token,
-            request_body=request_body,
-        )
-        base_res = self._request(
-            method="POST",
-            endpoint="/pipelines/{pipeline_id}/topics/input/events",
-            request=request,
-        )
+        endpoint = "pipelines/{pipeline_id}/topics/input/events".format(pipeline_id=self.pipeline_id)
+        http_res = self._request2(method="POST", endpoint=endpoint, body=request_body)
+        content_type = http_res.headers.get("Content-Type")
 
-        return operations.PublishEventResponse(
-            status_code=base_res.status_code,
-            content_type=base_res.content_type,
-            raw_response=base_res.raw_response,
+        return PublishEventResponse(
+            status_code=http_res.status_code,
+            content_type=content_type,
+            raw_response=http_res,
         )
 
 
@@ -94,7 +93,7 @@ class PipelineDataSink(PipelineDataClient):
         self._consume_retry_delay_current = 1
         self._consume_retry_delay_max = 60
 
-    def consume(self) -> operations.ConsumeEventResponse:
+    def consume(self) -> ConsumeEventResponse:
         """Consume the last message from the pipeline
 
         Returns:
@@ -105,50 +104,29 @@ class PipelineDataSink(PipelineDataClient):
             ClientError: If an error occurred while consuming the event
 
         """
-        request = operations.ConsumeEventRequest(
-            pipeline_id=self.pipeline_id,
-            x_pipeline_access_token=self.pipeline_access_token,
-        )
 
+        endpoint = "pipelines/{pipeline_id}/topics/output/events/consume".format(pipeline_id=self.pipeline_id)
         self._respect_retry_delay()
-        base_res = self._request(
-            method="POST",
-            endpoint="/pipelines/{pipeline_id}/topics/output/events/consume",
-            request=request,
+        http_res = self._request2(method="POST", endpoint=endpoint)
+        content_type = http_res.headers.get("Content-Type")
+        self._update_retry_delay(http_res.status_code)
+
+        res = ConsumeEventResponse(
+            status_code=http_res.status_code,
+            content_type=content_type,
+            raw_response=http_res
         )
-
-        res = operations.ConsumeEventResponse(
-            status_code=base_res.status_code,
-            content_type=base_res.content_type,
-            raw_response=base_res.raw_response,
-        )
-
-        self._update_retry_delay(base_res.status_code)
-        if res.status_code == 200:
-            if not utils.match_content_type(res.content_type, "application/json"):
-                raise errors.UnknownContentTypeError(res.raw_response)
-
+        if http_res.status_code == 200:
+            res.body = http_res.json()
             self._consume_retry_delay_current = self._consume_retry_delay_minimum
-            body = utils.unmarshal_json(
-                res.raw_response.text, Optional[operations.ConsumeEventResponseBody]
-            )
-            res.body = body
         elif res.status_code == 204:
-            # No messages to be consumed.
-            # update the retry delay
-            # Return an empty response body
-            body = operations.ConsumeEventResponseBody("", "", {})
-            res.body = body
+            res.body = None
         elif res.status_code == 429:
-            # update the retry delay
-            body = operations.ConsumeEventResponseBody("", "", {})
-            res.body = body
-        elif not utils.match_content_type(res.content_type, "application/json"):
-            raise errors.UnknownContentTypeError(res.raw_response)
-
+            # TODO update the retry delay
+            res.body = None
         return res
 
-    def consume_failed(self) -> operations.ConsumeFailedResponse:
+    def consume_failed(self) -> ConsumeFailedResponse:
         """Consume the failed message from the pipeline
 
         Returns:
@@ -159,44 +137,21 @@ class PipelineDataSink(PipelineDataClient):
             ClientError: If an error occurred while consuming the event
 
         """
-        request = operations.ConsumeFailedRequest(
-            pipeline_id=self.pipeline_id,
-            x_pipeline_access_token=self.pipeline_access_token,
-        )
 
         self._respect_retry_delay()
-        base_res = self._request(
-            method="POST",
-            endpoint="/pipelines/{pipeline_id}/topics/failed/events/consume",
-            request=request,
-        )
-
-        res = operations.ConsumeFailedResponse(
-            status_code=base_res.status_code,
-            content_type=base_res.content_type,
-            raw_response=base_res.raw_response,
+        endpoint = "pipelines/{pipeline_id}/topics/failed/events/consume".format(pipeline_id=self.pipeline_id)
+        http_res = self._request2(method="POST", endpoint=endpoint)
+        content_type = http_res.headers.get("Content-Type")
+        res = ConsumeFailedResponse(
+            status_code=http_res.status_code,
+            content_type=content_type,
+            raw_response=http_res
         )
 
         self._update_retry_delay(res.status_code)
         if res.status_code == 200:
-            if not utils.match_content_type(res.content_type, "application/json"):
-                raise errors.UnknownContentTypeError(res.raw_response)
-
+            res.body = http_res.json()
             self._consume_retry_delay_current = self._consume_retry_delay_minimum
-            body = utils.unmarshal_json(
-                res.raw_response.text, Optional[operations.ConsumeFailedResponseBody]
-            )
-            res.body = body
-        elif res.status_code == 204:
-            # No messages to be consumed. Return an empty response body
-            body = operations.ConsumeFailedResponseBody("", "", {})
-            res.body = body
-        elif res.status_code == 429:
-            # update the retry delay
-            body = operations.ConsumeEventResponseBody("", "", {})
-            res.body = body
-        elif not utils.match_content_type(res.content_type, "application/json"):
-            raise errors.UnknownContentTypeError(res.raw_response)
         return res
 
     def _update_retry_delay(self, status_code: int):

@@ -15,6 +15,7 @@ from .consumeevent import (
     ConsumeEventResponse,
     ConsumeEventResponseBody,
 )
+
 from .consumefailed import (
     ConsumeFailedRequest,
     ConsumeFailedResponse,
