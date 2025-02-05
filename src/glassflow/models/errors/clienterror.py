@@ -62,6 +62,7 @@ class PipelineUnknownError(ClientError):
             raw_response=raw_response,
         )
 
+
 class PipelineNotFoundError(ClientError):
     """Error caused by a pipeline ID not found."""
 

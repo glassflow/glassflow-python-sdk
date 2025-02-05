@@ -1,6 +1,8 @@
 from typing import Optional
-from pydantic import BaseModel, Field, ConfigDict
+
+from pydantic import BaseModel, ConfigDict, Field
 from requests import Response
+
 
 class BaseResponse(BaseModel):
     content_type: Optional[str] = None

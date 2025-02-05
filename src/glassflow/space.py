@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+from pathlib import PurePosixPath
+
+import requests
+
 from .client import APIClient
-from .models import errors, operations
+from .models import errors
 from .models.api.v2 import CreateSpace
 from .models.operations.v2 import CreateSpaceResponse
-from pathlib import PurePosixPath
-import requests
+
 
 class Space(APIClient):
     def __init__(
@@ -32,25 +35,21 @@ class Space(APIClient):
         self.created_at = created_at
         self.organization_id = organization_id
         self.personal_access_token = personal_access_token
-        self.request_headers = {
-            "Personal-Access-Token": self.personal_access_token
-        }
-        self.request_query_params = {
-            "organization_id": self.organization_id
-        }
+        self.request_headers = {"Personal-Access-Token": self.personal_access_token}
+        self.request_query_params = {"organization_id": self.organization_id}
 
-    def create(self)-> Space:
+    def create(self) -> Space:
         """
-          Creates a new GlassFlow space
+        Creates a new GlassFlow space
 
-          Returns:
-              self: Space object
+        Returns:
+            self: Space object
 
-          Raises:
-              ValueError: If name is not provided in the constructor
+        Raises:
+            ValueError: If name is not provided in the constructor
 
-          """
-        create_space = CreateSpace(name=self.name).model_dump(mode='json')
+        """
+        create_space = CreateSpace(name=self.name).model_dump(mode="json")
         endpoint = "/spaces"
 
         http_res = self._request2(method="POST", endpoint=endpoint, body=create_space)
@@ -83,39 +82,17 @@ class Space(APIClient):
         if self.id is None:
             raise ValueError("Space id must be provided in the constructor")
 
-        request = operations.DeleteSpaceRequest(
-            space_id=self.id,
-            organization_id=self.organization_id,
-            personal_access_token=self.personal_access_token,
-        )
-        self._request(
-            method="DELETE",
-            endpoint=f"/spaces/{self.id}",
-            request=request,
-        )
+        endpoint = f"/spaces/{self.id}"
+        self._request2(method="DELETE", endpoint=endpoint)
 
-    def _request(
-        self,
-        method: str,
-        endpoint: str,
-        request: operations.BaseManagementRequest,
-        **kwargs,
-    ) -> operations.BaseResponse:
-        try:
-            return super()._request(
-                method=method, endpoint=endpoint, request=request, **kwargs
-            )
-        except errors.ClientError as e:
-            if e.status_code == 404:
-                raise errors.SpaceNotFoundError(self.id, e.raw_response) from e
-            elif e.status_code == 401:
-                raise errors.UnauthorizedError(e.raw_response) from e
-            elif e.status_code == 409:
-                raise errors.SpaceIsNotEmptyError(e.raw_response) from e
-            else:
-                raise e
     def _request2(
-        self, method, endpoint, request_headers=None, body=None, request_query_params=None) -> requests.Response:
+        self,
+        method,
+        endpoint,
+        request_headers=None,
+        body=None,
+        request_query_params=None,
+    ) -> requests.Response:
         headers = self._get_headers2()
         headers.update(self.request_headers)
         if request_headers:
@@ -124,7 +101,9 @@ class Space(APIClient):
 
         if request_query_params:
             query_params.update(request_query_params)
-        url = f"{self.glassflow_config.server_url.rstrip('/')}/{PurePosixPath(endpoint)}"
+        url = (
+            f"{self.glassflow_config.server_url.rstrip('/')}/{PurePosixPath(endpoint)}"
+        )
         try:
             http_res = self.client.request(
                 method, url=url, params=query_params, headers=headers, json=body
@@ -133,11 +112,9 @@ class Space(APIClient):
             return http_res
         except requests.exceptions.HTTPError as http_err:
             if http_err.response.status_code == 401:
-                 raise errors.UnauthorizedError(http_err.response)
+                raise errors.UnauthorizedError(http_err.response)
             if http_err.response.status_code == 404:
-                raise errors.SpaceNotFoundError(
-                    self.id, http_err.response
-                )
+                raise errors.SpaceNotFoundError(self.id, http_err.response)
             if http_err.response.status_code == 409:
                 raise errors.SpaceIsNotEmptyError(http_err.response)
             # TODO add Unknown Error for 400 and 500

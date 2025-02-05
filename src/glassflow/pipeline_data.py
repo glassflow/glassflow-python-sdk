@@ -1,10 +1,16 @@
 import random
 import time
+from pathlib import PurePosixPath
+
+import requests
+
 from .api_client import APIClient
 from .models import errors
-from .models.operations.v2 import ConsumeEventResponse, ConsumeFailedResponse, PublishEventResponse
-from pathlib import PurePosixPath
-import requests
+from .models.operations.v2 import (
+    ConsumeEventResponse,
+    ConsumeFailedResponse,
+    PublishEventResponse,
+)
 
 
 class PipelineDataClient(APIClient):
@@ -20,19 +26,19 @@ class PipelineDataClient(APIClient):
         super().__init__()
         self.pipeline_id = pipeline_id
         self.pipeline_access_token = pipeline_access_token
-        self.request_headers = {
-            "X-PIPELINE-ACCESS-TOKEN": self.pipeline_access_token
-        }
+        self.request_headers = {"X-PIPELINE-ACCESS-TOKEN": self.pipeline_access_token}
 
     def validate_credentials(self) -> None:
         """
         Check if the pipeline credentials are valid and raise an error if not
         """
 
-        endpoint = "pipelines/{pipeline_id}/status/access_token".format(pipeline_id=self.pipeline_id)
+        endpoint = f"pipelines/{self.pipeline_id}/status/access_token"
         return self._request2(method="GET", endpoint=endpoint)
 
-    def _request2(self, method, endpoint, request_headers=None, body=None, query_params=None):
+    def _request2(
+        self, method, endpoint, request_headers=None, body=None, query_params=None
+    ):
         # updated request method that knows the request details and does not use utils
         # Do the https request. check for errors. if no errors, return the raw response http object that the caller can
         # map to a pydantic object
@@ -41,7 +47,9 @@ class PipelineDataClient(APIClient):
         headers.update(self.request_headers)
         if request_headers:
             headers.update(request_headers)
-        url = f"{self.glassflow_config.server_url.rstrip('/')}/{PurePosixPath(endpoint)}"
+        url = (
+            f"{self.glassflow_config.server_url.rstrip('/')}/{PurePosixPath(endpoint)}"
+        )
         try:
             http_res = self.client.request(
                 method, url=url, params=query_params, headers=headers, json=body
@@ -50,11 +58,9 @@ class PipelineDataClient(APIClient):
             return http_res
         except requests.exceptions.HTTPError as http_err:
             if http_err.response.status_code == 401:
-                 raise errors.PipelineAccessTokenInvalidError(http_err.response)
+                raise errors.PipelineAccessTokenInvalidError(http_err.response)
             if http_err.response.status_code == 404:
-                raise errors.PipelineNotFoundError(
-                    self.pipeline_id, http_err.response
-                )
+                raise errors.PipelineNotFoundError(self.pipeline_id, http_err.response)
             if http_err.response.status_code in [400, 500]:
                 errors.PipelineUnknownError(self.pipeline_id, http_err.response)
 
@@ -73,7 +79,7 @@ class PipelineDataSource(PipelineDataClient):
         Raises:
             ClientError: If an error occurred while publishing the event
         """
-        endpoint = "pipelines/{pipeline_id}/topics/input/events".format(pipeline_id=self.pipeline_id)
+        endpoint = f"pipelines/{self.pipeline_id}/topics/input/events"
         http_res = self._request2(method="POST", endpoint=endpoint, body=request_body)
         content_type = http_res.headers.get("Content-Type")
 
@@ -105,7 +111,7 @@ class PipelineDataSink(PipelineDataClient):
 
         """
 
-        endpoint = "pipelines/{pipeline_id}/topics/output/events/consume".format(pipeline_id=self.pipeline_id)
+        endpoint = f"pipelines/{self.pipeline_id}/topics/output/events/consume"
         self._respect_retry_delay()
         http_res = self._request2(method="POST", endpoint=endpoint)
         content_type = http_res.headers.get("Content-Type")
@@ -114,7 +120,7 @@ class PipelineDataSink(PipelineDataClient):
         res = ConsumeEventResponse(
             status_code=http_res.status_code,
             content_type=content_type,
-            raw_response=http_res
+            raw_response=http_res,
         )
         if http_res.status_code == 200:
             res.body = http_res.json()
@@ -139,13 +145,13 @@ class PipelineDataSink(PipelineDataClient):
         """
 
         self._respect_retry_delay()
-        endpoint = "pipelines/{pipeline_id}/topics/failed/events/consume".format(pipeline_id=self.pipeline_id)
+        endpoint = f"pipelines/{self.pipeline_id}/topics/failed/events/consume"
         http_res = self._request2(method="POST", endpoint=endpoint)
         content_type = http_res.headers.get("Content-Type")
         res = ConsumeFailedResponse(
             status_code=http_res.status_code,
             content_type=content_type,
-            raw_response=http_res
+            raw_response=http_res,
         )
 
         self._update_retry_delay(res.status_code)

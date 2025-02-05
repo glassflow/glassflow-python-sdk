@@ -1,7 +1,18 @@
 from __future__ import annotations
 
+from pathlib import PurePosixPath
+
+import requests
+
 from .client import APIClient
-from .models import api, errors, operations
+from .models import errors
+from .models.api import v2 as apiv2
+from .models.operations import v2 as operationsv2
+from .models.responses import (
+    FunctionLogEntry,
+    FunctionLogsResponse,
+    TestFunctionResponse,
+)
 from .pipeline_data import PipelineDataSink, PipelineDataSource
 
 
@@ -19,7 +30,7 @@ class Pipeline(APIClient):
         requirements: str | None = None,
         transformation_file: str | None = None,
         env_vars: list[dict[str, str]] | None = None,
-        state: api.PipelineState = "running",
+        state: str = "running",
         organization_id: str | None = None,
         metadata: dict | None = None,
         created_at: str | None = None,
@@ -70,6 +81,8 @@ class Pipeline(APIClient):
         self.created_at = created_at
         self.access_tokens = []
 
+        self.request_headers = {"Personal-Access-Token": self.personal_access_token}
+        self.request_query_params = {"organization_id": self.organization_id}
         if self.transformation_file is not None:
             self._read_transformation_file()
 
@@ -93,6 +106,45 @@ class Pipeline(APIClient):
         else:
             raise ValueError("Both sink_kind and sink_config must be provided")
 
+    def _request2(
+        self,
+        method,
+        endpoint,
+        request_headers=None,
+        json=None,
+        request_query_params=None,
+        files=None,
+        data=None
+    ):
+        # updated request method that knows the request details and does not use utils
+        # Do the https request. check for errors. if no errors, return the raw response http object that the caller can
+        # map to a pydantic object
+        headers = self._get_headers2()
+        headers.update(self.request_headers)
+        if request_headers:
+            headers.update(request_headers)
+
+        query_params = self.request_query_params
+        if request_query_params:
+            query_params.update(request_query_params)
+
+        url = (
+            f"{self.glassflow_config.server_url.rstrip('/')}/{PurePosixPath(endpoint)}"
+        )
+        try:
+            http_res = self.client.request(
+                method, url=url, params=query_params, headers=headers, json=json, files=files, data=data
+            )
+            http_res.raise_for_status()
+            return http_res
+        except requests.exceptions.HTTPError as http_err:
+            if http_err.response.status_code == 401:
+                raise errors.PipelineAccessTokenInvalidError(http_err.response)
+            if http_err.response.status_code == 404:
+                raise errors.PipelineNotFoundError(self.id, http_err.response)
+            if http_err.response.status_code in [400, 500]:
+                raise errors.PipelineUnknownError(self.id, http_err.response)
+
     def fetch(self) -> Pipeline:
         """
         Fetches pipeline information from the GlassFlow API
@@ -112,25 +164,19 @@ class Pipeline(APIClient):
                 "Pipeline id must be provided in order to fetch it's details"
             )
 
-        request = operations.GetPipelineRequest(
-            pipeline_id=self.id,
-            organization_id=self.organization_id,
-            personal_access_token=self.personal_access_token,
+        endpoint = f"/pipelines/{self.id}"
+        http_res = self._request2(method="GET", endpoint=endpoint)
+        res = operationsv2.CreatePipelineResponse(
+            status_code=http_res.status_code,
+            content_type=http_res.headers.get("Content-Type"),
+            raw_response=http_res,
+            body=http_res.json(),
         )
-
-        base_res = self._request(
-            method="GET",
-            endpoint=f"/pipelines/{self.id}",
-            request=request,
-        )
-        self._fill_pipeline_details(base_res.raw_response.json())
-
+        self._fill_pipeline_details(res.body.model_dump())
         # Fetch Pipeline Access Tokens
         self._list_access_tokens()
-
         # Fetch function source
         self._get_function_artifact()
-
         return self
 
     def create(self) -> Pipeline:
@@ -146,17 +192,7 @@ class Pipeline(APIClient):
             ValueError: If transformation_file is not provided
                 in the constructor
         """
-        create_pipeline = api.CreatePipeline(
-            name=self.name,
-            space_id=self.space_id,
-            transformation_function=self.transformation_code,
-            requirements_txt=self.requirements,
-            source_connector=self.source_connector,
-            sink_connector=self.sink_connector,
-            environments=self.env_vars,
-            state=self.state,
-            metadata=self.metadata,
-        )
+
         if self.name is None:
             raise ValueError("Name must be provided in order to create the pipeline")
         if self.space_id is None:
@@ -168,20 +204,28 @@ class Pipeline(APIClient):
         else:
             self._read_transformation_file()
 
-        request = operations.CreatePipelineRequest(
-            organization_id=self.organization_id,
-            personal_access_token=self.personal_access_token,
-            **create_pipeline.__dict__,
+        create_pipeline = apiv2.CreatePipeline(
+            name=self.name,
+            space_id=self.space_id,
+            transformation_function=self.transformation_code,
+            requirements_txt=self.requirements,
+            source_connector=self.source_connector,
+            sink_connector=self.sink_connector,
+            environments=self.env_vars,
+            state=apiv2.PipelineState(self.state),
+            metadata=self.metadata,
+        )
+        endpoint = "/pipelines"
+        http_res = self._request2(
+            method="POST", endpoint=endpoint, json=create_pipeline.model_dump()
         )
 
-        base_res = self._request(method="POST", endpoint="/pipelines", request=request)
-        res = operations.CreatePipelineResponse(
-            status_code=base_res.status_code,
-            content_type=base_res.content_type,
-            raw_response=base_res.raw_response,
-            **base_res.raw_response.json(),
+        res = operationsv2.CreatePipelineResponse(
+            status_code=http_res.status_code,
+            content_type=http_res.headers.get("Content-Type"),
+            raw_response=http_res,
+            body=http_res.json(),
         )
-
         self.id = res.id
         self.created_at = res.created_at
         self.access_tokens.append({"name": "default", "token": res.access_token})
@@ -190,7 +234,7 @@ class Pipeline(APIClient):
     def update(
         self,
         name: str | None = None,
-        state: api.PipelineState | None = None,
+        state: str | None = None,
         transformation_file: str | None = None,
         requirements: str | None = None,
         metadata: dict | None = None,
@@ -224,10 +268,7 @@ class Pipeline(APIClient):
             self: Updated pipeline
 
         """
-
-        # Fetch current pipeline data
         self.fetch()
-
         if transformation_file is not None or requirements is not None:
             if transformation_file is not None:
                 with open(transformation_file) as f:
@@ -261,20 +302,25 @@ class Pipeline(APIClient):
         if env_vars is not None:
             self._update_function(env_vars)
 
-        request = operations.UpdatePipelineRequest(
-            organization_id=self.organization_id,
-            personal_access_token=self.personal_access_token,
+        pipeline_req = operationsv2.UpdatePipelineRequest(
             name=name if name is not None else self.name,
-            state=state if state is not None else self.state,
+            state = state if state is not None else self.state,
             metadata=metadata if metadata is not None else self.metadata,
             source_connector=source_connector,
             sink_connector=sink_connector,
         )
 
-        base_res = self._request(
-            method="PATCH", endpoint=f"/pipelines/{self.id}", request=request
+        endpoint = f"/pipelines/{self.id}"
+        body = pipeline_req.model_dump()
+        http_res = self._request2(method="PATCH", endpoint=endpoint, json=body)
+        # TODO is this object needed ?
+        res = operationsv2.CreatePipelineResponse(
+            status_code=http_res.status_code,
+            content_type=http_res.headers.get("Content-Type"),
+            raw_response=http_res,
+            body=http_res.json(),
         )
-        self._fill_pipeline_details(base_res.raw_response.json())
+        self._fill_pipeline_details(res.body.model_dump())
         return self
 
     def delete(self) -> None:
@@ -293,78 +339,54 @@ class Pipeline(APIClient):
         if self.id is None:
             raise ValueError("Pipeline id must be provided")
 
-        request = operations.DeletePipelineRequest(
-            pipeline_id=self.id,
-            organization_id=self.organization_id,
-            personal_access_token=self.personal_access_token,
-        )
-        self._request(
-            method="DELETE",
-            endpoint=f"/pipelines/{self.id}",
-            request=request,
-        )
+        endpoint = f"/pipelines/{self.id}"
+        http_res = self._request2(method="DELETE", endpoint=endpoint)
 
     def get_logs(
         self,
         page_size: int = 50,
         page_token: str | None = None,
-        severity_code: api.SeverityCodeInput = api.SeverityCodeInput.integer_100,
+        severity_code: int = 100,
         start_time: str | None = None,
         end_time: str | None = None,
-    ) -> operations.GetFunctionLogsResponse:
+    ) -> FunctionLogsResponse:
         """
         Get the pipeline's logs
 
         Args:
             page_size: Pagination size
             page_token: Page token filter (use for pagination)
-            severity_code: Severity code filter
+            severity_code: Severity code filter (100, 200, 300, 400, 500)
             start_time: Start time filter
             end_time: End time filter
 
         Returns:
             PipelineFunctionsGetLogsResponse: Response with the logs
         """
-        request = operations.GetFunctionLogsRequest(
-            organization_id=self.organization_id,
-            personal_access_token=self.personal_access_token,
-            pipeline_id=self.id,
-            page_size=page_size,
-            page_token=page_token,
-            severity_code=severity_code,
-            start_time=start_time,
-            end_time=end_time,
+
+        query_params = {
+            "page_size": page_size,
+            "page_token": page_token,
+            "severity_code": severity_code,
+            "start_time": start_time,
+            "end_time": end_time,
+        }
+        endpoint = f"/pipelines/{self.id}/functions/main/logs"
+        http_res = self._request2(
+            method="GET", endpoint=endpoint, request_query_params=query_params
         )
-        base_res = self._request(
-            method="GET",
-            endpoint=f"/pipelines/{self.id}/functions/main/logs",
-            request=request,
-        )
-        base_res_json = base_res.raw_response.json()
-        logs = [
-            api.FunctionLogEntry.from_dict(entry) for entry in base_res_json["logs"]
-        ]
-        return operations.GetFunctionLogsResponse(
-            status_code=base_res.status_code,
-            content_type=base_res.content_type,
-            raw_response=base_res.raw_response,
+        base_res_json = http_res.json()
+        logs = [FunctionLogEntry(**entry) for entry in base_res_json["logs"]]
+        return FunctionLogsResponse(
             logs=logs,
             next=base_res_json["next"],
         )
 
     def _list_access_tokens(self) -> Pipeline:
-        request = operations.ListAccessTokensRequest(
-            organization_id=self.organization_id,
-            personal_access_token=self.personal_access_token,
-            pipeline_id=self.id,
-        )
-        base_res = self._request(
-            method="GET",
-            endpoint=f"/pipelines/{self.id}/access_tokens",
-            request=request,
-        )
-        res_json = base_res.raw_response.json()
-        self.access_tokens = res_json["access_tokens"]
+        endpoint = f"/pipelines/{self.id}/access_tokens"
+        http_res = self._request2(method="GET", endpoint=endpoint)
+        tokens = apiv2.ListAccessTokens(**http_res.json())
+        self.access_tokens = tokens.model_dump()
         return self
 
     def _get_function_artifact(self) -> Pipeline:
@@ -374,17 +396,9 @@ class Pipeline(APIClient):
         Returns:
             self: Pipeline with function source details
         """
-        request = operations.GetArtifactRequest(
-            organization_id=self.organization_id,
-            personal_access_token=self.personal_access_token,
-            pipeline_id=self.id,
-        )
-        base_res = self._request(
-            method="GET",
-            endpoint=f"/pipelines/{self.id}/functions/main/artifacts/latest",
-            request=request,
-        )
-        res_json = base_res.raw_response.json()
+        endpoint = f"/pipelines/{self.id}/functions/main/artifacts/latest"
+        http_res = self._request2(method="GET", endpoint=endpoint)
+        res_json = http_res.json()
         self.transformation_code = res_json["transformation_function"]
 
         if "requirements_txt" in res_json:
@@ -392,26 +406,14 @@ class Pipeline(APIClient):
         return self
 
     def _upload_function_artifact(self, file: str, requirements: str) -> None:
-        request = operations.PostArtifactRequest(
-            pipeline_id=self.id,
-            organization_id=self.organization_id,
-            personal_access_token=self.personal_access_token,
-            file=file,
-            requirementsTxt=requirements,
-        )
-        try:
-            self._request(
-                method="POST",
-                endpoint=f"/pipelines/{self.id}/functions/main/artifacts",
-                request=request,
-                serialization_method="multipart",
-            )
-        except errors.ClientError as e:
-            if e.status_code == 425:
-                # TODO: Figure out appropriate behaviour
-                print("Update still in progress")
-            else:
-                raise e
+        files = {
+            "file": file
+        }
+        data = {
+            "requirementsTxt": requirements,
+        }
+        endpoint = f"/pipelines/{self.id}/functions/main/artifacts"
+        self._request2(method="POST", endpoint=endpoint, files=files, data=data)
 
     def _update_function(self, env_vars):
         """
@@ -423,19 +425,12 @@ class Pipeline(APIClient):
         Returns:
             self: Pipeline with updated function
         """
-        request = operations.UpdateFunctionRequest(
-            organization_id=self.organization_id,
-            personal_access_token=self.personal_access_token,
-            pipeline_id=self.id,
-            environments=env_vars,
+        endpoint = f"/pipelines/{self.id}/functions/main"
+        body = apiv2.PipelineFunctionOutput(environments=env_vars)
+        http_res = self._request2(
+            method="PATCH", endpoint=endpoint, json=body.model_dump()
         )
-        base_res = self._request(
-            method="PATCH",
-            endpoint=f"/pipelines/{self.id}/functions/main",
-            request=request,
-        )
-        res_json = base_res.raw_response.json()
-        self.env_vars = res_json["environments"]
+        self.env_vars = http_res.json()["environments"]
         return self
 
     def get_source(
@@ -509,25 +504,6 @@ class Pipeline(APIClient):
             raise ValueError("client_type must be either source or sink")
         return client
 
-    def _request(
-        self,
-        method: str,
-        endpoint: str,
-        request: operations.BaseManagementRequest,
-        **kwargs,
-    ) -> operations.BaseResponse:
-        try:
-            return super()._request(
-                method=method, endpoint=endpoint, request=request, **kwargs
-            )
-        except errors.ClientError as e:
-            if e.status_code == 404:
-                raise errors.PipelineNotFoundError(self.id, e.raw_response) from e
-            elif e.status_code == 401:
-                raise errors.UnauthorizedError(e.raw_response) from e
-            else:
-                raise e
-
     def _read_transformation_file(self):
         try:
             with open(self.transformation_file) as f:
@@ -540,18 +516,20 @@ class Pipeline(APIClient):
         self.name = pipeline_details["name"]
         self.space_id = pipeline_details["space_id"]
         self.state = pipeline_details["state"]
-        if pipeline_details["source_connector"]:
-            self.source_kind = pipeline_details["source_connector"]["kind"]
-            self.source_config = pipeline_details["source_connector"]["config"]
-        if pipeline_details["sink_connector"]:
-            self.sink_kind = pipeline_details["sink_connector"]["kind"]
-            self.sink_config = pipeline_details["sink_connector"]["config"]
+        source_connector = pipeline_details["source_connector"]
+        if source_connector:
+            self.source_kind = source_connector["kind"]
+            self.source_config = source_connector["config"]
+        sink_connector = pipeline_details["sink_connector"]
+        if sink_connector:
+            self.sink_kind = sink_connector["kind"]
+            self.sink_config = sink_connector["config"]
         self.created_at = pipeline_details["created_at"]
         self.env_vars = pipeline_details["environments"]
 
         return self
 
-    def test(self, data: dict) -> operations.TestFunctionResponse:
+    def test(self, data: dict) -> TestFunctionResponse:
         """
         Test a pipeline's function with a sample input JSON
 
@@ -561,25 +539,11 @@ class Pipeline(APIClient):
         Returns:
             TestFunctionResponse: Test function response
         """
-        request = operations.TestFunctionRequest(
-            pipeline_id=self.id,
-            organization_id=self.organization_id,
-            personal_access_token=self.personal_access_token,
-            request_body=data,
-        )
-
-        base_res = self._request(
-            method="POST",
-            endpoint=f"/pipelines/{self.id}/functions/main/test",
-            request=request,
-        )
-        base_res_json = base_res.raw_response.json()
-        base_res_json["event_context"] = api.EventContext(
-            **base_res_json["event_context"]
-        )
-        return operations.TestFunctionResponse(
-            status_code=base_res.status_code,
-            content_type=base_res.content_type,
-            raw_response=base_res.raw_response,
+        endpoint = f"/pipelines/{self.id}/functions/main/test"
+        request_body = data
+        http_res = self._request2(method="POST", endpoint=endpoint, json=request_body)
+        base_res_json = http_res.json()
+        print("response for test ", base_res_json)
+        return TestFunctionResponse(
             **base_res_json,
         )

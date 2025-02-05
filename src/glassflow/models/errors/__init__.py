@@ -2,11 +2,11 @@ from .clienterror import (
     ClientError,
     PipelineAccessTokenInvalidError,
     PipelineNotFoundError,
+    PipelineUnknownError,
     SpaceIsNotEmptyError,
     SpaceNotFoundError,
     UnauthorizedError,
     UnknownContentTypeError,
-    PipelineUnknownError,
 )
 from .error import Error
 

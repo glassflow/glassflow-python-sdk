@@ -1,11 +1,31 @@
 from .api import (
+    ConsumeOutputEvent,
+    CreatePipeline,
     CreateSpace,
+    GetDetailedSpacePipeline,
+    ListAccessTokens,
+    ListPipelines,
+    ListSpaceScopes,
+    Pipeline,
+    PipelineFunctionOutput,
+    PipelineState,
+    SinkConnector,
+    SourceConnector,
     Space,
-    ConsumeOutputEvent
-
 )
+
 __all__ = [
     "CreateSpace",
     "Space",
-    "ConsumeOutputEvent"
+    "ConsumeOutputEvent",
+    "Pipeline",
+    "GetDetailedSpacePipeline",
+    "ListAccessTokens",
+    "SourceConnector",
+    "SinkConnector",
+    "CreatePipeline",
+    "PipelineState",
+    "PipelineFunctionOutput",
+    "ListSpaceScopes",
+    "ListPipelines",
 ]

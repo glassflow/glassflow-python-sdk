@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+from pathlib import PurePosixPath
+
+import requests
+
 from .api_client import APIClient
-from .models import errors, operations
-from .models.api import PipelineState
+from .models import errors, responses
+from .models.api import v2 as apiv2
 from .pipeline import Pipeline
 from .space import Space
 
@@ -35,6 +39,48 @@ class GlassFlowClient(APIClient):
         super().__init__()
         self.personal_access_token = personal_access_token
         self.organization_id = organization_id
+        self.request_headers = {"Personal-Access-Token": self.personal_access_token}
+        self.request_query_params = {"organization_id": self.organization_id}
+
+    def _request2(
+        self,
+        method,
+        endpoint,
+        request_headers=None,
+        body=None,
+        request_query_params=None,
+    ):
+        # updated request method that knows the request details and does not use utils
+        # Do the https request. check for errors. if no errors, return the raw response http object that the caller can
+        # map to a pydantic object
+        headers = self._get_headers2()
+        headers.update(self.request_headers)
+        if request_headers:
+            headers.update(request_headers)
+
+        query_params = self.request_query_params
+        if request_query_params:
+            query_params.update(request_query_params)
+
+        url = (
+            f"{self.glassflow_config.server_url.rstrip('/')}/{PurePosixPath(endpoint)}"
+        )
+        try:
+            http_res = self.client.request(
+                method, url=url, params=query_params, headers=headers, json=body
+            )
+            http_res.raise_for_status()
+            return http_res
+        except requests.exceptions.HTTPError as http_err:
+            if http_err.response.status_code == 401:
+                raise errors.PipelineAccessTokenInvalidError(http_err.response)
+            if http_err.response.status_code in [404, 400, 500]:
+                raise errors.ClientError(
+                    detail="Error in getting response from GlassFlow",
+                    status_code=http_err.response.status_code,
+                    body=http_err.response.text,
+                    raw_response=http_err.response,
+                )
 
     def get_pipeline(self, pipeline_id: str) -> Pipeline:
         """Gets a Pipeline object from the GlassFlow API
@@ -52,7 +98,9 @@ class GlassFlowClient(APIClient):
             ClientError: GlassFlow Client Error
         """
         return Pipeline(
-            personal_access_token=self.personal_access_token, id=pipeline_id
+            personal_access_token=self.personal_access_token,
+            id=pipeline_id,
+            organization_id=self.organization_id,
         ).fetch()
 
     def create_pipeline(
@@ -66,7 +114,7 @@ class GlassFlowClient(APIClient):
         sink_kind: str = None,
         sink_config: dict = None,
         env_vars: list[dict[str, str]] = None,
-        state: PipelineState = "running",
+        state: str = "running",
         metadata: dict = None,
     ) -> Pipeline:
         """Creates a new GlassFlow pipeline
@@ -113,7 +161,7 @@ class GlassFlowClient(APIClient):
 
     def list_pipelines(
         self, space_ids: list[str] | None = None
-    ) -> operations.ListPipelinesResponse:
+    ) -> responses.ListPipelinesResponse:
         """
         Lists all pipelines in the GlassFlow API
 
@@ -128,33 +176,19 @@ class GlassFlowClient(APIClient):
             UnauthorizedError: User does not have permission to perform the
                 requested operation
         """
-        request = operations.ListPipelinesRequest(
-            space_id=space_ids,
-            organization_id=self.organization_id,
-            personal_access_token=self.personal_access_token,
-        )
-        try:
-            res = self._request(
-                method="GET",
-                endpoint="/pipelines",
-                request=request,
-            )
-            res_json = res.raw_response.json()
-        except errors.ClientError as e:
-            if e.status_code == 401:
-                raise errors.UnauthorizedError(e.raw_response) from e
-            else:
-                raise e
 
-        return operations.ListPipelinesResponse(
-            content_type=res.content_type,
-            status_code=res.status_code,
-            raw_response=res.raw_response,
-            total_amount=res_json["total_amount"],
-            pipelines=res_json["pipelines"],
+        endpoint = "/pipelines"
+        query_params = {}
+        if space_ids:
+            query_params = {"space_id": space_ids}
+        http_res = self._request2(
+            method="GET", endpoint=endpoint, request_query_params=query_params
         )
+        res_json = http_res.json()
+        pipeline_list = apiv2.ListPipelines(**res_json)
+        return responses.ListPipelinesResponse(**pipeline_list.model_dump())
 
-    def list_spaces(self) -> operations.ListSpacesResponse:
+    def list_spaces(self) -> responses.ListSpacesResponse:
         """
         Lists all GlassFlow spaces in the GlassFlow API
 
@@ -165,30 +199,12 @@ class GlassFlowClient(APIClient):
             UnauthorizedError: User does not have permission to perform the
                 requested operation
         """
-        request = operations.ListSpacesRequest(
-            organization_id=self.organization_id,
-            personal_access_token=self.personal_access_token,
-        )
-        try:
-            res = self._request(
-                method="GET",
-                endpoint="/spaces",
-                request=request,
-            )
-            res_json = res.raw_response.json()
-        except errors.ClientError as e:
-            if e.status_code == 401:
-                raise errors.UnauthorizedError(e.raw_response) from e
-            else:
-                raise e
 
-        return operations.ListSpacesResponse(
-            content_type=res.content_type,
-            status_code=res.status_code,
-            raw_response=res.raw_response,
-            total_amount=res_json["total_amount"],
-            spaces=res_json["spaces"],
-        )
+        endpoint = "/spaces"
+        http_res = self._request2(method="GET", endpoint=endpoint)
+        res_json = http_res.json()
+        spaces_list = apiv2.ListSpaceScopes(**res_json)
+        return responses.ListSpacesResponse(**spaces_list.model_dump())
 
     def create_space(
         self,
