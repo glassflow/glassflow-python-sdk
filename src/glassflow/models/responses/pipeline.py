@@ -68,3 +68,36 @@ class SpacePipeline(Pipeline):
 class ListPipelinesResponse(BaseModel):
     total_amount: int
     pipelines: list[SpacePipeline]
+
+
+class ConsumeOutputEvent(BaseModel):
+    payload: Any
+    event_context: EventContext
+    status: str
+    response: Optional[Any] = None
+    error_details: Optional[str] = None
+    stack_trace: Optional[str] = None
+
+class ConsumeEventResponse(BaseModel):
+    body: Optional[ConsumeOutputEvent] = None
+    status_code: Optional[int] = None
+
+    def event(self):
+        if self.body:
+            return self.body["response"]
+        return None
+
+
+class PublishEventResponseBody(BaseModel):
+    """Message pushed to the pipeline."""
+    pass
+
+
+class PublishEventResponse(BaseModel):
+    status_code: Optional[int] = None
+
+
+
+class ConsumeFailedResponse(BaseModel):
+    body: Optional[ConsumeOutputEvent] = None
+    status_code: Optional[int] = None

@@ -1,6 +1,7 @@
 import pytest
 
-from glassflow.models import api, errors
+from glassflow.models import errors
+from glassflow.models.api import v2
 
 
 def test_create_pipeline_ok(creating_pipeline):
@@ -58,7 +59,7 @@ def test_update_pipeline_ok(creating_pipeline):
 
     assert updated_pipeline.source_kind == creating_pipeline.source_kind
     assert updated_pipeline.source_config == creating_pipeline.source_config
-    assert updated_pipeline.state == api.PipelineState.paused
+    assert updated_pipeline.state == v2.PipelineState.paused
 
 
 def test_delete_pipeline_fail_with_404(pipeline_with_random_id):

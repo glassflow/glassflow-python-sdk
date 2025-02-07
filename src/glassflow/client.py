@@ -1,14 +1,11 @@
 """GlassFlow Python Client to interact with GlassFlow API"""
 
 from __future__ import annotations
-
 from pathlib import PurePosixPath
-
 import requests
-
 from .api_client import APIClient
 from .models import errors, responses
-from .models.api import v2 as apiv2
+from .models.api import v2
 from .pipeline import Pipeline
 from .space import Space
 
@@ -185,7 +182,7 @@ class GlassFlowClient(APIClient):
             method="GET", endpoint=endpoint, request_query_params=query_params
         )
         res_json = http_res.json()
-        pipeline_list = apiv2.ListPipelines(**res_json)
+        pipeline_list = v2.ListPipelines(**res_json)
         return responses.ListPipelinesResponse(**pipeline_list.model_dump())
 
     def list_spaces(self) -> responses.ListSpacesResponse:
@@ -203,7 +200,7 @@ class GlassFlowClient(APIClient):
         endpoint = "/spaces"
         http_res = self._request2(method="GET", endpoint=endpoint)
         res_json = http_res.json()
-        spaces_list = apiv2.ListSpaceScopes(**res_json)
+        spaces_list = v2.ListSpaceScopes(**res_json)
         return responses.ListSpacesResponse(**spaces_list.model_dump())
 
     def create_space(

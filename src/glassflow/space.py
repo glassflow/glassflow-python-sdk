@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-from pathlib import PurePosixPath
-
 import requests
-
 from .client import APIClient
 from .models import errors
-from .models.api.v2 import CreateSpace
-from .models.operations.v2 import CreateSpaceResponse
+from .models.api import v2
+
+from dataclasses import is_dataclass
 
 
 class Space(APIClient):
@@ -35,8 +33,8 @@ class Space(APIClient):
         self.created_at = created_at
         self.organization_id = organization_id
         self.personal_access_token = personal_access_token
-        self.request_headers = {"Personal-Access-Token": self.personal_access_token}
-        self.request_query_params = {"organization_id": self.organization_id}
+        self.headers = {"Personal-Access-Token": self.personal_access_token}
+        self.query_params = {"organization_id": self.organization_id}
 
     def create(self) -> Space:
         """
@@ -49,21 +47,16 @@ class Space(APIClient):
             ValueError: If name is not provided in the constructor
 
         """
-        create_space = CreateSpace(name=self.name).model_dump(mode="json")
+        space_api_obj = v2.CreateSpace(name=self.name)
+        print(is_dataclass(space_api_obj))  # True
+
         endpoint = "/spaces"
+        http_res = self._request(method="POST", endpoint=endpoint, json=space_api_obj.model_dump())
 
-        http_res = self._request2(method="POST", endpoint=endpoint, body=create_space)
-        content_type = http_res.headers.get("Content-Type")
-        res = CreateSpaceResponse(
-            status_code=http_res.status_code,
-            content_type=content_type,
-            raw_response=http_res,
-            body=http_res.json(),
-        )
-
-        self.id = res.body.id
-        self.created_at = res.body.created_at
-        self.name = res.body.name
+        space_created = v2.Space(**http_res.json())
+        self.id = space_created.id
+        self.created_at = space_created.created_at
+        self.name = space_created.name
         return self
 
     def delete(self) -> None:
@@ -83,33 +76,24 @@ class Space(APIClient):
             raise ValueError("Space id must be provided in the constructor")
 
         endpoint = f"/spaces/{self.id}"
-        self._request2(method="DELETE", endpoint=endpoint)
+        self._request(method="DELETE", endpoint=endpoint)
 
-    def _request2(
+    def _request(
         self,
         method,
         endpoint,
         request_headers=None,
-        body=None,
+        json=None,
         request_query_params=None,
-    ) -> requests.Response:
-        headers = self._get_headers2()
-        headers.update(self.request_headers)
-        if request_headers:
-            headers.update(request_headers)
-        query_params = self.request_query_params
-
-        if request_query_params:
-            query_params.update(request_query_params)
-        url = (
-            f"{self.glassflow_config.server_url.rstrip('/')}/{PurePosixPath(endpoint)}"
-        )
+        files=None,
+        data=None
+    ):
+        headers = {**self.headers, **(request_headers or {})}
+        query_params = {**self.query_params, **(request_query_params or {})}
         try:
-            http_res = self.client.request(
-                method, url=url, params=query_params, headers=headers, json=body
+            return super()._request(
+                method=method, endpoint=endpoint, request_headers=headers, json=json, request_query_params=query_params, files=files, data=data
             )
-            http_res.raise_for_status()
-            return http_res
         except requests.exceptions.HTTPError as http_err:
             if http_err.response.status_code == 401:
                 raise errors.UnauthorizedError(http_err.response)

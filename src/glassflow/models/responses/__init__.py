@@ -3,6 +3,11 @@ from .pipeline import (
     FunctionLogsResponse,
     ListPipelinesResponse,
     TestFunctionResponse,
+    ConsumeEventResponse,
+    ConsumeOutputEvent,
+    PublishEventResponse,
+    ConsumeFailedResponse
+
 )
 from .space import ListSpacesResponse, Space
 
@@ -13,4 +18,9 @@ __all__ = [
     "FunctionLogEntry",
     "TestFunctionResponse",
     "ListPipelinesResponse",
+    "ConsumeEventResponse",
+    "ConsumeOutputEvent",
+    "PublishEventResponse",
+    "ConsumeFailedResponse"
+
 ]

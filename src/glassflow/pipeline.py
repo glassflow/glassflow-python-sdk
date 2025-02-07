@@ -1,12 +1,8 @@
 from __future__ import annotations
 
-from pathlib import PurePosixPath
-
-import requests
 
 from .client import APIClient
-from .models import errors
-from .models.api import v2 as apiv2
+from .models.api import v2
 from .models.operations import v2 as operationsv2
 from .models.responses import (
     FunctionLogEntry,
@@ -14,6 +10,7 @@ from .models.responses import (
     TestFunctionResponse,
 )
 from .pipeline_data import PipelineDataSink, PipelineDataSource
+from .models import errors
 
 
 class Pipeline(APIClient):
@@ -81,8 +78,8 @@ class Pipeline(APIClient):
         self.created_at = created_at
         self.access_tokens = []
 
-        self.request_headers = {"Personal-Access-Token": self.personal_access_token}
-        self.request_query_params = {"organization_id": self.organization_id}
+        self.headers = {"Personal-Access-Token": self.personal_access_token}
+        self.query_params = {"organization_id": self.organization_id}
         if self.transformation_file is not None:
             self._read_transformation_file()
 
@@ -106,7 +103,7 @@ class Pipeline(APIClient):
         else:
             raise ValueError("Both sink_kind and sink_config must be provided")
 
-    def _request2(
+    def _request(
         self,
         method,
         endpoint,
@@ -116,34 +113,19 @@ class Pipeline(APIClient):
         files=None,
         data=None
     ):
-        # updated request method that knows the request details and does not use utils
-        # Do the https request. check for errors. if no errors, return the raw response http object that the caller can
-        # map to a pydantic object
-        headers = self._get_headers2()
-        headers.update(self.request_headers)
-        if request_headers:
-            headers.update(request_headers)
-
-        query_params = self.request_query_params
-        if request_query_params:
-            query_params.update(request_query_params)
-
-        url = (
-            f"{self.glassflow_config.server_url.rstrip('/')}/{PurePosixPath(endpoint)}"
-        )
+        headers = {**self.headers, **(request_headers or {})}
+        query_params = {**self.query_params, **(request_query_params or {})}
         try:
-            http_res = self.client.request(
-                method, url=url, params=query_params, headers=headers, json=json, files=files, data=data
+            return super()._request(
+                method=method, endpoint=endpoint, request_headers=headers, json=json, request_query_params=query_params, files=files, data=data
             )
-            http_res.raise_for_status()
-            return http_res
-        except requests.exceptions.HTTPError as http_err:
-            if http_err.response.status_code == 401:
-                raise errors.PipelineAccessTokenInvalidError(http_err.response)
-            if http_err.response.status_code == 404:
-                raise errors.PipelineNotFoundError(self.id, http_err.response)
-            if http_err.response.status_code in [400, 500]:
-                raise errors.PipelineUnknownError(self.id, http_err.response)
+        except errors.ClientError as e:
+            if e.status_code == 404:
+                raise errors.PipelineNotFoundError(self.id, e.raw_response) from e
+            elif e.status_code == 401:
+                raise errors.UnauthorizedError(e.raw_response) from e
+            else:
+                raise e
 
     def fetch(self) -> Pipeline:
         """
@@ -165,7 +147,7 @@ class Pipeline(APIClient):
             )
 
         endpoint = f"/pipelines/{self.id}"
-        http_res = self._request2(method="GET", endpoint=endpoint)
+        http_res = self._request(method="GET", endpoint=endpoint)
         res = operationsv2.CreatePipelineResponse(
             status_code=http_res.status_code,
             content_type=http_res.headers.get("Content-Type"),
@@ -204,7 +186,7 @@ class Pipeline(APIClient):
         else:
             self._read_transformation_file()
 
-        create_pipeline = apiv2.CreatePipeline(
+        create_pipeline = v2.CreatePipeline(
             name=self.name,
             space_id=self.space_id,
             transformation_function=self.transformation_code,
@@ -212,11 +194,11 @@ class Pipeline(APIClient):
             source_connector=self.source_connector,
             sink_connector=self.sink_connector,
             environments=self.env_vars,
-            state=apiv2.PipelineState(self.state),
+            state=v2.PipelineState(self.state),
             metadata=self.metadata,
         )
         endpoint = "/pipelines"
-        http_res = self._request2(
+        http_res = self._request(
             method="POST", endpoint=endpoint, json=create_pipeline.model_dump()
         )
 
@@ -312,7 +294,7 @@ class Pipeline(APIClient):
 
         endpoint = f"/pipelines/{self.id}"
         body = pipeline_req.model_dump()
-        http_res = self._request2(method="PATCH", endpoint=endpoint, json=body)
+        http_res = self._request(method="PATCH", endpoint=endpoint, json=body)
         # TODO is this object needed ?
         res = operationsv2.CreatePipelineResponse(
             status_code=http_res.status_code,
@@ -340,7 +322,7 @@ class Pipeline(APIClient):
             raise ValueError("Pipeline id must be provided")
 
         endpoint = f"/pipelines/{self.id}"
-        http_res = self._request2(method="DELETE", endpoint=endpoint)
+        http_res = self._request(method="DELETE", endpoint=endpoint)
 
     def get_logs(
         self,
@@ -372,7 +354,7 @@ class Pipeline(APIClient):
             "end_time": end_time,
         }
         endpoint = f"/pipelines/{self.id}/functions/main/logs"
-        http_res = self._request2(
+        http_res = self._request(
             method="GET", endpoint=endpoint, request_query_params=query_params
         )
         base_res_json = http_res.json()
@@ -384,8 +366,8 @@ class Pipeline(APIClient):
 
     def _list_access_tokens(self) -> Pipeline:
         endpoint = f"/pipelines/{self.id}/access_tokens"
-        http_res = self._request2(method="GET", endpoint=endpoint)
-        tokens = apiv2.ListAccessTokens(**http_res.json())
+        http_res = self._request(method="GET", endpoint=endpoint)
+        tokens = v2.ListAccessTokens(**http_res.json())
         self.access_tokens = tokens.model_dump()
         return self
 
@@ -397,7 +379,7 @@ class Pipeline(APIClient):
             self: Pipeline with function source details
         """
         endpoint = f"/pipelines/{self.id}/functions/main/artifacts/latest"
-        http_res = self._request2(method="GET", endpoint=endpoint)
+        http_res = self._request(method="GET", endpoint=endpoint)
         res_json = http_res.json()
         self.transformation_code = res_json["transformation_function"]
 
@@ -413,7 +395,7 @@ class Pipeline(APIClient):
             "requirementsTxt": requirements,
         }
         endpoint = f"/pipelines/{self.id}/functions/main/artifacts"
-        self._request2(method="POST", endpoint=endpoint, files=files, data=data)
+        self._request(method="POST", endpoint=endpoint, files=files, data=data)
 
     def _update_function(self, env_vars):
         """
@@ -426,8 +408,8 @@ class Pipeline(APIClient):
             self: Pipeline with updated function
         """
         endpoint = f"/pipelines/{self.id}/functions/main"
-        body = apiv2.PipelineFunctionOutput(environments=env_vars)
-        http_res = self._request2(
+        body = v2.PipelineFunctionOutput(environments=env_vars)
+        http_res = self._request(
             method="PATCH", endpoint=endpoint, json=body.model_dump()
         )
         self.env_vars = http_res.json()["environments"]
@@ -541,7 +523,7 @@ class Pipeline(APIClient):
         """
         endpoint = f"/pipelines/{self.id}/functions/main/test"
         request_body = data
-        http_res = self._request2(method="POST", endpoint=endpoint, json=request_body)
+        http_res = self._request(method="POST", endpoint=endpoint, json=request_body)
         base_res_json = http_res.json()
         print("response for test ", base_res_json)
         return TestFunctionResponse(

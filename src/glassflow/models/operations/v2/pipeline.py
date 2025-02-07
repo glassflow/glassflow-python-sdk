@@ -2,7 +2,7 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from src.glassflow.models.api.v2 import (
+from glassflow.models.api.v2 import (
     GetDetailedSpacePipeline,
     SinkConnector,
     SourceConnector,
