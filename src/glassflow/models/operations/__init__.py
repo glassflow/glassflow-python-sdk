@@ -1,11 +1,11 @@
 from glassflow.models.operations.pipeline import (
-    CreatePipelineResponse,
+    CreatePipeline,
     FetchPipelineResponse,
     UpdatePipelineRequest,
 )
 
 __all__ = [
-    "CreatePipelineResponse",
+    "CreatePipeline",
     "FetchPipelineResponse",
     "UpdatePipelineRequest",
 ]

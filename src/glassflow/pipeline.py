@@ -197,21 +197,20 @@ class Pipeline(APIClient):
         http_res = self._request(
             method="POST", endpoint=endpoint, json=create_pipeline.model_dump()
         )
-
-        res = operations.CreatePipelineResponse(
-            status_code=http_res.status_code,
-            content_type=http_res.headers.get("Content-Type"),
-            raw_response=http_res,
-            body=http_res.json(),
+        res_json = http_res.json()
+        # using custom operations model because api model does not exist
+        res = operations.CreatePipeline(
+            **res_json,
         )
-        self.id = res.body.id
-        self.created_at = res.body.created_at
+        self.id = res.id
+        self.created_at = res.created_at
+        self.space_id = res.space_id
         self.access_tokens.append(
             AccessToken(
                 name="default",
-                token=res.body.access_token,
+                token=res.access_token,
                 id="default",
-                created_at=res.body.created_at,
+                created_at=res.created_at,
             )
         )
         return self
@@ -287,6 +286,7 @@ class Pipeline(APIClient):
         if env_vars is not None:
             self._update_function(env_vars)
 
+        # using custom model because api model does not exist
         pipeline_req = operations.UpdatePipelineRequest(
             name=name if name is not None else self.name,
             state=state if state is not None else self.state,
@@ -298,6 +298,9 @@ class Pipeline(APIClient):
         endpoint = f"/pipelines/{self.id}"
         body = pipeline_req.model_dump()
         http_res = self._request(method="PATCH", endpoint=endpoint, json=body)
+        # Fetch updated pipeline details and validate
+        updated_pipeline = api.GetDetailedSpacePipeline(**http_res.json())
+        # TODO use the response model
         self._fill_pipeline_details(http_res.json())
         return self
 
