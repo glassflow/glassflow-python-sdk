@@ -86,7 +86,7 @@ def fetch_pipeline_response():
                 ],
             },
         },
-        "environments": [{"test-var": "test-var"}],
+        "environments": [{"name": "test-var", "value": "test-var"}],
     }
 
 

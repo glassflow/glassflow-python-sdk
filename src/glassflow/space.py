@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import requests
-from .client import APIClient
-from .models import errors
-from .models.api import v2
+import datetime
 
-from dataclasses import is_dataclass
+import requests
+
+from .client import APIClient
+from .models import api, errors
 
 
 class Space(APIClient):
@@ -14,7 +14,7 @@ class Space(APIClient):
         personal_access_token: str,
         name: str | None = None,
         id: str | None = None,
-        created_at: str | None = None,
+        created_at: datetime.datetime | None = None,
         organization_id: str | None = None,
     ):
         """Creates a new GlassFlow space object
@@ -47,13 +47,14 @@ class Space(APIClient):
             ValueError: If name is not provided in the constructor
 
         """
-        space_api_obj = v2.CreateSpace(name=self.name)
-        print(is_dataclass(space_api_obj))  # True
+        space_api_obj = api.CreateSpace(name=self.name)
 
         endpoint = "/spaces"
-        http_res = self._request(method="POST", endpoint=endpoint, json=space_api_obj.model_dump())
+        http_res = self._request(
+            method="POST", endpoint=endpoint, json=space_api_obj.model_dump()
+        )
 
-        space_created = v2.Space(**http_res.json())
+        space_created = api.Space(**http_res.json())
         self.id = space_created.id
         self.created_at = space_created.created_at
         self.name = space_created.name
@@ -86,20 +87,28 @@ class Space(APIClient):
         json=None,
         request_query_params=None,
         files=None,
-        data=None
+        data=None,
     ):
         headers = {**self.headers, **(request_headers or {})}
         query_params = {**self.query_params, **(request_query_params or {})}
         try:
             return super()._request(
-                method=method, endpoint=endpoint, request_headers=headers, json=json, request_query_params=query_params, files=files, data=data
+                method=method,
+                endpoint=endpoint,
+                request_headers=headers,
+                json=json,
+                request_query_params=query_params,
+                files=files,
+                data=data,
             )
         except requests.exceptions.HTTPError as http_err:
             if http_err.response.status_code == 401:
-                raise errors.UnauthorizedError(http_err.response)
+                raise errors.UnauthorizedError(http_err.response) from http_err
             if http_err.response.status_code == 404:
-                raise errors.SpaceNotFoundError(self.id, http_err.response)
+                raise errors.SpaceNotFoundError(
+                    self.id, http_err.response
+                ) from http_err
             if http_err.response.status_code == 409:
-                raise errors.SpaceIsNotEmptyError(http_err.response)
+                raise errors.SpaceIsNotEmptyError(http_err.response) from http_err
             # TODO add Unknown Error for 400 and 500
             raise http_err

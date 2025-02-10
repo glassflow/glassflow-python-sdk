@@ -1,7 +1,6 @@
 import pytest
 
-from glassflow.models import errors
-from glassflow.models.api import v2
+from glassflow.models import api, errors
 
 
 def test_create_pipeline_ok(creating_pipeline):
@@ -59,7 +58,7 @@ def test_update_pipeline_ok(creating_pipeline):
 
     assert updated_pipeline.source_kind == creating_pipeline.source_kind
     assert updated_pipeline.source_config == creating_pipeline.source_config
-    assert updated_pipeline.state == v2.PipelineState.paused
+    assert updated_pipeline.state == api.PipelineState.paused
 
 
 def test_delete_pipeline_fail_with_404(pipeline_with_random_id):
@@ -88,8 +87,6 @@ def test_get_logs_from_pipeline_ok(creating_pipeline):
             n_tries += 1
             time.sleep(1)
 
-    assert logs.status_code == 200
-    assert logs.content_type == "application/json"
     assert logs.logs[0].payload.message == "Function is uploaded"
     assert logs.logs[0].level == "INFO"
     assert logs.logs[1].payload.message == "Pipeline is created"
@@ -100,6 +97,4 @@ def test_test_pipeline_ok(creating_pipeline):
     test_message = {"message": "test"}
     response = creating_pipeline.test(test_message)
 
-    assert response.status_code == 200
-    assert response.content_type == "application/json"
     assert response.payload == test_message

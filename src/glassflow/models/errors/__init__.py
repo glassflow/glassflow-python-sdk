@@ -2,6 +2,7 @@ from .clienterror import (
     ClientError,
     PipelineAccessTokenInvalidError,
     PipelineNotFoundError,
+    PipelineTooManyRequestsError,
     PipelineUnknownError,
     SpaceIsNotEmptyError,
     SpaceNotFoundError,
@@ -20,4 +21,6 @@ __all__ = [
     "UnauthorizedError",
     "SpaceIsNotEmptyError",
     "PipelineUnknownError",
+    "PipelineAccessTokenInvalidError",
+    "PipelineTooManyRequestsError",
 ]

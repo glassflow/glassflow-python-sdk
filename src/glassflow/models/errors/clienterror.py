@@ -134,3 +134,15 @@ class SpaceIsNotEmptyError(ClientError):
             body=raw_response.text,
             raw_response=raw_response,
         )
+
+
+class PipelineTooManyRequestsError(ClientError):
+    """Error caused by too many requests."""
+
+    def __init__(self, raw_response: requests_http.Response):
+        super().__init__(
+            detail="Too many requests",
+            status_code=429,
+            body=raw_response.text,
+            raw_response=raw_response,
+        )

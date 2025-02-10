@@ -1,11 +1,9 @@
 """GlassFlow Python Client to interact with GlassFlow API"""
 
-from __future__ import annotations
-from pathlib import PurePosixPath
 import requests
+
 from .api_client import APIClient
 from .models import errors, responses
-from .models.api import v2
 from .pipeline import Pipeline
 from .space import Space
 
@@ -39,45 +37,40 @@ class GlassFlowClient(APIClient):
         self.request_headers = {"Personal-Access-Token": self.personal_access_token}
         self.request_query_params = {"organization_id": self.organization_id}
 
-    def _request2(
+    def _request(
         self,
         method,
         endpoint,
         request_headers=None,
-        body=None,
+        json=None,
         request_query_params=None,
+        files=None,
+        data=None,
     ):
-        # updated request method that knows the request details and does not use utils
-        # Do the https request. check for errors. if no errors, return the raw response http object that the caller can
-        # map to a pydantic object
-        headers = self._get_headers2()
-        headers.update(self.request_headers)
-        if request_headers:
-            headers.update(request_headers)
+        headers = {**self.request_headers, **(request_headers or {})}
+        query_params = {**self.request_query_params, **(request_query_params or {})}
 
-        query_params = self.request_query_params
-        if request_query_params:
-            query_params.update(request_query_params)
-
-        url = (
-            f"{self.glassflow_config.server_url.rstrip('/')}/{PurePosixPath(endpoint)}"
-        )
         try:
-            http_res = self.client.request(
-                method, url=url, params=query_params, headers=headers, json=body
+            http_res = super()._request(
+                method=method,
+                endpoint=endpoint,
+                request_headers=headers,
+                json=json,
+                request_query_params=query_params,
+                files=files,
+                data=data,
             )
-            http_res.raise_for_status()
             return http_res
         except requests.exceptions.HTTPError as http_err:
             if http_err.response.status_code == 401:
-                raise errors.PipelineAccessTokenInvalidError(http_err.response)
+                raise errors.UnauthorizedError(http_err.response) from http_err
             if http_err.response.status_code in [404, 400, 500]:
                 raise errors.ClientError(
                     detail="Error in getting response from GlassFlow",
                     status_code=http_err.response.status_code,
                     body=http_err.response.text,
                     raw_response=http_err.response,
-                )
+                ) from http_err
 
     def get_pipeline(self, pipeline_id: str) -> Pipeline:
         """Gets a Pipeline object from the GlassFlow API
@@ -157,7 +150,7 @@ class GlassFlowClient(APIClient):
         ).create()
 
     def list_pipelines(
-        self, space_ids: list[str] | None = None
+        self, space_ids: list[str] = None
     ) -> responses.ListPipelinesResponse:
         """
         Lists all pipelines in the GlassFlow API
@@ -178,12 +171,11 @@ class GlassFlowClient(APIClient):
         query_params = {}
         if space_ids:
             query_params = {"space_id": space_ids}
-        http_res = self._request2(
+        http_res = self._request(
             method="GET", endpoint=endpoint, request_query_params=query_params
         )
         res_json = http_res.json()
-        pipeline_list = v2.ListPipelines(**res_json)
-        return responses.ListPipelinesResponse(**pipeline_list.model_dump())
+        return responses.ListPipelinesResponse(**res_json)
 
     def list_spaces(self) -> responses.ListSpacesResponse:
         """
@@ -198,10 +190,9 @@ class GlassFlowClient(APIClient):
         """
 
         endpoint = "/spaces"
-        http_res = self._request2(method="GET", endpoint=endpoint)
+        http_res = self._request(method="GET", endpoint=endpoint)
         res_json = http_res.json()
-        spaces_list = v2.ListSpaceScopes(**res_json)
-        return responses.ListSpacesResponse(**spaces_list.model_dump())
+        return responses.ListSpacesResponse(**res_json)
 
     def create_space(
         self,

@@ -54,6 +54,7 @@ def pipeline(client, creating_space):
         space_id=creating_space.id,
         transformation_file="tests/data/transformation.py",
         personal_access_token=client.personal_access_token,
+        metadata={"view_only": True},
     )
 
 
@@ -84,7 +85,7 @@ def creating_pipeline(pipeline):
 def source(creating_pipeline):
     return PipelineDataSource(
         pipeline_id=creating_pipeline.id,
-        pipeline_access_token=creating_pipeline.access_tokens[0]["token"],
+        pipeline_access_token=creating_pipeline.access_tokens[0].token,
     )
 
 
@@ -99,7 +100,7 @@ def source_with_invalid_access_token(creating_pipeline):
 def source_with_non_existing_id(creating_pipeline):
     return PipelineDataSource(
         pipeline_id=str(uuid.uuid4()),
-        pipeline_access_token=creating_pipeline.access_tokens[0]["token"],
+        pipeline_access_token=creating_pipeline.access_tokens[0].token,
     )
 
 

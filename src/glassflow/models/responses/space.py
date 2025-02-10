@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import List
 
 from pydantic import BaseModel
 
@@ -13,4 +12,4 @@ class Space(BaseModel):
 
 class ListSpacesResponse(BaseModel):
     total_amount: int
-    spaces: List[Space]
+    spaces: list[Space]

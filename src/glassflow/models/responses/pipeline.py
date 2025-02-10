@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 
@@ -19,25 +21,25 @@ class FunctionLogEntry(BaseModel):
 
 
 class FunctionLogsResponse(BaseModel):
-    logs: List[FunctionLogEntry]
+    logs: list[FunctionLogEntry]
     next: str
 
 
 class EventContext(BaseModel):
     request_id: str
-    external_id: Optional[str] = None
+    external_id: str | None = None
     receive_time: AwareDatetime
 
 
 class ConsumeOutputEvent(BaseModel):
-    req_id: Optional[str] = Field(None, description="DEPRECATED")
-    receive_time: Optional[AwareDatetime] = Field(None, description="DEPRECATED")
+    req_id: str | None = Field(None, description="DEPRECATED")
+    receive_time: AwareDatetime | None = Field(None, description="DEPRECATED")
     payload: Any
     event_context: EventContext
     status: str
-    response: Optional[Any] = None
-    error_details: Optional[str] = None
-    stack_trace: Optional[str] = None
+    response: Any | None = None
+    error_details: str | None = None
+    stack_trace: str | None = None
 
 
 class TestFunctionResponse(ConsumeOutputEvent):
@@ -47,7 +49,7 @@ class TestFunctionResponse(ConsumeOutputEvent):
 class BasePipeline(BaseModel):
     name: str
     space_id: str
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
 
 class PipelineState(str, Enum):
@@ -74,13 +76,14 @@ class ConsumeOutputEvent(BaseModel):
     payload: Any
     event_context: EventContext
     status: str
-    response: Optional[Any] = None
-    error_details: Optional[str] = None
-    stack_trace: Optional[str] = None
+    response: Any | None = None
+    error_details: str | None = None
+    stack_trace: str | None = None
+
 
 class ConsumeEventResponse(BaseModel):
-    body: Optional[ConsumeOutputEvent] = None
-    status_code: Optional[int] = None
+    body: ConsumeOutputEvent | None = None
+    status_code: int | None = None
 
     def event(self):
         if self.body:
@@ -90,14 +93,26 @@ class ConsumeEventResponse(BaseModel):
 
 class PublishEventResponseBody(BaseModel):
     """Message pushed to the pipeline."""
+
     pass
 
 
 class PublishEventResponse(BaseModel):
-    status_code: Optional[int] = None
-
+    status_code: int | None = None
 
 
 class ConsumeFailedResponse(BaseModel):
-    body: Optional[ConsumeOutputEvent] = None
-    status_code: Optional[int] = None
+    body: ConsumeOutputEvent | None = None
+    status_code: int | None = None
+
+
+class AccessToken(BaseModel):
+    id: str
+    name: str
+    token: str
+    created_at: AwareDatetime
+
+
+class ListAccessTokensResponse(BaseModel):
+    access_tokens: list[AccessToken]
+    total_amount: int

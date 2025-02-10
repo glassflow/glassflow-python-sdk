@@ -124,7 +124,7 @@ def test_create_pipeline_fail_with_missing_name(client):
         ).create()
 
     assert e.value.__str__() == (
-        "Name must be provided in order to " "create the pipeline"
+        "Name must be provided in order to create the pipeline"
     )
 
 
@@ -261,8 +261,6 @@ def test_get_logs_from_pipeline_ok(client, requests_mock, get_logs_response):
     pipeline = Pipeline(id=pipeline_id, personal_access_token="test-token")
     logs = pipeline.get_logs(page_size=50, severity_code=100)
 
-    assert logs.status_code == 200
-    assert logs.content_type == "application/json"
     assert logs.next == get_logs_response["next"]
     for idx, log in enumerate(logs.logs):
         assert log.level == get_logs_response["logs"][idx]["level"]
@@ -284,8 +282,9 @@ def test_test_pipeline_ok(client, requests_mock, test_pipeline_response):
     pipeline = Pipeline(id=pipeline_id, personal_access_token="test-token")
     response = pipeline.test(test_pipeline_response["payload"])
 
-    assert response.status_code == 200
-    assert response.content_type == "application/json"
-    assert response.event_context.to_dict() == test_pipeline_response["event_context"]
+    assert (
+        response.event_context.external_id
+        == test_pipeline_response["event_context"]["external_id"]
+    )
     assert response.status == test_pipeline_response["status"]
     assert response.response == test_pipeline_response["response"]

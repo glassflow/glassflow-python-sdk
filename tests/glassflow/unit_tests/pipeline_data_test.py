@@ -55,7 +55,6 @@ def test_push_to_pipeline_data_source_ok(requests_mock):
     res = source.publish({"test": "test"})
 
     assert res.status_code == 200
-    assert res.content_type == "application/json"
 
 
 def test_push_to_pipeline_data_source_fail_with_404(requests_mock):
@@ -113,8 +112,7 @@ def test_consume_from_pipeline_data_sink_ok(requests_mock, consume_payload):
     res = sink.consume()
 
     assert res.status_code == 200
-    assert res.content_type == "application/json"
-    assert res.body.req_id == consume_payload["req_id"]
+    assert res.body.event_context.request_id == consume_payload["req_id"]
 
 
 def test_consume_from_pipeline_data_sink_fail_with_404(requests_mock):
@@ -175,8 +173,7 @@ def test_consume_from_pipeline_data_sink_ok_with_empty_response(requests_mock):
     res = sink.consume()
 
     assert res.status_code == 204
-    assert res.content_type == "application/json"
-    assert res.body.event == {}
+    assert res.body is None
 
 
 def test_consume_from_pipeline_data_sink_ok_with_too_many_requests(requests_mock):
@@ -197,8 +194,7 @@ def test_consume_from_pipeline_data_sink_ok_with_too_many_requests(requests_mock
     res = sink.consume()
 
     assert res.status_code == 429
-    assert res.content_type == "application/json"
-    assert res.body.event == {}
+    assert res.body is None
 
 
 def test_consume_failed_from_pipeline_data_sink_ok(requests_mock, consume_payload):
@@ -220,8 +216,7 @@ def test_consume_failed_from_pipeline_data_sink_ok(requests_mock, consume_payloa
     res = sink.consume_failed()
 
     assert res.status_code == 200
-    assert res.content_type == "application/json"
-    assert res.body.req_id == consume_payload["req_id"]
+    assert res.body.event_context.request_id == consume_payload["req_id"]
 
 
 def test_consume_failed_from_pipeline_data_sink_ok_with_empty_response(requests_mock):
@@ -242,8 +237,7 @@ def test_consume_failed_from_pipeline_data_sink_ok_with_empty_response(requests_
     res = sink.consume_failed()
 
     assert res.status_code == 204
-    assert res.content_type == "application/json"
-    assert res.body.event == {}
+    assert res.body is None
 
 
 def test_consume_failed_from_pipeline_data_sink_ok_with_too_many_requests(
@@ -266,8 +260,7 @@ def test_consume_failed_from_pipeline_data_sink_ok_with_too_many_requests(
     res = sink.consume_failed()
 
     assert res.status_code == 429
-    assert res.content_type == "application/json"
-    assert res.body.event == {}
+    assert res.body is None
 
 
 def test_consume_failed_from_pipeline_data_sink_fail_with_404(requests_mock):
