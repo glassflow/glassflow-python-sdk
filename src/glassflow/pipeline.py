@@ -150,13 +150,7 @@ class Pipeline(APIClient):
 
         endpoint = f"/pipelines/{self.id}"
         http_res = self._request(method="GET", endpoint=endpoint)
-        res = operations.FetchPipelineResponse(
-            status_code=http_res.status_code,
-            content_type=http_res.headers.get("Content-Type"),
-            raw_response=http_res,
-            body=http_res.json(),
-        )
-        self._fill_pipeline_details(res.body.model_dump())
+        self._fill_pipeline_details(http_res.json())
         # Fetch Pipeline Access Tokens
         self._list_access_tokens()
         # Fetch function source
@@ -304,14 +298,7 @@ class Pipeline(APIClient):
         endpoint = f"/pipelines/{self.id}"
         body = pipeline_req.model_dump()
         http_res = self._request(method="PATCH", endpoint=endpoint, json=body)
-        # TODO is this object needed ?
-        res = operations.FetchPipelineResponse(
-            status_code=http_res.status_code,
-            content_type=http_res.headers.get("Content-Type"),
-            raw_response=http_res,
-            body=http_res.json(),
-        )
-        self._fill_pipeline_details(res.body.model_dump())
+        self._fill_pipeline_details(http_res.json())
         return self
 
     def delete(self) -> None:
