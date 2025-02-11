@@ -87,7 +87,7 @@ class ConsumeEventResponse(BaseModel):
 
     def event(self):
         if self.body:
-            return self.body["response"]
+            return self.body.response
         return None
 
 
