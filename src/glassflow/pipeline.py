@@ -150,7 +150,8 @@ class Pipeline(APIClient):
 
         endpoint = f"/pipelines/{self.id}"
         http_res = self._request(method="GET", endpoint=endpoint)
-        self._fill_pipeline_details(http_res.json())
+        fetched_pipeline = api.GetDetailedSpacePipeline(**http_res.json())
+        self._fill_pipeline_details(fetched_pipeline)
         # Fetch Pipeline Access Tokens
         self._list_access_tokens()
         # Fetch function source
@@ -202,6 +203,7 @@ class Pipeline(APIClient):
         res = operations.CreatePipeline(
             **res_json,
         )
+        # it seems somebody doesn't lock his laptop
         self.id = res.id
         self.created_at = res.created_at
         self.space_id = res.space_id
@@ -296,12 +298,11 @@ class Pipeline(APIClient):
         )
 
         endpoint = f"/pipelines/{self.id}"
-        body = pipeline_req.model_dump()
-        http_res = self._request(method="PATCH", endpoint=endpoint, json=body)
+        body = pipeline_req.model_dump_json(exclude_none=True)
+        http_res = self._request(method="PATCH", endpoint=endpoint, data=body)
         # Fetch updated pipeline details and validate
         updated_pipeline = api.GetDetailedSpacePipeline(**http_res.json())
-        # TODO use the response model
-        self._fill_pipeline_details(http_res.json())
+        self._fill_pipeline_details(updated_pipeline)
         return self
 
     def delete(self) -> None:
@@ -381,6 +382,7 @@ class Pipeline(APIClient):
         http_res = self._request(method="GET", endpoint=endpoint)
         res_json = http_res.json()
         self.transformation_code = res_json["transformation_function"]
+        # you would never know what else was changed
 
         if "requirements_txt" in res_json:
             self.requirements = res_json["requirements_txt"]
@@ -490,21 +492,23 @@ class Pipeline(APIClient):
         except FileNotFoundError:
             raise
 
-    def _fill_pipeline_details(self, pipeline_details: dict) -> Pipeline:
-        self.id = pipeline_details["id"]
-        self.name = pipeline_details["name"]
-        self.space_id = pipeline_details["space_id"]
-        self.state = pipeline_details["state"]
-        source_connector = pipeline_details["source_connector"]
-        if source_connector:
-            self.source_kind = source_connector["kind"]
-            self.source_config = source_connector["config"]
-        sink_connector = pipeline_details["sink_connector"]
-        if sink_connector:
-            self.sink_kind = sink_connector["kind"]
-            self.sink_config = sink_connector["config"]
-        self.created_at = pipeline_details["created_at"]
-        self.env_vars = pipeline_details["environments"]
+    def _fill_pipeline_details(
+        self, pipeline_details: api.GetDetailedSpacePipeline
+    ) -> Pipeline:
+        self.id = pipeline_details.id
+        self.name = pipeline_details.name
+        self.space_id = pipeline_details.space_id
+        self.state = pipeline_details.state
+        source_connector = pipeline_details.source_connector
+        if source_connector.root:
+            self.source_kind = source_connector.root.kind
+            self.source_config = source_connector.root.config
+        sink_connector = pipeline_details.sink_connector
+        if sink_connector.root:
+            self.sink_kind = sink_connector.root.kind
+            self.sink_config = sink_connector.root.config
+        self.created_at = pipeline_details.created_at
+        self.env_vars = pipeline_details.environments
 
         return self
 

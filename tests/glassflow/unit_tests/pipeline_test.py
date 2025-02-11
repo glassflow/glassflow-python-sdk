@@ -52,11 +52,11 @@ def test_fetch_pipeline_ok(
     function_source_response,
 ):
     pipeline = Pipeline(
-        id=fetch_pipeline_response["id"],
+        id=fetch_pipeline_response.id,
         personal_access_token="test-token",
     ).fetch()
 
-    assert pipeline.name == fetch_pipeline_response["name"]
+    assert pipeline.name == fetch_pipeline_response.name
     assert len(pipeline.access_tokens) > 0
     assert (
         pipeline.transformation_code
@@ -68,14 +68,14 @@ def test_fetch_pipeline_ok(
 def test_fetch_pipeline_fail_with_404(requests_mock, fetch_pipeline_response, client):
     requests_mock.get(
         client.glassflow_config.server_url + "/pipelines/test-id",
-        json=fetch_pipeline_response,
+        json=fetch_pipeline_response.model_dump(mode="json"),
         status_code=404,
         headers={"Content-Type": "application/json"},
     )
 
     with pytest.raises(errors.PipelineNotFoundError):
         Pipeline(
-            id=fetch_pipeline_response["id"],
+            id=fetch_pipeline_response.id,
             personal_access_token="test-token",
         ).fetch()
 
@@ -83,14 +83,14 @@ def test_fetch_pipeline_fail_with_404(requests_mock, fetch_pipeline_response, cl
 def test_fetch_pipeline_fail_with_401(requests_mock, fetch_pipeline_response, client):
     requests_mock.get(
         client.glassflow_config.server_url + "/pipelines/test-id",
-        json=fetch_pipeline_response,
+        json=fetch_pipeline_response.model_dump(mode="json"),
         status_code=401,
         headers={"Content-Type": "application/json"},
     )
 
     with pytest.raises(errors.UnauthorizedError):
         Pipeline(
-            id=fetch_pipeline_response["id"],
+            id=fetch_pipeline_response.id,
             personal_access_token="test-token",
         ).fetch()
 
@@ -105,7 +105,7 @@ def test_create_pipeline_ok(
         headers={"Content-Type": "application/json"},
     )
     pipeline = Pipeline(
-        name=fetch_pipeline_response["name"],
+        name=fetch_pipeline_response.name,
         space_id=create_pipeline_response["space_id"],
         transformation_file="tests/data/transformation.py",
         personal_access_token="test-token",
@@ -166,8 +166,8 @@ def test_update_pipeline_ok(
         .update()
     )
 
-    assert pipeline.name == update_pipeline_response["name"]
-    assert pipeline.source_connector == update_pipeline_response["source_connector"]
+    assert pipeline.name == update_pipeline_response.name
+    assert pipeline.source_connector == update_pipeline_response.source_connector.root
 
 
 def test_delete_pipeline_ok(requests_mock, client):
@@ -199,7 +199,7 @@ def test_get_source_from_pipeline_ok(
     get_pipeline_function_source_request_mock,
     access_tokens_response,
 ):
-    p = client.get_pipeline(fetch_pipeline_response["id"])
+    p = client.get_pipeline(fetch_pipeline_response.id)
     source = p.get_source()
     source2 = p.get_source(pipeline_access_token_name="token2")
 
@@ -232,7 +232,7 @@ def test_get_sink_from_pipeline_ok(
     get_pipeline_function_source_request_mock,
     access_tokens_response,
 ):
-    p = client.get_pipeline(fetch_pipeline_response["id"])
+    p = client.get_pipeline(fetch_pipeline_response.id)
     sink = p.get_sink()
     sink2 = p.get_sink(pipeline_access_token_name="token2")
 
