@@ -1,6 +1,7 @@
 from .api import (
     ConsumeOutputEvent,
     CreatePipeline,
+    CreateSecret,
     CreateSpace,
     FunctionEnvironments,
     GetDetailedSpacePipeline,
@@ -19,6 +20,7 @@ __all__ = [
     "CreateSpace",
     "Space",
     "ConsumeOutputEvent",
+    "CreateSecret",
     "Pipeline",
     "GetDetailedSpacePipeline",
     "ListAccessTokens",
