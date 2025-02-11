@@ -21,7 +21,7 @@ def test_fetch_pipeline_fail_with_404(pipeline_with_random_id):
 
 
 def test_fetch_pipeline_fail_with_401(pipeline_with_random_id_and_invalid_token):
-    with pytest.raises(errors.UnauthorizedError):
+    with pytest.raises(errors.PipelineUnauthorizedError):
         pipeline_with_random_id_and_invalid_token.fetch()
 
 
@@ -70,7 +70,7 @@ def test_delete_pipeline_fail_with_404(pipeline_with_random_id):
 
 
 def test_delete_pipeline_fail_with_401(pipeline_with_random_id_and_invalid_token):
-    with pytest.raises(errors.UnauthorizedError):
+    with pytest.raises(errors.PipelineUnauthorizedError):
         pipeline_with_random_id_and_invalid_token.delete()
 
 

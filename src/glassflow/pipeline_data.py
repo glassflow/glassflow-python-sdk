@@ -1,8 +1,6 @@
 import random
 import time
 
-import requests
-
 from .api_client import APIClient
 from .models import errors, responses
 
@@ -53,20 +51,18 @@ class PipelineDataClient(APIClient):
                 files=files,
                 data=data,
             )
-        except requests.exceptions.HTTPError as http_err:
-            if http_err.response.status_code == 401:
+        except errors.UnknownError as http_err:
+            if http_err.status_code == 401:
                 raise errors.PipelineAccessTokenInvalidError(
-                    http_err.response
+                    http_err.raw_response
                 ) from http_err
-            elif http_err.response.status_code == 404:
+            if http_err.status_code == 404:
                 raise errors.PipelineNotFoundError(
-                    self.pipeline_id, http_err.response
+                    self.pipeline_id, http_err.raw_response
                 ) from http_err
-            elif http_err.response.status_code == 429:
-                return errors.PipelineTooManyRequestsError(http_err.response)
-            elif http_err.response.status_code in [400, 500]:
-                errors.PipelineUnknownError(self.pipeline_id, http_err.response)
-
+            if http_err.status_code == 429:
+                return errors.PipelineTooManyRequestsError(http_err.raw_response)
+            raise http_err
 
 class PipelineDataSource(PipelineDataClient):
     def publish(self, request_body: dict) -> responses.PublishEventResponse:

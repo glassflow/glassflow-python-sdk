@@ -88,7 +88,7 @@ def test_fetch_pipeline_fail_with_401(requests_mock, fetch_pipeline_response, cl
         headers={"Content-Type": "application/json"},
     )
 
-    with pytest.raises(errors.UnauthorizedError):
+    with pytest.raises(errors.PipelineUnauthorizedError):
         Pipeline(
             id=fetch_pipeline_response.id,
             personal_access_token="test-token",

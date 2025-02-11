@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import requests
-
 from .client import APIClient
 from .models import api, errors, operations, responses
 from .models.responses.pipeline import AccessToken
@@ -120,13 +118,19 @@ class Pipeline(APIClient):
                 files=files,
                 data=data,
             )
-        except requests.exceptions.HTTPError as http_err:
-            if http_err.response.status_code == 404:
-                raise errors.PipelineNotFoundError(
-                    self.id, http_err.response
+        except errors.UnknownError as http_err:
+            if http_err.status_code == 401:
+                raise errors.PipelineUnauthorizedError(
+                    self.id, http_err.raw_response
                 ) from http_err
-            if http_err.response.status_code == 401:
-                raise errors.UnauthorizedError(http_err.response) from http_err
+            if http_err.status_code == 404:
+                raise errors.PipelineNotFoundError(
+                    self.id, http_err.raw_response
+                ) from http_err
+            if http_err.status_code == 425:
+                raise errors.PipelineArtifactStillInProgressError(
+                    self.id, http_err.raw_response
+                )
             raise http_err
 
     def fetch(self) -> Pipeline:

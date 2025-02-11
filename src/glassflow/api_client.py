@@ -5,6 +5,7 @@ import sys
 import requests as requests_http
 
 from .config import GlassFlowConfig
+from .models import errors
 
 
 class APIClient:
@@ -37,23 +38,23 @@ class APIClient:
         files=None,
         data=None,
     ):
-        # updated request method that knows the request details and does not use utils
-        # Do the https request. check for errors. if no errors, return the raw response
-        # http object that the caller can map to a pydantic object
         headers = self._get_core_headers()
         if request_headers:
             headers.update(request_headers)
 
         url = self.glassflow_config.server_url + endpoint
 
-        http_res = self.client.request(
-            method,
-            url=url,
-            params=request_query_params,
-            headers=headers,
-            json=json,
-            files=files,
-            data=data,
-        )
-        http_res.raise_for_status()
+        try:
+            http_res = self.client.request(
+                method,
+                url=url,
+                params=request_query_params,
+                headers=headers,
+                json=json,
+                files=files,
+                data=data,
+            )
+            http_res.raise_for_status()
+        except requests_http.HTTPError as http_err:
+            raise errors.UnknownError(http_err.response) from http_err
         return http_res

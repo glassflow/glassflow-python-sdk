@@ -1,7 +1,5 @@
 """GlassFlow Python Client to interact with GlassFlow API"""
 
-import requests
-
 from .api_client import APIClient
 from .models import errors, responses
 from .pipeline import Pipeline
@@ -61,16 +59,10 @@ class GlassFlowClient(APIClient):
                 data=data,
             )
             return http_res
-        except requests.exceptions.HTTPError as http_err:
-            if http_err.response.status_code == 401:
-                raise errors.UnauthorizedError(http_err.response) from http_err
-            if http_err.response.status_code in [404, 400, 500]:
-                raise errors.ClientError(
-                    detail="Error in getting response from GlassFlow",
-                    status_code=http_err.response.status_code,
-                    body=http_err.response.text,
-                    raw_response=http_err.response,
-                ) from http_err
+        except errors.UnknownError as http_err:
+            if http_err.status_code == 401:
+                raise errors.UnauthorizedError(http_err.raw_response) from http_err
+            raise http_err
 
     def get_pipeline(self, pipeline_id: str) -> Pipeline:
         """Gets a Pipeline object from the GlassFlow API
