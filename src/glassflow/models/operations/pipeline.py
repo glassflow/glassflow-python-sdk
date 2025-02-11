@@ -8,6 +8,7 @@ from glassflow.models.api import (
     SourceConnector,
 )
 
+
 class CreatePipeline(BaseModel):
     name: str
     space_id: str

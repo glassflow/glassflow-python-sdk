@@ -9,16 +9,7 @@ add-noqa: generate-api-data-models
 	echo "Add noqa comment ..."
 	sed -i '' -e '1s/^/# ruff: noqa\n/' $(API_DATA_MODELS)
 
-
-add-dataclass-json-decorators: add-noqa
-	echo "Import dataclass_json ..."
-	sed -i '' -e '/^from __future__ import annotations/a\'$$'\n''from dataclasses_json import dataclass_json' $(API_DATA_MODELS)
-
-
-	echo "Add dataclass_json decorators ..."
-	sed  -i '' -e '/@dataclass/ i\'$$'\n''@dataclass_json\''' $(API_DATA_MODELS)
-
-generate: add-dataclass-json-decorators
+generate: add-noqa
 
 include .env
 export
@@ -32,3 +23,11 @@ lint:
 
 formatter:
 	ruff format --check .
+
+fix-format:
+	ruff format .
+
+fix-lint:
+	ruff check --fix .
+
+fix: fix-format fix-lint
