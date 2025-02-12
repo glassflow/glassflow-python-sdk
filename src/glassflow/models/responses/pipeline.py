@@ -105,6 +105,10 @@ class ConsumeFailedResponse(BaseModel):
     body: ConsumeOutputEvent | None = None
     status_code: int | None = None
 
+    def event(self):
+        if self.body:
+            return self.body.response
+        return None
 
 class AccessToken(BaseModel):
     id: str
