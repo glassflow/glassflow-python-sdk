@@ -96,39 +96,6 @@ class Pipeline(APIClient):
         else:
             raise ValueError("Both sink_kind and sink_config must be provided")
 
-    def _request(
-        self,
-        method,
-        endpoint,
-        request_headers=None,
-        json=None,
-        request_query_params=None,
-        files=None,
-        data=None,
-    ):
-        headers = {**self.headers, **(request_headers or {})}
-        query_params = {**self.query_params, **(request_query_params or {})}
-        try:
-            return super()._request(
-                method=method,
-                endpoint=endpoint,
-                request_headers=headers,
-                json=json,
-                request_query_params=query_params,
-                files=files,
-                data=data,
-            )
-        except errors.UnknownError as e:
-            if e.status_code == 401:
-                raise errors.PipelineUnauthorizedError(self.id, e.raw_response) from e
-            if e.status_code == 404:
-                raise errors.PipelineNotFoundError(self.id, e.raw_response) from e
-            if e.status_code == 425:
-                raise errors.PipelineArtifactStillInProgressError(
-                    self.id, e.raw_response
-                ) from e
-            raise e
-
     def fetch(self) -> Pipeline:
         """
         Fetches pipeline information from the GlassFlow API
@@ -360,6 +327,96 @@ class Pipeline(APIClient):
             next=base_res_json["next"],
         )
 
+    def get_source(
+        self, pipeline_access_token_name: str | None = None
+    ) -> PipelineDataSource:
+        """
+        Get source client to publish data to the pipeline
+
+        Args:
+            pipeline_access_token_name (str | None): Name of the pipeline
+                access token to use. If not specified, the default token
+                will be used
+
+        Returns:
+            Source client to publish data to the pipeline
+
+        Raises:
+            ValueError: If pipeline id is not provided in the constructor
+        """
+        return self._get_data_client("source", pipeline_access_token_name)
+
+    def get_sink(
+        self, pipeline_access_token_name: str | None = None
+    ) -> PipelineDataSink:
+        """
+        Get sink client to consume data from the pipeline
+
+        Args:
+            pipeline_access_token_name (str | None): Name of the pipeline
+                access token to use. If not specified, the default token
+                will be used
+
+        Returns:
+            Sink client to consume data from the pipeline
+
+        Raises:
+            ValueError: If pipeline id is not provided in the constructor
+        """
+        return self._get_data_client("sink", pipeline_access_token_name)
+
+    def test(self, data: dict) -> responses.TestFunctionResponse:
+        """
+        Test a pipeline's function with a sample input JSON
+
+        Args:
+            data: Input JSON
+
+        Returns:
+            Test function response
+        """
+        endpoint = f"/pipelines/{self.id}/functions/main/test"
+        request_body = data
+        http_res = self._request(method="POST", endpoint=endpoint, json=request_body)
+        base_res_json = http_res.json()
+        print("response for test ", base_res_json)
+        return responses.TestFunctionResponse(
+            **base_res_json,
+        )
+
+    def _request(
+        self,
+        method,
+        endpoint,
+        request_headers=None,
+        json=None,
+        request_query_params=None,
+        files=None,
+        data=None,
+    ):
+        headers = {**self.headers, **(request_headers or {})}
+        query_params = {**self.query_params, **(request_query_params or {})}
+        try:
+            return super()._request(
+                method=method,
+                endpoint=endpoint,
+                request_headers=headers,
+                json=json,
+                request_query_params=query_params,
+                files=files,
+                data=data,
+            )
+        except errors.UnknownError as e:
+            if e.status_code == 401:
+                raise errors.PipelineUnauthorizedError(self.id, e.raw_response) from e
+            if e.status_code == 404:
+                raise errors.PipelineNotFoundError(self.id, e.raw_response) from e
+            if e.status_code == 425:
+                raise errors.PipelineArtifactStillInProgressError(
+                    self.id, e.raw_response
+                ) from e
+            raise e
+
     def _list_access_tokens(self) -> Pipeline:
         endpoint = f"/pipelines/{self.id}/access_tokens"
         http_res = self._request(method="GET", endpoint=endpoint)
@@ -409,44 +466,6 @@ class Pipeline(APIClient):
         )
         self.env_vars = http_res.json()["environments"]
         return self
-
-    def get_source(
-        self, pipeline_access_token_name: str | None = None
-    ) -> PipelineDataSource:
-        """
-        Get source client to publish data to the pipeline
-
-        Args:
-            pipeline_access_token_name (str | None): Name of the pipeline
-                access token to use. If not specified, the default token
-                will be used
-
-        Returns:
-            Source client to publish data to the pipeline
-
-        Raises:
-            ValueError: If pipeline id is not provided in the constructor
-        """
-        return self._get_data_client("source", pipeline_access_token_name)
-
-    def get_sink(
-        self, pipeline_access_token_name: str | None = None
-    ) -> PipelineDataSink:
-        """
-        Get sink client to consume data from the pipeline
-
-        Args:
-            pipeline_access_token_name (str | None): Name of the pipeline
-                access token to use. If not specified, the default token
-                will be used
-
-        Returns:
-            Sink client to consume data from the pipeline
-
-        Raises:
-            ValueError: If pipeline id is not provided in the constructor
-        """
-        return self._get_data_client("sink", pipeline_access_token_name)
 
     def _get_data_client(
         self, client_type: str, pipeline_access_token_name: str | None = None
@@ -507,22 +526,3 @@ class Pipeline(APIClient):
         self.env_vars = pipeline_details.environments
 
         return self
-
-    def test(self, data: dict) -> responses.TestFunctionResponse:
-        """
-        Test a pipeline's function with a sample input JSON
-
-        Args:
-            data: Input JSON
-
-        Returns:
-            Test function response
-        """
-        endpoint = f"/pipelines/{self.id}/functions/main/test"
-        request_body = data
-        http_res = self._request(method="POST", endpoint=endpoint, json=request_body)
-        base_res_json = http_res.json()
-        print("response for test ", base_res_json)
-        return responses.TestFunctionResponse(
-            **base_res_json,
-        )
