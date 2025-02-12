@@ -1,4 +1,5 @@
 import setuptools
+from importlib_metadata import entry_points
 
 try:
     with open("README.md") as fh:
@@ -50,4 +51,9 @@ setuptools.setup(
     package_dir={"": "src"},
     python_requires=">=3.8",
     package_data={"glassflow": ["py.typed"]},
+    entry_points={
+        "console_scripts": [
+            "glassflow = glassflow.cli:glassflow",
+        ],
+    },
 )
