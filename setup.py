@@ -1,5 +1,4 @@
 import setuptools
-from importlib_metadata import entry_points
 
 try:
     with open("README.md") as fh:
