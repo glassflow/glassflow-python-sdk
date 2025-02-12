@@ -8,6 +8,7 @@ from glassflow import (
     Pipeline,
     PipelineDataSink,
     PipelineDataSource,
+    Secret,
     Space,
 )
 
@@ -40,7 +41,7 @@ def space_with_random_id(client):
 
 
 @pytest.fixture
-def space_with_random_id_and_invalid_token(client):
+def space_with_random_id_and_invalid_token():
     return Space(
         id=str(uuid.uuid4()),
         personal_access_token="invalid-token",
@@ -115,4 +116,35 @@ def sink(source_with_published_events):
     return PipelineDataSink(
         pipeline_id=source_with_published_events.pipeline_id,
         pipeline_access_token=source_with_published_events.pipeline_access_token,
+    )
+
+
+@pytest.fixture
+def secret(client):
+    return Secret(
+        key="SecretKey",
+        value="SecretValue",
+        personal_access_token=client.personal_access_token,
+    )
+
+
+@pytest.fixture
+def creating_secret(secret):
+    secret.create()
+    yield secret
+    secret.delete()
+
+
+@pytest.fixture
+def secret_with_invalid_key_and_token():
+    return Secret(
+        key="InvalidSecretKey",
+        personal_access_token="invalid-token",
+    )
+
+
+@pytest.fixture
+def secret_with_invalid_key(client):
+    return Secret(
+        key="InvalidSecretKey", personal_access_token=client.personal_access_token
     )
