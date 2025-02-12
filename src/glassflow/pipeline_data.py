@@ -78,7 +78,6 @@ class PipelineDataSource(PipelineDataClient):
             errors.ClientError: If an error occurred while publishing the event
         """
         endpoint = f"/pipelines/{self.pipeline_id}/topics/input/events"
-        print("request_body", request_body)
         http_res = self._request(method="POST", endpoint=endpoint, json=request_body)
         return responses.PublishEventResponse(
             status_code=http_res.status_code,

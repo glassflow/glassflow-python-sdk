@@ -50,4 +50,9 @@ setuptools.setup(
     package_dir={"": "src"},
     python_requires=">=3.8",
     package_data={"glassflow": ["py.typed"]},
+    entry_points={
+        "console_scripts": [
+            "glassflow = cli.cli:glassflow",
+        ],
+    },
 )
