@@ -82,13 +82,11 @@ def pipeline_with_secrets(client, creating_space, creating_secret):
                 "value": "my-subscription-id",
             },
             "credentials_json": {
-                "secret_ref": {
-                    "type": "organization",
-                    "key": creating_secret.key
-                },
+                "secret_ref": {"type": "organization", "key": creating_secret.key},
             },
         },
     )
+
 
 @pytest.fixture
 def creating_pipeline_with_secret(pipeline_with_secrets):
