@@ -161,7 +161,9 @@ class Pipeline(APIClient):
         )
         endpoint = "/pipelines"
         http_res = self._request(
-            method="POST", endpoint=endpoint, json=create_pipeline.model_dump()
+            method="POST",
+            endpoint=endpoint,
+            json=create_pipeline.model_dump(exclude_none=True),
         )
         res_json = http_res.json()
         # using custom operations model because api model does not exist
@@ -242,15 +244,15 @@ class Pipeline(APIClient):
             source_connector = self._fill_connector(
                 "source",
                 source_kind,
-                self.source_config,
-                self.source_config_secret_refs,
+                source_config,
+                source_config_secret_refs,
             )
         else:
             source_connector = self.source_connector
 
         if sink_kind is not None:
             sink_connector = self._fill_connector(
-                "sink", sink_kind, self.sink_config, self.sink_config_secret_refs
+                "sink", sink_kind, sink_config, sink_config_secret_refs
             )
         else:
             sink_connector = self.sink_connector
