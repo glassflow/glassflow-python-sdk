@@ -134,7 +134,7 @@ class Pipeline(APIClient):
         Fetches pipeline information from the GlassFlow API
 
         Returns:
-            self: Pipeline object
+            Pipeline object
 
         Raises:
             ValueError: If ID is not provided in the constructor
@@ -163,7 +163,7 @@ class Pipeline(APIClient):
         Creates a new GlassFlow pipeline
 
         Returns:
-            self: Pipeline object
+            Pipeline object
 
         Raises:
             ValueError: If name is not provided in the constructor
@@ -233,7 +233,6 @@ class Pipeline(APIClient):
         Updates a GlassFlow pipeline
 
         Args:
-
             name: Name of the pipeline
             state: State of the pipeline after creation.
                 It can be either "running" or "paused"
@@ -250,7 +249,7 @@ class Pipeline(APIClient):
             metadata: Metadata of the pipeline
 
         Returns:
-            self: Updated pipeline
+            Updated pipeline
 
         """
         self.fetch()
@@ -308,8 +307,6 @@ class Pipeline(APIClient):
         """
         Deletes a GlassFlow pipeline
 
-        Returns:
-
         Raises:
             ValueError: If ID is not provided in the constructor
             error.PipelineNotFoundError: If ID provided does not match any
@@ -342,7 +339,7 @@ class Pipeline(APIClient):
             end_time: End time filter
 
         Returns:
-            error.PipelineFunctionsGetLogsResponse: Response with the logs
+            Response with the logs
         """
 
         query_params = {
@@ -375,7 +372,7 @@ class Pipeline(APIClient):
         Fetch pipeline function source
 
         Returns:
-            self: Pipeline with function source details
+            Pipeline with function source details
         """
         endpoint = f"/pipelines/{self.id}/functions/main/artifacts/latest"
         http_res = self._request(method="GET", endpoint=endpoint)
@@ -403,7 +400,7 @@ class Pipeline(APIClient):
             env_vars: Environment variables to update
 
         Returns:
-            self: Pipeline with updated function
+            Pipeline with updated function
         """
         endpoint = f"/pipelines/{self.id}/functions/main"
         body = api.PipelineFunctionOutput(environments=env_vars)
@@ -425,7 +422,7 @@ class Pipeline(APIClient):
                 will be used
 
         Returns:
-            PipelineDataSource: Source client to publish data to the pipeline
+            Source client to publish data to the pipeline
 
         Raises:
             ValueError: If pipeline id is not provided in the constructor
@@ -444,7 +441,7 @@ class Pipeline(APIClient):
                 will be used
 
         Returns:
-            PipelineDataSink: Sink client to consume data from the pipeline
+            Sink client to consume data from the pipeline
 
         Raises:
             ValueError: If pipeline id is not provided in the constructor
@@ -519,7 +516,7 @@ class Pipeline(APIClient):
             data: Input JSON
 
         Returns:
-            responses.TestFunctionResponse: Test function response
+            Test function response
         """
         endpoint = f"/pipelines/{self.id}/functions/main/test"
         request_body = data

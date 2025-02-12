@@ -43,7 +43,7 @@ class Secret(APIClient):
         Creates a new Glassflow Secret
 
         Returns:
-            self: Secret object
+            Secret object
 
         Raises:
             ValueError: If secret key or value are not set in the constructor
@@ -67,15 +67,13 @@ class Secret(APIClient):
         )
         return self
 
-    def delete(self):
+    def delete(self) -> None:
         """
         Deletes a Glassflow Secret.
 
-        Returns:
-
         Raises:
             errors.SecretUnauthorizedError: If personal access token is invalid
-            errors.SecretNotFound: If secret key does not exist
+            errors.SecretNotFoundError: If secret key does not exist
             ValueError: If secret key is not set in the constructor
         """
         if self.key is None:
@@ -85,7 +83,8 @@ class Secret(APIClient):
         self._request(method="DELETE", endpoint=endpoint)
 
     @staticmethod
-    def _is_key_valid(key, search=re.compile(r"[^a-zA-Z0-9_]").search):
+    def _is_key_valid(key: str) -> bool:
+        search = re.compile(r"[^a-zA-Z0-9_]").search
         return not bool(search(key))
 
     def _request(

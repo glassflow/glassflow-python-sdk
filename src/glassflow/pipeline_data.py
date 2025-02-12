@@ -72,8 +72,7 @@ class PipelineDataSource(PipelineDataClient):
             request_body: The message to be published into the pipeline
 
         Returns:
-            responses.PublishEventResponse: Response object containing the status
-                code and the raw response
+            Response object containing the status code and the raw response
 
         Raises:
             errors.ClientError: If an error occurred while publishing the event
@@ -99,8 +98,7 @@ class PipelineDataSink(PipelineDataClient):
         """Consume the last message from the pipeline
 
         Returns:
-            responses.ConsumeEventResponse: Response object containing the status
-                code and the raw response
+            Response object containing the status code and the raw response
 
         Raises:
             errors.ClientError: If an error occurred while consuming the event
@@ -125,8 +123,7 @@ class PipelineDataSink(PipelineDataClient):
         """Consume the failed message from the pipeline
 
         Returns:
-            responsesConsumeFailedResponse: Response object containing the status
-                code and the raw response
+            Response object containing the status code and the raw response
 
         Raises:
             errors.ClientError: If an error occurred while consuming the event

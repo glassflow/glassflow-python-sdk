@@ -39,7 +39,7 @@ class Space(APIClient):
         Creates a new GlassFlow space
 
         Returns:
-            self: Space object
+            Space object
 
         Raises:
             ValueError: If name is not provided in the constructor
@@ -61,8 +61,6 @@ class Space(APIClient):
     def delete(self) -> None:
         """
         Deletes a GlassFlow space
-
-        Returns:
 
         Raises:
             ValueError: If ID is not provided in the constructor
