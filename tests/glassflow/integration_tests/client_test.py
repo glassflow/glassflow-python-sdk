@@ -11,3 +11,16 @@ def test_list_pipelines_ok(client, creating_pipeline):
     assert res.total_amount >= 1
     assert res.pipelines[-1].id == creating_pipeline.id
     assert res.pipelines[-1].name == creating_pipeline.name
+
+def test_list_spaces_ok(client, creating_space):
+    res = client.list_spaces()
+
+    assert res.total_amount >= 1
+    assert res.spaces[-1].id == creating_space.id
+    assert res.spaces[-1].name == creating_space.name
+
+def test_list_secrets_ok(client, creating_secret):
+    res = client.list_secrets()
+
+    assert res.total_amount >= 1
+    assert res.secrets[-1].key == creating_secret.key
