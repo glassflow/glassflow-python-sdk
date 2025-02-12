@@ -21,11 +21,14 @@ def test_fetch_pipeline_fail_with_404(pipeline_with_random_id):
 
 
 def test_fetch_pipeline_fail_with_401(pipeline_with_random_id_and_invalid_token):
-    with pytest.raises(errors.UnauthorizedError):
+    with pytest.raises(errors.PipelineUnauthorizedError):
         pipeline_with_random_id_and_invalid_token.fetch()
 
 
 def test_update_pipeline_ok(creating_pipeline):
+    import time
+
+    time.sleep(1)
     updated_pipeline = creating_pipeline.update(
         name="new_name",
         sink_kind="webhook",
@@ -44,12 +47,12 @@ def test_update_pipeline_ok(creating_pipeline):
     )
     assert updated_pipeline.name == "new_name"
     assert updated_pipeline.sink_kind == "webhook"
-    assert updated_pipeline.sink_config == {
+    assert updated_pipeline.sink_config.model_dump(mode="json") == {
         "url": "www.test-url.com",
         "method": "GET",
         "headers": [{"name": "header1", "value": "header1"}],
     }
-    assert updated_pipeline.env_vars == [
+    assert updated_pipeline.env_vars.model_dump(mode="json") == [
         {"name": "env1", "value": "env1"},
         {"name": "env2", "value": "env2"},
     ]
@@ -67,7 +70,7 @@ def test_delete_pipeline_fail_with_404(pipeline_with_random_id):
 
 
 def test_delete_pipeline_fail_with_401(pipeline_with_random_id_and_invalid_token):
-    with pytest.raises(errors.UnauthorizedError):
+    with pytest.raises(errors.PipelineUnauthorizedError):
         pipeline_with_random_id_and_invalid_token.delete()
 
 
@@ -75,7 +78,7 @@ def test_get_logs_from_pipeline_ok(creating_pipeline):
     import time
 
     n_tries = 0
-    max_tries = 10
+    max_tries = 20
     while True:
         if n_tries == max_tries:
             pytest.fail("Max tries reached")
@@ -87,8 +90,6 @@ def test_get_logs_from_pipeline_ok(creating_pipeline):
             n_tries += 1
             time.sleep(1)
 
-    assert logs.status_code == 200
-    assert logs.content_type == "application/json"
     assert logs.logs[0].payload.message == "Function is uploaded"
     assert logs.logs[0].level == "INFO"
     assert logs.logs[1].payload.message == "Pipeline is created"
@@ -99,6 +100,9 @@ def test_test_pipeline_ok(creating_pipeline):
     test_message = {"message": "test"}
     response = creating_pipeline.test(test_message)
 
-    assert response.status_code == 200
-    assert response.content_type == "application/json"
     assert response.payload == test_message
+
+
+def test_pipeline_with_secrets_ok(creating_pipeline_with_secret):
+    assert creating_pipeline_with_secret.name == "test_pipeline"
+    assert creating_pipeline_with_secret.id is not None

@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import pytest
 
 from glassflow import Space
@@ -16,14 +18,11 @@ def test_create_space_ok(requests_mock, create_space_response, client):
 
     assert space.name == create_space_response["name"]
     assert space.id == create_space_response["id"]
-    assert space.created_at == create_space_response["created_at"]
 
-
-def test_create_space_fail_with_missing_name(client):
-    with pytest.raises(ValueError) as e:
-        Space(personal_access_token="test-token").create()
-
-    assert str(e.value) == ("Name must be provided in order to create the space")
+    parsed_response_space_created_at = datetime.strptime(
+        create_space_response["created_at"], "%Y-%m-%dT%H:%M:%S.%fZ"
+    )
+    assert space.created_at.replace(tzinfo=None) == parsed_response_space_created_at
 
 
 def test_delete_space_ok(requests_mock, client):

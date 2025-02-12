@@ -1,87 +1,87 @@
 import random
 import time
-from typing import Optional
 
 from .api_client import APIClient
-from .models import errors, operations
-from .models.operations.base import BasePipelineDataRequest, BaseResponse
-from .utils import utils
+from .models import errors, responses
 
 
 class PipelineDataClient(APIClient):
     """Base Client object to publish and consume events from the given pipeline.
 
     Attributes:
-        glassflow_config: GlassFlowConfig object to interact with GlassFlow API
-        pipeline_id: The pipeline id to interact with
-        pipeline_access_token: The access token to access the pipeline
+        glassflow_config (GlassFlowConfig): GlassFlowConfig object to interact
+            with GlassFlow API
+        pipeline_id (str): The pipeline id to interact with
+        pipeline_access_token (str): The access token to access the pipeline
     """
 
     def __init__(self, pipeline_id: str, pipeline_access_token: str):
         super().__init__()
         self.pipeline_id = pipeline_id
         self.pipeline_access_token = pipeline_access_token
+        self.headers = {"X-PIPELINE-ACCESS-TOKEN": self.pipeline_access_token}
+        self.query_params = {}
 
     def validate_credentials(self) -> None:
         """
         Check if the pipeline credentials are valid and raise an error if not
         """
-        request = operations.StatusAccessTokenRequest(
-            pipeline_id=self.pipeline_id,
-            x_pipeline_access_token=self.pipeline_access_token,
-        )
-        self._request(
-            method="GET",
-            endpoint="/pipelines/{pipeline_id}/status/access_token",
-            request=request,
-        )
+
+        endpoint = f"/pipelines/{self.pipeline_id}/status/access_token"
+        return self._request(method="GET", endpoint=endpoint)
 
     def _request(
-        self, method: str, endpoint: str, request: BasePipelineDataRequest, **kwargs
-    ) -> BaseResponse:
+        self,
+        method,
+        endpoint,
+        request_headers=None,
+        json=None,
+        request_query_params=None,
+        files=None,
+        data=None,
+    ):
+        headers = {**self.headers, **(request_headers or {})}
+        query_params = {**self.query_params, **(request_query_params or {})}
         try:
-            res = super()._request(method, endpoint, request, **kwargs)
-        except errors.ClientError as e:
+            return super()._request(
+                method=method,
+                endpoint=endpoint,
+                request_headers=headers,
+                json=json,
+                request_query_params=query_params,
+                files=files,
+                data=data,
+            )
+        except errors.UnknownError as e:
             if e.status_code == 401:
                 raise errors.PipelineAccessTokenInvalidError(e.raw_response) from e
-            elif e.status_code == 404:
+            if e.status_code == 404:
                 raise errors.PipelineNotFoundError(
                     self.pipeline_id, e.raw_response
                 ) from e
-            else:
-                raise e
-        return res
+            if e.status_code == 429:
+                return errors.PipelineTooManyRequestsError(e.raw_response)
+            raise e
 
 
 class PipelineDataSource(PipelineDataClient):
-    def publish(self, request_body: dict) -> operations.PublishEventResponse:
+    def publish(self, request_body: dict) -> responses.PublishEventResponse:
         """Push a new message into the pipeline
 
         Args:
             request_body: The message to be published into the pipeline
 
         Returns:
-            PublishEventResponse: Response object containing the status
-                code and the raw response
+            Response object containing the status code and the raw response
 
         Raises:
-            ClientError: If an error occurred while publishing the event
+            errors.ClientError: If an error occurred while publishing the event
         """
-        request = operations.PublishEventRequest(
-            pipeline_id=self.pipeline_id,
-            x_pipeline_access_token=self.pipeline_access_token,
-            request_body=request_body,
-        )
-        base_res = self._request(
-            method="POST",
-            endpoint="/pipelines/{pipeline_id}/topics/input/events",
-            request=request,
-        )
-
-        return operations.PublishEventResponse(
-            status_code=base_res.status_code,
-            content_type=base_res.content_type,
-            raw_response=base_res.raw_response,
+        endpoint = f"/pipelines/{self.pipeline_id}/topics/input/events"
+        print("request_body", request_body)
+        http_res = self._request(method="POST", endpoint=endpoint, json=request_body)
+        return responses.PublishEventResponse(
+            status_code=http_res.status_code,
         )
 
 
@@ -94,110 +94,55 @@ class PipelineDataSink(PipelineDataClient):
         self._consume_retry_delay_current = 1
         self._consume_retry_delay_max = 60
 
-    def consume(self) -> operations.ConsumeEventResponse:
+    def consume(self) -> responses.ConsumeEventResponse:
         """Consume the last message from the pipeline
 
         Returns:
-            ConsumeEventResponse: Response object containing the status
-                code and the raw response
+            Response object containing the status code and the raw response
 
         Raises:
-            ClientError: If an error occurred while consuming the event
+            errors.ClientError: If an error occurred while consuming the event
 
         """
-        request = operations.ConsumeEventRequest(
-            pipeline_id=self.pipeline_id,
-            x_pipeline_access_token=self.pipeline_access_token,
-        )
 
+        endpoint = f"/pipelines/{self.pipeline_id}/topics/output/events/consume"
         self._respect_retry_delay()
-        base_res = self._request(
-            method="POST",
-            endpoint="/pipelines/{pipeline_id}/topics/output/events/consume",
-            request=request,
-        )
+        http_res = self._request(method="POST", endpoint=endpoint)
+        self._update_retry_delay(http_res.status_code)
 
-        res = operations.ConsumeEventResponse(
-            status_code=base_res.status_code,
-            content_type=base_res.content_type,
-            raw_response=base_res.raw_response,
-        )
-
-        self._update_retry_delay(base_res.status_code)
-        if res.status_code == 200:
-            if not utils.match_content_type(res.content_type, "application/json"):
-                raise errors.UnknownContentTypeError(res.raw_response)
-
+        body = None
+        if http_res.status_code == 200:
+            body = http_res.json()
             self._consume_retry_delay_current = self._consume_retry_delay_minimum
-            body = utils.unmarshal_json(
-                res.raw_response.text, Optional[operations.ConsumeEventResponseBody]
-            )
-            res.body = body
-        elif res.status_code == 204:
-            # No messages to be consumed.
-            # update the retry delay
-            # Return an empty response body
-            body = operations.ConsumeEventResponseBody("", "", {})
-            res.body = body
-        elif res.status_code == 429:
-            # update the retry delay
-            body = operations.ConsumeEventResponseBody("", "", {})
-            res.body = body
-        elif not utils.match_content_type(res.content_type, "application/json"):
-            raise errors.UnknownContentTypeError(res.raw_response)
 
-        return res
+        return responses.ConsumeEventResponse(
+            status_code=http_res.status_code, body=body
+        )
 
-    def consume_failed(self) -> operations.ConsumeFailedResponse:
+    def consume_failed(self) -> responses.ConsumeFailedResponse:
         """Consume the failed message from the pipeline
 
         Returns:
-            ConsumeFailedResponse: Response object containing the status
-                code and the raw response
+            Response object containing the status code and the raw response
 
         Raises:
-            ClientError: If an error occurred while consuming the event
+            errors.ClientError: If an error occurred while consuming the event
 
         """
-        request = operations.ConsumeFailedRequest(
-            pipeline_id=self.pipeline_id,
-            x_pipeline_access_token=self.pipeline_access_token,
-        )
 
         self._respect_retry_delay()
-        base_res = self._request(
-            method="POST",
-            endpoint="/pipelines/{pipeline_id}/topics/failed/events/consume",
-            request=request,
-        )
+        endpoint = f"/pipelines/{self.pipeline_id}/topics/failed/events/consume"
+        http_res = self._request(method="POST", endpoint=endpoint)
 
-        res = operations.ConsumeFailedResponse(
-            status_code=base_res.status_code,
-            content_type=base_res.content_type,
-            raw_response=base_res.raw_response,
-        )
-
-        self._update_retry_delay(res.status_code)
-        if res.status_code == 200:
-            if not utils.match_content_type(res.content_type, "application/json"):
-                raise errors.UnknownContentTypeError(res.raw_response)
-
+        self._update_retry_delay(http_res.status_code)
+        body = None
+        if http_res.status_code == 200:
+            body = http_res.json()
             self._consume_retry_delay_current = self._consume_retry_delay_minimum
-            body = utils.unmarshal_json(
-                res.raw_response.text, Optional[operations.ConsumeFailedResponseBody]
-            )
-            res.body = body
-        elif res.status_code == 204:
-            # No messages to be consumed. Return an empty response body
-            body = operations.ConsumeFailedResponseBody("", "", {})
-            res.body = body
-        elif res.status_code == 429:
-            # update the retry delay
-            body = operations.ConsumeEventResponseBody("", "", {})
-            res.body = body
-        elif not utils.match_content_type(res.content_type, "application/json"):
-            raise errors.UnknownContentTypeError(res.raw_response)
-        return res
+
+        return responses.ConsumeFailedResponse(
+            status_code=http_res.status_code, body=body
+        )
 
     def _update_retry_delay(self, status_code: int):
         if status_code == 200:

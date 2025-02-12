@@ -1,6 +1,7 @@
 import pytest
 
 from glassflow import GlassFlowClient
+from glassflow.models import api
 
 
 @pytest.fixture
@@ -12,7 +13,7 @@ def client():
 def get_pipeline_request_mock(client, requests_mock, fetch_pipeline_response):
     return requests_mock.get(
         client.glassflow_config.server_url + "/pipelines/test-id",
-        json=fetch_pipeline_response,
+        json=fetch_pipeline_response.model_dump(mode="json"),
         status_code=200,
         headers={"Content-Type": "application/json"},
     )
@@ -24,7 +25,7 @@ def get_access_token_request_mock(
 ):
     return requests_mock.get(
         client.glassflow_config.server_url
-        + f"/pipelines/{fetch_pipeline_response['id']}/access_tokens",
+        + f"/pipelines/{fetch_pipeline_response.id}/access_tokens",
         json=access_tokens_response,
         status_code=200,
         headers={"Content-Type": "application/json"},
@@ -37,7 +38,7 @@ def get_pipeline_function_source_request_mock(
 ):
     return requests_mock.get(
         client.glassflow_config.server_url
-        + f"/pipelines/{fetch_pipeline_response['id']}/functions/main/artifacts/latest",
+        + f"/pipelines/{fetch_pipeline_response.id}/functions/main/artifacts/latest",
         json=function_source_response,
         status_code=200,
         headers={"Content-Type": "application/json"},
@@ -49,9 +50,8 @@ def update_pipeline_request_mock(
     client, requests_mock, fetch_pipeline_response, update_pipeline_response
 ):
     return requests_mock.patch(
-        client.glassflow_config.server_url
-        + f"/pipelines/{fetch_pipeline_response['id']}",
-        json=update_pipeline_response,
+        client.glassflow_config.server_url + f"/pipelines/{fetch_pipeline_response.id}",
+        json=update_pipeline_response.model_dump(mode="json"),
         status_code=200,
         headers={"Content-Type": "application/json"},
     )
@@ -59,41 +59,43 @@ def update_pipeline_request_mock(
 
 @pytest.fixture
 def fetch_pipeline_response():
-    return {
-        "id": "test-id",
-        "name": "test-name",
-        "space_id": "test-space-id",
-        "metadata": {},
-        "created_at": "2024-09-23T10:08:45.529Z",
-        "state": "running",
-        "space_name": "test-space-name",
-        "source_connector": {
-            "kind": "google_pubsub",
-            "config": {
-                "project_id": "test-project",
-                "subscription_id": "test-subscription",
-                "credentials_json": "credentials.json",
+    return api.GetDetailedSpacePipeline(
+        **{
+            "id": "test-id",
+            "name": "test-name",
+            "space_id": "test-space-id",
+            "metadata": {},
+            "created_at": "2024-09-23T10:08:45.529Z",
+            "state": "running",
+            "space_name": "test-space-name",
+            "source_connector": {
+                "kind": "google_pubsub",
+                "config": {
+                    "project_id": "test-project",
+                    "subscription_id": "test-subscription",
+                    "credentials_json": "credentials.json",
+                },
             },
-        },
-        "sink_connector": {
-            "kind": "webhook",
-            "config": {
-                "url": "www.test-url.com",
-                "method": "GET",
-                "headers": [
-                    {"name": "header1", "value": "header1"},
-                    {"name": "header2", "value": "header2"},
-                ],
+            "sink_connector": {
+                "kind": "webhook",
+                "config": {
+                    "url": "www.test-url.com",
+                    "method": "GET",
+                    "headers": [
+                        {"name": "header1", "value": "header1"},
+                        {"name": "header2", "value": "header2"},
+                    ],
+                },
             },
-        },
-        "environments": [{"test-var": "test-var"}],
-    }
+            "environments": [{"name": "test-var", "value": "test-var"}],
+        }
+    )
 
 
 @pytest.fixture
 def update_pipeline_response(fetch_pipeline_response):
-    fetch_pipeline_response["name"] = "updated name"
-    fetch_pipeline_response["source_connector"] = None
+    fetch_pipeline_response.name = "updated name"
+    fetch_pipeline_response.source_connector = api.SourceConnector(root=None)
     return fetch_pipeline_response
 
 
@@ -185,4 +187,11 @@ def test_pipeline_response():
         "response": {"message": "Test Response"},
         "error_details": "Error message",
         "stack_trace": "Error Stack trace",
+    }
+
+
+@pytest.fixture
+def create_secret_response():
+    return {
+        "name": "test-name",
     }
