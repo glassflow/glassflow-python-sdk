@@ -203,6 +203,12 @@ class ConsumeFailedResponse(BaseModel):
     body: ConsumeOutputEvent | None = None
     status_code: int | None = None
 
+    def event(self) -> Any:
+        """Return failed event response."""
+        if self.body:
+            return self.body.response
+        return None
+
 
 class AccessToken(BaseModel):
     """
