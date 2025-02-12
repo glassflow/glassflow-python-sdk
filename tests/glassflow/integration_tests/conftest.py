@@ -56,6 +56,12 @@ def pipeline(client, creating_space):
         transformation_file="tests/data/transformation.py",
         personal_access_token=client.personal_access_token,
         metadata={"view_only": True},
+        source_kind="google_pubsub",
+        source_config={
+            "project_id": "my-project-id",
+            "subscription_id": "my-subscription-id",
+            "credentials_json": "my-credentials.json",
+        }
     )
 
 
