@@ -13,9 +13,9 @@ class GlassFlowClient(APIClient):
     and other resources
 
     Attributes:
-        client: requests.Session object to make HTTP requests to GlassFlow API
-        glassflow_config: GlassFlowConfig object to store configuration
-        organization_id: Organization ID of the user. If not provided,
+        client (requests.Session): Session object to make HTTP requests to GlassFlow API
+        glassflow_config (GlassFlowConfig): GlassFlow config object to store configuration
+        organization_id (str): Organization ID of the user. If not provided,
             the default organization will be used
 
     """
