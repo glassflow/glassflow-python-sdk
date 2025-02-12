@@ -42,7 +42,7 @@ class FunctionLogsResponse(BaseModel):
     Response for a function's logs endpoint.
 
     Attributes:
-        logs (List[FunctionLogEntry]): list of logs
+        logs (list[FunctionLogEntry]): list of logs
         next (str): ID used to retrieve next page of logs
     """
 
@@ -87,6 +87,7 @@ class ConsumeOutputEvent(BaseModel):
 
 
 class TestFunctionResponse(ConsumeOutputEvent):
+    """Response for Test function endpoint."""
     pass
 
 
@@ -145,9 +146,8 @@ class ListPipelinesResponse(BaseModel):
     Response for list pipelines endpoint
 
     Attributes:
-        total_amount (int): Total amount of pipelines
-
-        pipelines (list[Pipeline]): List of pipelines
+        total_amount (int): Total amount of pipelines.
+        pipelines (list[SpacePipeline]): List of pipelines.
     """
 
     total_amount: int
@@ -166,9 +166,10 @@ class ConsumeEventResponse(BaseModel):
     body: ConsumeOutputEvent | None = None
     status_code: int | None = None
 
-    def event(self):
+    def event(self) -> Any:
+        """Return event response."""
         if self.body:
-            return self.body["response"]
+            return self.body.response
         return None
 
 

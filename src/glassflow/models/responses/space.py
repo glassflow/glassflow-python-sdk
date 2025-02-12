@@ -26,7 +26,7 @@ class ListSpacesResponse(BaseModel):
 
     Attributes:
         total_amount (int): Total amount of spaces.
-        spaces (List[Space]): List of spaces.
+        spaces (list[Space]): List of spaces.
     """
 
     total_amount: int
