@@ -66,6 +66,38 @@ def pipeline(client, creating_space):
 
 
 @pytest.fixture
+def pipeline_with_secrets(client, creating_space, creating_secret):
+    return Pipeline(
+        name="test_pipeline",
+        space_id=creating_space.id,
+        transformation_file="tests/data/transformation.py",
+        personal_access_token=client.personal_access_token,
+        metadata={"view_only": True},
+        source_kind="google_pubsub",
+        source_config_secret_refs={
+            "project_id": {
+                "value": "my-project-id",
+            },
+            "subscription_id": {
+                "value": "my-subscription-id",
+            },
+            "credentials_json": {
+                "secret_ref": {
+                    "type": "organization",
+                    "key": creating_secret.key
+                },
+            },
+        },
+    )
+
+@pytest.fixture
+def creating_pipeline_with_secret(pipeline_with_secrets):
+    pipeline_with_secrets.create()
+    yield pipeline_with_secrets
+    pipeline_with_secrets.delete()
+
+
+@pytest.fixture
 def pipeline_with_random_id(client):
     return Pipeline(
         id=str(uuid.uuid4()),
