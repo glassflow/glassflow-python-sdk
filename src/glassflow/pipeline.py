@@ -118,20 +118,16 @@ class Pipeline(APIClient):
                 files=files,
                 data=data,
             )
-        except errors.UnknownError as http_err:
-            if http_err.status_code == 401:
-                raise errors.PipelineUnauthorizedError(
-                    self.id, http_err.raw_response
-                ) from http_err
-            if http_err.status_code == 404:
-                raise errors.PipelineNotFoundError(
-                    self.id, http_err.raw_response
-                ) from http_err
-            if http_err.status_code == 425:
+        except errors.UnknownError as e:
+            if e.status_code == 401:
+                raise errors.PipelineUnauthorizedError(self.id, e.raw_response) from e
+            if e.status_code == 404:
+                raise errors.PipelineNotFoundError(self.id, e.raw_response) from e
+            if e.status_code == 425:
                 raise errors.PipelineArtifactStillInProgressError(
-                    self.id, http_err.raw_response
-                )
-            raise http_err
+                    self.id, e.raw_response
+                ) from e
+            raise e
 
     def fetch(self) -> Pipeline:
         """
@@ -207,7 +203,6 @@ class Pipeline(APIClient):
         res = operations.CreatePipeline(
             **res_json,
         )
-        # it seems somebody doesn't lock his laptop
         self.id = res.id
         self.created_at = res.created_at
         self.space_id = res.space_id

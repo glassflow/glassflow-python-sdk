@@ -32,11 +32,12 @@ class PipelineArtifactStillInProgressError(ClientError):
     def __init__(self, pipeline_id: str, raw_response: requests_http.Response):
         super().__init__(
             detail=f"Artifact from pipeline {pipeline_id} "
-                   f"is still in process, try again later.",
+            f"is still in process, try again later.",
             status_code=raw_response.status_code,
             body=raw_response.text,
             raw_response=raw_response,
         )
+
 
 class PipelineTooManyRequestsError(ClientError):
     """Error caused by too many requests to a pipeline."""
@@ -48,6 +49,7 @@ class PipelineTooManyRequestsError(ClientError):
             body=raw_response.text,
             raw_response=raw_response,
         )
+
 
 class PipelineAccessTokenInvalidError(ClientError):
     """Error caused by invalid access token."""

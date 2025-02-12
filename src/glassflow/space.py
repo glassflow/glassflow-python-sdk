@@ -99,13 +99,11 @@ class Space(APIClient):
                 files=files,
                 data=data,
             )
-        except errors.UnknownError as http_err:
-            if http_err.status_code == 401:
-                raise errors.SpaceUnauthorizedError(
-                    self.id, http_err.raw_response
-                ) from http_err
-            if http_err.status_code == 404:
-                raise errors.SpaceNotFoundError(self.id, http_err.raw_response) from http_err
-            if http_err.status_code == 409:
-                raise errors.SpaceIsNotEmptyError(http_err.raw_response) from http_err
-            raise http_err
+        except errors.UnknownError as e:
+            if e.status_code == 401:
+                raise errors.SpaceUnauthorizedError(self.id, e.raw_response) from e
+            if e.status_code == 404:
+                raise errors.SpaceNotFoundError(self.id, e.raw_response) from e
+            if e.status_code == 409:
+                raise errors.SpaceIsNotEmptyError(e.raw_response) from e
+            raise e

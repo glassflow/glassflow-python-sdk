@@ -51,18 +51,17 @@ class PipelineDataClient(APIClient):
                 files=files,
                 data=data,
             )
-        except errors.UnknownError as http_err:
-            if http_err.status_code == 401:
-                raise errors.PipelineAccessTokenInvalidError(
-                    http_err.raw_response
-                ) from http_err
-            if http_err.status_code == 404:
+        except errors.UnknownError as e:
+            if e.status_code == 401:
+                raise errors.PipelineAccessTokenInvalidError(e.raw_response) from e
+            if e.status_code == 404:
                 raise errors.PipelineNotFoundError(
-                    self.pipeline_id, http_err.raw_response
-                ) from http_err
-            if http_err.status_code == 429:
-                return errors.PipelineTooManyRequestsError(http_err.raw_response)
-            raise http_err
+                    self.pipeline_id, e.raw_response
+                ) from e
+            if e.status_code == 429:
+                return errors.PipelineTooManyRequestsError(e.raw_response)
+            raise e
+
 
 class PipelineDataSource(PipelineDataClient):
     def publish(self, request_body: dict) -> responses.PublishEventResponse:
