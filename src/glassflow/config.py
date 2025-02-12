@@ -1,9 +1,8 @@
-from dataclasses import dataclass
+from pydantic import BaseModel
 from importlib.metadata import version
 
 
-@dataclass
-class GlassFlowConfig:
+class GlassFlowConfig(BaseModel):
     """Configuration object for GlassFlowClient
 
     Attributes:
