@@ -61,7 +61,7 @@ def pipeline(client, creating_space):
             "project_id": "my-project-id",
             "subscription_id": "my-subscription-id",
             "credentials_json": "my-credentials.json",
-        }
+        },
     )
 
 
