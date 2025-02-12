@@ -88,6 +88,7 @@ class ConsumeOutputEvent(BaseModel):
 
 class TestFunctionResponse(ConsumeOutputEvent):
     """Response for Test function endpoint."""
+
     pass
 
 

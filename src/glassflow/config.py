@@ -1,5 +1,6 @@
-from pydantic import BaseModel
 from importlib.metadata import version
+
+from pydantic import BaseModel
 
 
 class GlassFlowConfig(BaseModel):
