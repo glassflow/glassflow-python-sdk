@@ -15,8 +15,10 @@ class Pipeline(APIClient):
         id: str | None = None,
         source_kind: str | None = None,
         source_config: dict | None = None,
+        source_config_secret_refs: dict | None = None,
         sink_kind: str | None = None,
         sink_config: dict | None = None,
+        sink_config_secret_refs: dict | None = None,
         requirements: str | None = None,
         transformation_file: str | None = None,
         env_vars: list[dict[str, str]] | None = None,
@@ -39,9 +41,13 @@ class Pipeline(APIClient):
             source_kind: Kind of source for the pipeline. If no source is
                 provided, the default source will be SDK
             source_config: Configuration of the pipeline's source
+            source_config_secret_refs: Configuration of the pipeline's source
+                using secrets references'
             sink_kind: Kind of sink for the pipeline. If no sink is provided,
                 the default sink will be SDK
             sink_config: Configuration of the pipeline's sink
+            sink_config_secret_refs: Configuration of the pipeline's sink
+                using secrets references'
             env_vars: Environment variables to pass to the pipeline
             state: State of the pipeline after creation.
                 It can be either "running" or "paused"
@@ -59,8 +65,10 @@ class Pipeline(APIClient):
         self.personal_access_token = personal_access_token
         self.source_kind = source_kind
         self.source_config = source_config
+        self.source_config_secret_refs = source_config_secret_refs
         self.sink_kind = sink_kind
         self.sink_config = sink_config
+        self.sink_config_secret_refs = sink_config_secret_refs
         self.requirements = requirements
         self.transformation_code = None
         self.transformation_file = transformation_file
@@ -76,25 +84,15 @@ class Pipeline(APIClient):
         if self.transformation_file is not None:
             self._read_transformation_file()
 
-        if source_kind is not None and self.source_config is not None:
-            self.source_connector = dict(
-                kind=self.source_kind,
-                config=self.source_config,
-            )
-        elif self.source_kind is None and self.source_config is None:
-            self.source_connector = None
-        else:
-            raise ValueError("Both source_kind and source_config must be provided")
-
-        if self.sink_kind is not None and self.sink_config is not None:
-            self.sink_connector = dict(
-                kind=sink_kind,
-                config=sink_config,
-            )
-        elif self.sink_kind is None and self.sink_config is None:
-            self.sink_connector = None
-        else:
-            raise ValueError("Both sink_kind and sink_config must be provided")
+        self.source_connector = self._fill_connector(
+            "source",
+            self.source_kind,
+            self.source_config,
+            self.source_config_secret_refs,
+        )
+        self.sink_connector = self._fill_connector(
+            "sink", self.sink_kind, self.sink_config, self.sink_config_secret_refs
+        )
 
     def fetch(self) -> Pipeline:
         """
@@ -192,8 +190,10 @@ class Pipeline(APIClient):
         metadata: dict | None = None,
         source_kind: str | None = None,
         source_config: dict | None = None,
+        source_config_secret_refs: dict | None = None,
         sink_kind: str | None = None,
         sink_config: dict | None = None,
+        sink_config_secret_refs: dict | None = None,
         env_vars: list[dict[str, str]] | None = None,
     ) -> Pipeline:
         """
@@ -209,9 +209,13 @@ class Pipeline(APIClient):
             source_kind: Kind of source for the pipeline. If no source is
                 provided, the default source will be SDK
             source_config: Configuration of the pipeline's source
+            source_config_secret_refs: Configuration of the pipeline's source
+                using secrets references'
             sink_kind: Kind of sink for the pipeline. If no sink is provided,
                 the default sink will be SDK
             sink_config: Configuration of the pipeline's sink
+            sink_config_secret_refs: Configuration of the pipeline's sink
+                using secrets references'
             env_vars: Environment variables to pass to the pipeline
             metadata: Metadata of the pipeline
 
@@ -235,17 +239,18 @@ class Pipeline(APIClient):
             self.transformation_code = file
 
         if source_kind is not None:
-            source_connector = dict(
-                kind=source_kind,
-                config=source_config,
+            source_connector = self._fill_connector(
+                "source",
+                source_kind,
+                self.source_config,
+                self.source_config_secret_refs,
             )
         else:
             source_connector = self.source_connector
 
         if sink_kind is not None:
-            sink_connector = dict(
-                kind=sink_kind,
-                config=sink_config,
+            sink_connector = self._fill_connector(
+                "sink", sink_kind, self.sink_config, self.sink_config_secret_refs
             )
         else:
             sink_connector = self.sink_connector
@@ -416,6 +421,29 @@ class Pipeline(APIClient):
                     self.id, e.raw_response
                 ) from e
             raise e
+
+    @staticmethod
+    def _fill_connector(
+        connector_type: str, kind: str, config: dict, config_secret_refs: dict
+    ) -> api.SourceConnector | api.SinkConnector:
+        """Format connector input"""
+        if not kind and not config and not config_secret_refs:
+            connector = None
+        elif kind and (config or config_secret_refs):
+            if config:
+                # TODO: Should we create the secrets for the user??
+                connector = dict(kind=kind, config=config)
+            else:
+                connector = dict(kind=kind, configuration=config_secret_refs)
+        else:
+            raise errors.MissingConnectorSettingsValueError(connector_type)
+
+        if connector_type == "source":
+            return api.SourceConnector(root=connector)
+        elif connector_type == "sink":
+            return api.SinkConnector(root=connector)
+        else:
+            raise ValueError("connector_type must be 'source' or 'sink'")
 
     def _list_access_tokens(self) -> Pipeline:
         endpoint = f"/pipelines/{self.id}/access_tokens"

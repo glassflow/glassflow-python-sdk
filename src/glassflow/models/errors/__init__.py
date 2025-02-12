@@ -6,6 +6,7 @@ from .clienterror import (
 )
 from .error import Error
 from .pipeline import (
+    MissingConnectorSettingsValueError,
     PipelineAccessTokenInvalidError,
     PipelineArtifactStillInProgressError,
     PipelineNotFoundError,
@@ -28,6 +29,7 @@ __all__ = [
     "ClientError",
     "UnknownContentTypeError",
     "UnauthorizedError",
+    "MissingConnectorSettingsValueError",
     "SecretInvalidKeyError",
     "SecretNotFoundError",
     "SecretUnauthorizedError",

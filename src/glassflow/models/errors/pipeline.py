@@ -1,6 +1,16 @@
 from .clienterror import ClientError, requests_http
 
 
+class MissingConnectorSettingsValueError(Exception):
+    """Value error for missing connector settings."""
+
+    def __init__(self, connector_type: str):
+        super().__init__(
+            f"ValueError: {connector_type}_kind and {connector_type}_config "
+            f" or {connector_type}_config_secret_refs must be provided"
+        )
+
+
 class PipelineNotFoundError(ClientError):
     """Error caused by a pipeline ID not found."""
 

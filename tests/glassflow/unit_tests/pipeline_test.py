@@ -25,23 +25,21 @@ def test_pipeline_fail_with_file_not_found():
 
 
 def test_pipeline_fail_with_missing_sink_data():
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(errors.MissingConnectorSettingsValueError):
         Pipeline(
             transformation_file="tests/data/transformation.py",
             personal_access_token="test-token",
             sink_kind="google_pubsub",
         )
-    assert str(e.value) == "Both sink_kind and sink_config must be provided"
 
 
 def test_pipeline_fail_with_missing_source_data():
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(errors.MissingConnectorSettingsValueError):
         Pipeline(
             transformation_file="tests/data/transformation.py",
             personal_access_token="test-token",
             source_kind="google_pubsub",
         )
-    assert str(e.value) == "Both source_kind and source_config must be provided"
 
 
 def test_fetch_pipeline_ok(
@@ -167,7 +165,7 @@ def test_update_pipeline_ok(
     )
 
     assert pipeline.name == update_pipeline_response.name
-    assert pipeline.source_connector == update_pipeline_response.source_connector.root
+    assert pipeline.source_connector == update_pipeline_response.source_connector
 
 
 def test_delete_pipeline_ok(requests_mock, client):
