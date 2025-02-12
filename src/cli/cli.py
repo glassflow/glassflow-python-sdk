@@ -9,7 +9,6 @@ def glassflow():
     pass
 
 
-
 @click.command()
 @click.argument("command", required=False)
 def help(command):
