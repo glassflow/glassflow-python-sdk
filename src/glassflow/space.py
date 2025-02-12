@@ -66,10 +66,11 @@ class Space(APIClient):
 
         Raises:
             ValueError: If ID is not provided in the constructor
-            SpaceNotFoundError: If ID provided does not match any
+            errors.SpaceNotFoundError: If ID provided does not match any
                 existing space in GlassFlow
-            UnauthorizedError: If the Personal Access Token is not
+            errors.SpaceUnauthorizedError: If the Personal Access Token is not
                 provided or is invalid
+            errors.SpaceIsNotEmptyError: If the Space is not empty
         """
         if self.id is None:
             raise ValueError("Space id must be provided in the constructor")

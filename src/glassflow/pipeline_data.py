@@ -9,9 +9,10 @@ class PipelineDataClient(APIClient):
     """Base Client object to publish and consume events from the given pipeline.
 
     Attributes:
-        glassflow_config: GlassFlowConfig object to interact with GlassFlow API
-        pipeline_id: The pipeline id to interact with
-        pipeline_access_token: The access token to access the pipeline
+        glassflow_config (GlassFlowConfig): GlassFlowConfig object to interact
+            with GlassFlow API
+        pipeline_id (str): The pipeline id to interact with
+        pipeline_access_token (str): The access token to access the pipeline
     """
 
     def __init__(self, pipeline_id: str, pipeline_access_token: str):
@@ -71,11 +72,11 @@ class PipelineDataSource(PipelineDataClient):
             request_body: The message to be published into the pipeline
 
         Returns:
-            PublishEventResponse: Response object containing the status
+            responses.PublishEventResponse: Response object containing the status
                 code and the raw response
 
         Raises:
-            ClientError: If an error occurred while publishing the event
+            errors.ClientError: If an error occurred while publishing the event
         """
         endpoint = f"/pipelines/{self.pipeline_id}/topics/input/events"
         print("request_body", request_body)
@@ -98,11 +99,11 @@ class PipelineDataSink(PipelineDataClient):
         """Consume the last message from the pipeline
 
         Returns:
-            ConsumeEventResponse: Response object containing the status
+            responses.ConsumeEventResponse: Response object containing the status
                 code and the raw response
 
         Raises:
-            ClientError: If an error occurred while consuming the event
+            errors.ClientError: If an error occurred while consuming the event
 
         """
 
@@ -124,11 +125,11 @@ class PipelineDataSink(PipelineDataClient):
         """Consume the failed message from the pipeline
 
         Returns:
-            ConsumeFailedResponse: Response object containing the status
+            responsesConsumeFailedResponse: Response object containing the status
                 code and the raw response
 
         Raises:
-            ClientError: If an error occurred while consuming the event
+            errors.ClientError: If an error occurred while consuming the event
 
         """
 

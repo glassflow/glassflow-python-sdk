@@ -25,7 +25,7 @@ class Secret(APIClient):
             value: Value of the secret to store
 
         Raises:
-            SecretInvalidKeyError: If secret key is invalid
+            errors.SecretInvalidKeyError: If secret key is invalid
         """
         super().__init__()
         self.personal_access_token = personal_access_token
@@ -47,7 +47,7 @@ class Secret(APIClient):
 
         Raises:
             ValueError: If secret key or value are not set in the constructor
-            Unauthorized: If personal access token is invalid
+            errors.SecretUnauthorizedError: If personal access token is invalid
         """
         if self.key is None:
             raise ValueError("Secret key is required in the constructor")
@@ -74,8 +74,8 @@ class Secret(APIClient):
         Returns:
 
         Raises:
-            Unauthorized: If personal access token is invalid
-            SecretNotFound: If secret key does not exist
+            errors.SecretUnauthorizedError: If personal access token is invalid
+            errors.SecretNotFound: If secret key does not exist
             ValueError: If secret key is not set in the constructor
         """
         if self.key is None:

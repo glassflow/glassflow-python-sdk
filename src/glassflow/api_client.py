@@ -12,6 +12,7 @@ class APIClient:
     glassflow_config = GlassFlowConfig()
 
     def __init__(self):
+        """API client constructor"""
         super().__init__()
         self.client = requests_http.Session()
 

@@ -31,3 +31,6 @@ fix-lint:
 	ruff check --fix .
 
 fix: fix-format fix-lint
+
+serve-docs-locally:
+	mkdocs serve

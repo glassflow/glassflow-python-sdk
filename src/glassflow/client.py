@@ -46,10 +46,10 @@ class GlassFlowClient(APIClient):
             Pipeline: Pipeline object from the GlassFlow API
 
         Raises:
-            PipelineNotFoundError: Pipeline does not exist
-            UnauthorizedError: User does not have permission to perform the
-                requested operation
-            ClientError: GlassFlow Client Error
+            errors.PipelineNotFoundError: Pipeline does not exist
+            errors.PipelineUnauthorizedError: User does not have permission to
+                perform the requested operation
+            errors.ClientError: GlassFlow Client Error
         """
         return Pipeline(
             personal_access_token=self.personal_access_token,
@@ -94,7 +94,7 @@ class GlassFlowClient(APIClient):
             Pipeline: New pipeline
 
         Raises:
-            UnauthorizedError: User does not have permission to perform
+            errors.PipelineUnauthorizedError: User does not have permission to perform
                 the requested operation
         """
         return Pipeline(
@@ -124,11 +124,11 @@ class GlassFlowClient(APIClient):
                 If not specified, all the pipelines will be listed.
 
         Returns:
-            ListPipelinesResponse: Response object with the pipelines listed
+            responses.ListPipelinesResponse: Response object with the pipelines listed
 
         Raises:
-            UnauthorizedError: User does not have permission to perform the
-                requested operation
+            errors.PipelineUnauthorizedError: User does not have permission to
+                perform the requested operation
         """
 
         endpoint = "/pipelines"
@@ -151,7 +151,7 @@ class GlassFlowClient(APIClient):
             Space: New space
 
         Raises:
-            UnauthorizedError: User does not have permission to perform
+            errors.SpaceUnauthorizedError: User does not have permission to perform
                 the requested operation
         """
         return Space(
@@ -165,10 +165,10 @@ class GlassFlowClient(APIClient):
         Lists all GlassFlow spaces in the GlassFlow API
 
         Returns:
-            ListSpacesResponse: Response object with the spaces listed
+            response.ListSpacesResponse: Response object with the spaces listed
 
         Raises:
-            UnauthorizedError: User does not have permission to perform the
+            errors.SpaceUnauthorizedError: User does not have permission to perform the
                 requested operation
         """
 
@@ -188,7 +188,7 @@ class GlassFlowClient(APIClient):
             Secret: New secret
 
         Raises:
-            UnauthorizedError: User does not have permission to perform the
+            errors.SecretUnauthorizedError: User does not have permission to perform the
                 requested operation
         """
         return Secret(
@@ -203,10 +203,10 @@ class GlassFlowClient(APIClient):
         Lists all GlassFlow secrets in the GlassFlow API
 
         Returns:
-            ListSecretsResponse: Response object with the secrets listed
+            responses.ListSecretsResponse: Response object with the secrets listed
 
         Raises:
-            UnauthorizedError: User does not have permission to perform the
+            errors.SecretUnauthorizedError: User does not have permission to perform the
                 requested operation
         """
         endpoint = "/secrets"

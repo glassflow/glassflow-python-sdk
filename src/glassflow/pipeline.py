@@ -49,7 +49,7 @@ class Pipeline(APIClient):
             created_at: Timestamp when the pipeline was created
 
         Raises:
-            FailNotFoundError: If the transformation file is provided and
+            FileNotFoundError: If the transformation file is provided and
                 does not exist
         """
         super().__init__()
@@ -138,9 +138,9 @@ class Pipeline(APIClient):
 
         Raises:
             ValueError: If ID is not provided in the constructor
-            PipelineNotFoundError: If ID provided does not match any
+            errors.PipelineNotFoundError: If ID provided does not match any
                 existing pipeline in GlassFlow
-            UnauthorizedError: If the Personal Access Token is not
+            errors.PipelineUnauthorizedError: If the Personal Access Token is not
                 provider or is invalid
         """
         if self.id is None:
@@ -312,9 +312,9 @@ class Pipeline(APIClient):
 
         Raises:
             ValueError: If ID is not provided in the constructor
-            PipelineNotFoundError: If ID provided does not match any
+            error.PipelineNotFoundError: If ID provided does not match any
                 existing pipeline in GlassFlow
-            UnauthorizedError: If the Personal Access Token is not
+            errors.PipelineUnauthorizedError: If the Personal Access Token is not
                 provided or is invalid
         """
         if self.id is None:
@@ -342,7 +342,7 @@ class Pipeline(APIClient):
             end_time: End time filter
 
         Returns:
-            PipelineFunctionsGetLogsResponse: Response with the logs
+            error.PipelineFunctionsGetLogsResponse: Response with the logs
         """
 
         query_params = {
@@ -519,7 +519,7 @@ class Pipeline(APIClient):
             data: Input JSON
 
         Returns:
-            TestFunctionResponse: Test function response
+            responses.TestFunctionResponse: Test function response
         """
         endpoint = f"/pipelines/{self.id}/functions/main/test"
         request_body = data
