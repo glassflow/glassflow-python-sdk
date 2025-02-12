@@ -6,13 +6,14 @@ from .clienterror import (
 )
 from .error import Error
 from .pipeline import (
+    PipelineAccessTokenInvalidError,
     PipelineArtifactStillInProgressError,
     PipelineNotFoundError,
-    PipelineUnauthorizedError,
-    PipelineAccessTokenInvalidError,
     PipelineTooManyRequestsError,
+    PipelineUnauthorizedError,
 )
 from .secret import (
+    SecretInvalidKeyError,
     SecretNotFoundError,
     SecretUnauthorizedError,
 )
@@ -27,6 +28,7 @@ __all__ = [
     "ClientError",
     "UnknownContentTypeError",
     "UnauthorizedError",
+    "SecretInvalidKeyError",
     "SecretNotFoundError",
     "SecretUnauthorizedError",
     "SpaceNotFoundError",

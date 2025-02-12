@@ -10,6 +10,7 @@ from .pipeline import (
     PublishEventResponse,
     TestFunctionResponse,
 )
+from .secret import ListSecretsResponse, Secret
 from .space import ListSpacesResponse, Space
 
 __all__ = [
@@ -25,4 +26,6 @@ __all__ = [
     "ConsumeFailedResponse",
     "ListAccessTokensResponse",
     "AccessToken",
+    "Secret",
+    "ListSecretsResponse",
 ]

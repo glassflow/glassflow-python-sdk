@@ -24,3 +24,13 @@ class SecretUnauthorizedError(ClientError):
             body=raw_response.text,
             raw_response=raw_response,
         )
+
+
+class SecretInvalidKeyError(Exception):
+    """Error caused by a Secret Key has invalid format."""
+
+    def __init__(self, secret_key: str):
+        super().__init__(
+            f"Secret key {secret_key} has invalid format, it must start with a letter, "
+            f"and it can only contain characters in a-zA-Z0-9_"
+        )

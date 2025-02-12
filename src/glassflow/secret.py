@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 from .api_client import APIClient
 from .models import api, errors
 
@@ -18,8 +20,12 @@ class Secret(APIClient):
         Args:
             personal_access_token: The personal access token to authenticate
                 against GlassFlow
-            key: Name of the secret
+            key: Name of the secret. It must start with a letter,
+                and it can only contain characters in a-zA-Z0-9_
             value: Value of the secret to store
+
+        Raises:
+            SecretInvalidKeyError: If secret key is invalid
         """
         super().__init__()
         self.personal_access_token = personal_access_token
@@ -29,6 +35,9 @@ class Secret(APIClient):
         self.headers = {"Personal-Access-Token": self.personal_access_token}
         self.query_params = {"organization_id": self.organization_id}
 
+        if self.key and not self._is_key_valid(self.key):
+            raise errors.SecretInvalidKeyError(self.key)
+
     def create(self) -> Secret:
         """
         Creates a new Glassflow Secret
@@ -37,11 +46,13 @@ class Secret(APIClient):
             self: Secret object
 
         Raises:
-            ValueError: If secret key is not provided in the constructor
+            ValueError: If secret key or value are not set in the constructor
             Unauthorized: If personal access token is invalid
         """
         if self.key is None:
             raise ValueError("Secret key is required in the constructor")
+        if self.value is None:
+            raise ValueError("Secret value is required in the constructor")
 
         secret_api_obj = api.CreateSecret(
             **{
@@ -65,13 +76,17 @@ class Secret(APIClient):
         Raises:
             Unauthorized: If personal access token is invalid
             SecretNotFound: If secret key does not exist
-            ValueError: If secret key is not provided in the constructor
+            ValueError: If secret key is not set in the constructor
         """
         if self.key is None:
             raise ValueError("Secret key is required in the constructor")
 
         endpoint = f"/secrets/{self.key}"
         self._request(method="DELETE", endpoint=endpoint)
+
+    @staticmethod
+    def _is_key_valid(key, search=re.compile(r"[^a-zA-Z0-9_]").search):
+        return not bool(search(key))
 
     def _request(
         self,
@@ -95,11 +110,9 @@ class Secret(APIClient):
                 files=files,
                 data=data,
             )
-        except errors.UnknownError as http_err:
-            if http_err.status_code == 401:
-                raise errors.SecretUnauthorizedError(
-                    self.key, http_err.raw_response
-                ) from http_err
-            if http_err.status_code == 404:
-                raise errors.SecretNotFoundError(self.key, http_err.raw_response) from http_err
-            raise http_err
+        except errors.UnknownError as e:
+            if e.status_code == 401:
+                raise errors.SecretUnauthorizedError(self.key, e.raw_response) from e
+            if e.status_code == 404:
+                raise errors.SecretNotFoundError(self.key, e.raw_response) from e
+            raise e

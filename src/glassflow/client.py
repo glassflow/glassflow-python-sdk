@@ -3,6 +3,7 @@
 from .api_client import APIClient
 from .models import errors, responses
 from .pipeline import Pipeline
+from .secret import Secret
 from .space import Space
 
 
@@ -34,35 +35,6 @@ class GlassFlowClient(APIClient):
         self.organization_id = organization_id
         self.request_headers = {"Personal-Access-Token": self.personal_access_token}
         self.request_query_params = {"organization_id": self.organization_id}
-
-    def _request(
-        self,
-        method,
-        endpoint,
-        request_headers=None,
-        json=None,
-        request_query_params=None,
-        files=None,
-        data=None,
-    ):
-        headers = {**self.request_headers, **(request_headers or {})}
-        query_params = {**self.request_query_params, **(request_query_params or {})}
-
-        try:
-            http_res = super()._request(
-                method=method,
-                endpoint=endpoint,
-                request_headers=headers,
-                json=json,
-                request_query_params=query_params,
-                files=files,
-                data=data,
-            )
-            return http_res
-        except errors.UnknownError as http_err:
-            if http_err.status_code == 401:
-                raise errors.UnauthorizedError(http_err.raw_response) from http_err
-            raise http_err
 
     def get_pipeline(self, pipeline_id: str) -> Pipeline:
         """Gets a Pipeline object from the GlassFlow API
@@ -160,31 +132,11 @@ class GlassFlowClient(APIClient):
         """
 
         endpoint = "/pipelines"
-        query_params = {}
-        if space_ids:
-            query_params = {"space_id": space_ids}
+        query_params = {"space_id": space_ids} if space_ids else {}
         http_res = self._request(
             method="GET", endpoint=endpoint, request_query_params=query_params
         )
-        res_json = http_res.json()
-        return responses.ListPipelinesResponse(**res_json)
-
-    def list_spaces(self) -> responses.ListSpacesResponse:
-        """
-        Lists all GlassFlow spaces in the GlassFlow API
-
-        Returns:
-            ListSpacesResponse: Response object with the spaces listed
-
-        Raises:
-            UnauthorizedError: User does not have permission to perform the
-                requested operation
-        """
-
-        endpoint = "/spaces"
-        http_res = self._request(method="GET", endpoint=endpoint)
-        res_json = http_res.json()
-        return responses.ListSpacesResponse(**res_json)
+        return responses.ListPipelinesResponse(**http_res.json())
 
     def create_space(
         self,
@@ -207,3 +159,85 @@ class GlassFlowClient(APIClient):
             personal_access_token=self.personal_access_token,
             organization_id=self.organization_id,
         ).create()
+
+    def list_spaces(self) -> responses.ListSpacesResponse:
+        """
+        Lists all GlassFlow spaces in the GlassFlow API
+
+        Returns:
+            ListSpacesResponse: Response object with the spaces listed
+
+        Raises:
+            UnauthorizedError: User does not have permission to perform the
+                requested operation
+        """
+
+        endpoint = "/spaces"
+        http_res = self._request(method="GET", endpoint=endpoint)
+        return responses.ListSpacesResponse(**http_res.json())
+
+    def create_secret(self, key: str, value: str) -> Secret:
+        """
+        Creates a new secret
+
+        Args:
+            key: Secret key (must be unique in your organization)
+            value: Secret value
+
+        Returns:
+            Secret: New secret
+
+        Raises:
+            UnauthorizedError: User does not have permission to perform the
+                requested operation
+        """
+        return Secret(
+            key=key,
+            value=value,
+            personal_access_token=self.personal_access_token,
+            organization_id=self.organization_id,
+        ).create()
+
+    def list_secrets(self) -> responses.ListSecretsResponse:
+        """
+        Lists all GlassFlow secrets in the GlassFlow API
+
+        Returns:
+            ListSecretsResponse: Response object with the secrets listed
+
+        Raises:
+            UnauthorizedError: User does not have permission to perform the
+                requested operation
+        """
+        endpoint = "/secrets"
+        http_res = self._request(method="GET", endpoint=endpoint)
+        return responses.ListSecretsResponse(**http_res.json())
+
+    def _request(
+        self,
+        method,
+        endpoint,
+        request_headers=None,
+        json=None,
+        request_query_params=None,
+        files=None,
+        data=None,
+    ):
+        headers = {**self.request_headers, **(request_headers or {})}
+        query_params = {**self.request_query_params, **(request_query_params or {})}
+
+        try:
+            http_res = super()._request(
+                method=method,
+                endpoint=endpoint,
+                request_headers=headers,
+                json=json,
+                request_query_params=query_params,
+                files=files,
+                data=data,
+            )
+            return http_res
+        except errors.UnknownError as e:
+            if e.status_code == 401:
+                raise errors.UnauthorizedError(e.raw_response) from e
+            raise e
