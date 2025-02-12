@@ -52,7 +52,7 @@ setuptools.setup(
     package_data={"glassflow": ["py.typed"]},
     entry_points={
         "console_scripts": [
-            "glassflow = glassflow.cli:glassflow",
+            "glassflow = cli.cli:glassflow",
         ],
     },
 )
