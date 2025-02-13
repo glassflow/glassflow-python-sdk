@@ -14,5 +14,5 @@ def test_delete_space_fail_with_404(space_with_random_id):
 
 
 def test_delete_space_fail_with_401(space_with_random_id_and_invalid_token):
-    with pytest.raises(errors.UnauthorizedError):
+    with pytest.raises(errors.SpaceUnauthorizedError):
         space_with_random_id_and_invalid_token.delete()

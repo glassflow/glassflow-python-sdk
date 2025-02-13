@@ -31,10 +31,8 @@ def test_list_pipelines_ok(requests_mock, list_pipelines_response, client):
 
     res = client.list_pipelines()
 
-    assert res.status_code == 200
-    assert res.content_type == "application/json"
     assert res.total_amount == list_pipelines_response["total_amount"]
-    assert res.pipelines == list_pipelines_response["pipelines"]
+    assert res.pipelines[0].name == list_pipelines_response["pipelines"][0]["name"]
 
 
 def test_list_pipelines_fail_with_401(requests_mock, client):

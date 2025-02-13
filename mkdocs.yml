@@ -43,7 +43,11 @@ plugins:
       handlers:
         python:
           import:
-            - url: https://docs.python-requests.org/en/master/objects.inv
+            - url: https://docs.python.org/3/objects.inv  # Add Python's objects.inv
+              domains: [ std, py ]
+            - url: https://docs.python-requests.org/en/master/objects.inv  # Add requests objects.inv
+              domains: [ std, py ]
+            - url: https://docs.pydantic.dev/latest/objects.inv  # Add Pydantic's objects.inv
               domains: [ std, py ]
           options:
             members_order: source

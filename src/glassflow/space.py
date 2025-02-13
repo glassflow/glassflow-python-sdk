@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import datetime
+
 from .client import APIClient
-from .models import api, errors, operations
+from .models import api, errors
 
 
 class Space(APIClient):
@@ -10,10 +12,10 @@ class Space(APIClient):
         personal_access_token: str,
         name: str | None = None,
         id: str | None = None,
-        created_at: str | None = None,
+        created_at: datetime.datetime | None = None,
         organization_id: str | None = None,
     ):
-        """Creates a new GlassFlow pipeline object
+        """Creates a new GlassFlow space object
 
         Args:
             personal_access_token: The personal access token to authenticate
@@ -29,84 +31,78 @@ class Space(APIClient):
         self.created_at = created_at
         self.organization_id = organization_id
         self.personal_access_token = personal_access_token
+        self.headers = {"Personal-Access-Token": self.personal_access_token}
+        self.query_params = {"organization_id": self.organization_id}
 
     def create(self) -> Space:
         """
         Creates a new GlassFlow space
 
         Returns:
-            self: Space object
+            Space object
 
         Raises:
             ValueError: If name is not provided in the constructor
 
         """
-        if self.name is None:
-            raise ValueError("Name must be provided in order to create the space")
-        create_space = api.CreateSpace(name=self.name)
-        request = operations.CreateSpaceRequest(
-            organization_id=self.organization_id,
-            personal_access_token=self.personal_access_token,
-            **create_space.__dict__,
-        )
-        base_res = self._request(method="POST", endpoint="/spaces", request=request)
+        space_api_obj = api.CreateSpace(name=self.name)
 
-        res = operations.CreateSpaceResponse(
-            status_code=base_res.status_code,
-            content_type=base_res.content_type,
-            raw_response=base_res.raw_response,
-            **base_res.raw_response.json(),
+        endpoint = "/spaces"
+        http_res = self._request(
+            method="POST", endpoint=endpoint, json=space_api_obj.model_dump()
         )
 
-        self.id = res.id
-        self.created_at = res.created_at
-        self.name = res.name
+        space_created = api.Space(**http_res.json())
+        self.id = space_created.id
+        self.created_at = space_created.created_at
+        self.name = space_created.name
         return self
 
     def delete(self) -> None:
         """
         Deletes a GlassFlow space
 
-        Returns:
-
         Raises:
             ValueError: If ID is not provided in the constructor
-            SpaceNotFoundError: If ID provided does not match any
+            errors.SpaceNotFoundError: If ID provided does not match any
                 existing space in GlassFlow
-            UnauthorizedError: If the Personal Access Token is not
+            errors.SpaceUnauthorizedError: If the Personal Access Token is not
                 provided or is invalid
+            errors.SpaceIsNotEmptyError: If the Space is not empty
         """
         if self.id is None:
             raise ValueError("Space id must be provided in the constructor")
 
-        request = operations.DeleteSpaceRequest(
-            space_id=self.id,
-            organization_id=self.organization_id,
-            personal_access_token=self.personal_access_token,
-        )
-        self._request(
-            method="DELETE",
-            endpoint=f"/spaces/{self.id}",
-            request=request,
-        )
+        endpoint = f"/spaces/{self.id}"
+        self._request(method="DELETE", endpoint=endpoint)
 
     def _request(
         self,
-        method: str,
-        endpoint: str,
-        request: operations.BaseManagementRequest,
-        **kwargs,
-    ) -> operations.BaseResponse:
+        method,
+        endpoint,
+        request_headers=None,
+        json=None,
+        request_query_params=None,
+        files=None,
+        data=None,
+    ):
+        headers = {**self.headers, **(request_headers or {})}
+        query_params = {**self.query_params, **(request_query_params or {})}
         try:
             return super()._request(
-                method=method, endpoint=endpoint, request=request, **kwargs
+                method=method,
+                endpoint=endpoint,
+                request_headers=headers,
+                json=json,
+                request_query_params=query_params,
+                files=files,
+                data=data,
             )
-        except errors.ClientError as e:
+        except errors.UnknownError as e:
+            if e.status_code == 401:
+                raise errors.SpaceUnauthorizedError(self.id, e.raw_response) from e
             if e.status_code == 404:
                 raise errors.SpaceNotFoundError(self.id, e.raw_response) from e
-            elif e.status_code == 401:
-                raise errors.UnauthorizedError(e.raw_response) from e
-            elif e.status_code == 409:
+            if e.status_code == 409:
                 raise errors.SpaceIsNotEmptyError(e.raw_response) from e
-            else:
-                raise e
+            raise e

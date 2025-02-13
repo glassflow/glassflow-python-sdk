@@ -1,21 +1,46 @@
 from .clienterror import (
     ClientError,
-    PipelineAccessTokenInvalidError,
-    PipelineNotFoundError,
-    SpaceIsNotEmptyError,
-    SpaceNotFoundError,
     UnauthorizedError,
     UnknownContentTypeError,
+    UnknownError,
 )
 from .error import Error
+from .pipeline import (
+    ConnectorConfigValueError,
+    PipelineAccessTokenInvalidError,
+    PipelineArtifactStillInProgressError,
+    PipelineNotFoundError,
+    PipelineTooManyRequestsError,
+    PipelineUnauthorizedError,
+)
+from .secret import (
+    SecretInvalidKeyError,
+    SecretNotFoundError,
+    SecretUnauthorizedError,
+)
+from .space import (
+    SpaceIsNotEmptyError,
+    SpaceNotFoundError,
+    SpaceUnauthorizedError,
+)
 
 __all__ = [
     "Error",
     "ClientError",
-    "PipelineNotFoundError",
-    "PipelineAccessTokenInvalidError",
-    "SpaceNotFoundError",
     "UnknownContentTypeError",
     "UnauthorizedError",
+    "ConnectorConfigValueError",
+    "SecretInvalidKeyError",
+    "SecretNotFoundError",
+    "SecretUnauthorizedError",
+    "SpaceNotFoundError",
     "SpaceIsNotEmptyError",
+    "SpaceUnauthorizedError",
+    "PipelineArtifactStillInProgressError",
+    "PipelineNotFoundError",
+    "PipelineAccessTokenInvalidError",
+    "PipelineAccessTokenInvalidError",
+    "PipelineTooManyRequestsError",
+    "PipelineUnauthorizedError",
+    "UnknownError",
 ]

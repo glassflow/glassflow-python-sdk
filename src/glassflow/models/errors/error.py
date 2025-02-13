@@ -1,25 +1,14 @@
-from __future__ import annotations
-
-import dataclasses
-
-from dataclasses_json import Undefined, dataclass_json
-
-from glassflow import utils
+from pydantic import BaseModel
 
 
-@dataclass_json(undefined=Undefined.EXCLUDE)
-@dataclasses.dataclass
-class Error(Exception):
+class Error(BaseModel):
     """Bad request error response
 
     Attributes:
-        message: A message describing the error
-
+        detail: A message describing the error
     """
 
-    detail: str = dataclasses.field(
-        metadata={"dataclasses_json": {"letter_case": utils.get_field_name("detail")}}
-    )
+    detail: str
 
     def __str__(self) -> str:
-        return utils.marshal_json(self, type(self))
+        return self.model_dump_json()

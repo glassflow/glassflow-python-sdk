@@ -51,48 +51,12 @@ class ClientError(Exception):
         return f"{self.detail}: Status {self.status_code}{body}"
 
 
-class PipelineNotFoundError(ClientError):
-    """Error caused by a pipeline ID not found."""
-
-    def __init__(self, pipeline_id: str, raw_response: requests_http.Response):
-        super().__init__(
-            detail=f"Pipeline ID {pipeline_id} does not exist",
-            status_code=404,
-            body=raw_response.text,
-            raw_response=raw_response,
-        )
-
-
-class SpaceNotFoundError(ClientError):
-    """Error caused by a pipeline ID not found."""
-
-    def __init__(self, space_id: str, raw_response: requests_http.Response):
-        super().__init__(
-            detail=f"Space ID {space_id} does not exist",
-            status_code=404,
-            body=raw_response.text,
-            raw_response=raw_response,
-        )
-
-
 class UnauthorizedError(ClientError):
     """Error caused by a user not authorized."""
 
     def __init__(self, raw_response: requests_http.Response):
         super().__init__(
             detail="Unauthorized request, Personal Access Token used is invalid",
-            status_code=401,
-            body=raw_response.text,
-            raw_response=raw_response,
-        )
-
-
-class PipelineAccessTokenInvalidError(ClientError):
-    """Error caused by invalid access token."""
-
-    def __init__(self, raw_response: requests_http.Response):
-        super().__init__(
-            detail="The Pipeline Access Token used is invalid",
             status_code=401,
             body=raw_response.text,
             raw_response=raw_response,
@@ -112,13 +76,13 @@ class UnknownContentTypeError(ClientError):
         )
 
 
-class SpaceIsNotEmptyError(ClientError):
-    """Error caused by trying to delete a space that is not empty."""
+class UnknownError(ClientError):
+    """Error caused by an unknown error."""
 
     def __init__(self, raw_response: requests_http.Response):
         super().__init__(
-            detail=raw_response.json()["msg"],
-            status_code=409,
+            detail="Error in getting response from GlassFlow",
+            status_code=raw_response.status_code,
             body=raw_response.text,
             raw_response=raw_response,
         )

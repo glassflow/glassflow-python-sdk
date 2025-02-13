@@ -8,6 +8,7 @@ from glassflow import (
     Pipeline,
     PipelineDataSink,
     PipelineDataSource,
+    Secret,
     Space,
 )
 
@@ -40,7 +41,7 @@ def space_with_random_id(client):
 
 
 @pytest.fixture
-def space_with_random_id_and_invalid_token(client):
+def space_with_random_id_and_invalid_token():
     return Space(
         id=str(uuid.uuid4()),
         personal_access_token="invalid-token",
@@ -54,6 +55,13 @@ def pipeline(client, creating_space):
         space_id=creating_space.id,
         transformation_file="tests/data/transformation.py",
         personal_access_token=client.personal_access_token,
+        metadata={"view_only": True},
+        source_kind="google_pubsub",
+        source_config={
+            "project_id": "my-project-id",
+            "subscription_id": "my-subscription-id",
+            "credentials_json": "my-credentials.json",
+        },
     )
 
 
@@ -84,7 +92,7 @@ def creating_pipeline(pipeline):
 def source(creating_pipeline):
     return PipelineDataSource(
         pipeline_id=creating_pipeline.id,
-        pipeline_access_token=creating_pipeline.access_tokens[0]["token"],
+        pipeline_access_token=creating_pipeline.access_tokens[0].token,
     )
 
 
@@ -99,7 +107,7 @@ def source_with_invalid_access_token(creating_pipeline):
 def source_with_non_existing_id(creating_pipeline):
     return PipelineDataSource(
         pipeline_id=str(uuid.uuid4()),
-        pipeline_access_token=creating_pipeline.access_tokens[0]["token"],
+        pipeline_access_token=creating_pipeline.access_tokens[0].token,
     )
 
 
@@ -114,4 +122,35 @@ def sink(source_with_published_events):
     return PipelineDataSink(
         pipeline_id=source_with_published_events.pipeline_id,
         pipeline_access_token=source_with_published_events.pipeline_access_token,
+    )
+
+
+@pytest.fixture
+def secret(client):
+    return Secret(
+        key="SecretKey",
+        value="SecretValue",
+        personal_access_token=client.personal_access_token,
+    )
+
+
+@pytest.fixture
+def creating_secret(secret):
+    secret.create()
+    yield secret
+    secret.delete()
+
+
+@pytest.fixture
+def secret_with_invalid_key_and_token():
+    return Secret(
+        key="InvalidSecretKey",
+        personal_access_token="invalid-token",
+    )
+
+
+@pytest.fixture
+def secret_with_invalid_key(client):
+    return Secret(
+        key="InvalidSecretKey", personal_access_token=client.personal_access_token
     )
