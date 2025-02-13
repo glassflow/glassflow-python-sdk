@@ -89,7 +89,7 @@ def test_get_logs_from_pipeline_ok(creating_pipeline):
         else:
             n_tries += 1
             time.sleep(1)
-    log_records = [l for l in logs.logs if l.level == "INFO"]
+    log_records = [log for log in logs.logs if log.level == "INFO"]
     assert log_records[0].payload.message == "Function is uploaded"
     assert log_records[1].payload.message == "Pipeline is created"
 
