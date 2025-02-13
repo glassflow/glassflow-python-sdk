@@ -43,9 +43,7 @@ def test_pipeline_fail_with_connection_config_value_error():
         Pipeline(
             transformation_file="tests/data/transformation.py",
             personal_access_token="test-token",
-            source_kind="google_pubsub",
             source_config={"url": "test-url"},
-            source_config_secret_refs={"url": "test-url"},
         )
 
 

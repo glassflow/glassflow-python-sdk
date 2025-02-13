@@ -101,8 +101,3 @@ def test_test_pipeline_ok(creating_pipeline):
     response = creating_pipeline.test(test_message)
 
     assert response.payload == test_message
-
-
-def test_pipeline_with_secrets_ok(creating_pipeline_with_secret):
-    assert creating_pipeline_with_secret.name == "test_pipeline"
-    assert creating_pipeline_with_secret.id is not None
