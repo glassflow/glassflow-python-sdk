@@ -77,7 +77,9 @@ class Pipeline(APIClient):
             self._read_transformation_file()
 
         self.source_connector = self._fill_connector(
-            "source", self.source_kind, self.source_config,
+            "source",
+            self.source_kind,
+            self.source_config,
         )
         self.sink_connector = self._fill_connector(
             "sink", self.sink_kind, self.sink_config
@@ -225,15 +227,15 @@ class Pipeline(APIClient):
 
         if source_kind is not None:
             source_connector = self._fill_connector(
-                "source", source_kind, source_config,
+                "source",
+                source_kind,
+                source_config,
             )
         else:
             source_connector = self.source_connector
 
         if sink_kind is not None:
-            sink_connector = self._fill_connector(
-                "sink", sink_kind, sink_config
-            )
+            sink_connector = self._fill_connector("sink", sink_kind, sink_config)
         else:
             sink_connector = self.sink_connector
 
