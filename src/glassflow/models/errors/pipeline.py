@@ -1,13 +1,13 @@
 from .clienterror import ClientError, requests_http
 
 
-class MissingConnectorSettingsValueError(Exception):
+class ConnectorConfigValueError(Exception):
     """Value error for missing connector settings."""
 
     def __init__(self, connector_type: str):
         super().__init__(
-            f"ValueError: {connector_type}_kind and {connector_type}_config "
-            f" or {connector_type}_config_secret_refs must be provided"
+            f"{connector_type}_kind and {connector_type}_config "
+            f"or {connector_type}_config_secret_refs must be provided"
         )
 
 

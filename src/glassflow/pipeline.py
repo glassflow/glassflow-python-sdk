@@ -432,13 +432,14 @@ class Pipeline(APIClient):
         if not kind and not config and not config_secret_refs:
             connector = None
         elif kind and (config or config_secret_refs):
-            if config:
-                # TODO: Should we create the secrets for the user??
-                connector = dict(kind=kind, config=config)
-            else:
+            if config and config_secret_refs:
+                raise errors.ConnectorConfigValueError(connector_type)
+            elif config_secret_refs:
                 connector = dict(kind=kind, configuration=config_secret_refs)
+            else:
+                connector = dict(kind=kind, config=config)
         else:
-            raise errors.MissingConnectorSettingsValueError(connector_type)
+            raise errors.ConnectorConfigValueError(connector_type)
 
         if connector_type == "source":
             return api.SourceConnector(root=connector)

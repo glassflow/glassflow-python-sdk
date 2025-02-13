@@ -24,21 +24,28 @@ def test_pipeline_fail_with_file_not_found():
         p._read_transformation_file()
 
 
-def test_pipeline_fail_with_missing_sink_data():
-    with pytest.raises(errors.MissingConnectorSettingsValueError):
+def test_pipeline_fail_with_connection_config_value_error():
+    with pytest.raises(errors.ConnectorConfigValueError):
         Pipeline(
             transformation_file="tests/data/transformation.py",
             personal_access_token="test-token",
-            sink_kind="google_pubsub",
+            sink_kind="webhook",
         )
 
-
-def test_pipeline_fail_with_missing_source_data():
-    with pytest.raises(errors.MissingConnectorSettingsValueError):
+    with pytest.raises(errors.ConnectorConfigValueError):
         Pipeline(
             transformation_file="tests/data/transformation.py",
             personal_access_token="test-token",
             source_kind="google_pubsub",
+        )
+
+    with pytest.raises(errors.ConnectorConfigValueError):
+        Pipeline(
+            transformation_file="tests/data/transformation.py",
+            personal_access_token="test-token",
+            source_kind="google_pubsub",
+            source_config={"url": "test-url"},
+            source_config_secret_refs={"url": "test-url"},
         )
 
 
