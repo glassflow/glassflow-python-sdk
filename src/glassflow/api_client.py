@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+from typing import Any
 
 import requests as requests_http
 
@@ -59,3 +60,8 @@ class APIClient:
         except requests_http.HTTPError as http_err:
             raise errors.UnknownError(http_err.response) from http_err
         return http_res
+
+    def __eq__(self, other: Any) -> bool:
+        vars_self = {k: v for k, v in vars(self).items() if k != "client"}
+        vars_other = {k: v for k, v in vars(other).items() if k != "client"}
+        return (type(self), vars_self) == (type(other), vars_other)
