@@ -9,9 +9,9 @@ def glassflow():
     pass
 
 
-@click.command()
+@click.command(name="help")
 @click.argument("command", required=False)
-def help(command):
+def help_command(command):
     """Displays help information about Glassflow CLI and its commands."""
 
     commands = {
@@ -37,7 +37,7 @@ def help(command):
 
 # Add commands to CLI group
 glassflow.add_command(get_started)
-glassflow.add_command(help)
+glassflow.add_command(help_command)
 
 if __name__ == "__main__":
     glassflow()

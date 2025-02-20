@@ -1,7 +1,6 @@
 import pytest
 
-from glassflow import Pipeline, Secret
-from glassflow.models import errors
+from glassflow import Pipeline, Secret, errors
 
 
 def test_pipeline_with_transformation_file():
