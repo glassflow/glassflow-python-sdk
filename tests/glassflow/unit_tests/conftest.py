@@ -190,10 +190,3 @@ def test_pipeline_response():
         "error_details": "Error message",
         "stack_trace": "Error Stack trace",
     }
-
-
-@pytest.fixture
-def create_secret_response():
-    return {
-        "name": "test-name",
-    }
