@@ -2,7 +2,7 @@ from datetime import datetime
 
 import pytest
 
-from glassflow import Space
+from glassflow import Space, errors
 
 
 def test_create_space_ok(requests_mock, create_space_response, client):
@@ -43,3 +43,17 @@ def test_delete_space_fail_with_missing_id(client):
         Space(personal_access_token="test-token").delete()
 
     assert str(e.value) == "Space id must be provided in the constructor"
+
+
+def test_delete_space_file_with_409(requests_mock, client):
+    requests_mock.delete(
+        client.glassflow_config.server_url + "/spaces/test-space-id",
+        status_code=409,
+        json={"msg": "", "existed_pipeline_id": ""},
+        headers={"Content-Type": "application/json"},
+    )
+    with pytest.raises(errors.SpaceIsNotEmptyError):
+        Space(
+            id="test-space-id",
+            personal_access_token="test-token",
+        ).delete()

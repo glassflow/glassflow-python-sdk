@@ -1,4 +1,6 @@
 from .api import (
+    ConnectorValueSecretRef,
+    ConnectorValueValue,
     ConsumeOutputEvent,
     CreatePipeline,
     CreateSecret,
@@ -32,4 +34,6 @@ __all__ = [
     "ListSpaceScopes",
     "ListPipelines",
     "FunctionEnvironments",
+    "ConnectorValueSecretRef",
+    "ConnectorValueValue",
 ]

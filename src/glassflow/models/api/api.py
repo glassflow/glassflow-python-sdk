@@ -20,8 +20,13 @@ class CreateOrganization(BaseModel):
     name: str
 
 
+class PatchOrganization(BaseModel):
+    name: str
+
+
 class Organization(CreateOrganization):
     id: str
+    created_at: datetime
 
 
 class OrganizationScope(Organization):
@@ -48,6 +53,28 @@ class SecretRef(BaseModel):
 class CreateSecret(BaseModel):
     key: SecretKey
     value: str
+
+
+class CreateInvite(BaseModel):
+    email: str
+
+
+class Invite(CreateInvite):
+    id: str
+
+
+class Invites(RootModel[list[Invite]]):
+    root: list[Invite]
+
+
+class OrganizationMember(BaseModel):
+    id: str
+    name: str
+    email: str
+
+
+class OrganizationMembers(RootModel[list[OrganizationMember]]):
+    root: list[OrganizationMember]
 
 
 class SignUp(BaseModel):
@@ -341,6 +368,23 @@ class Secret(BaseModel):
     key: SecretKey
 
 
+class CreateInvites(BaseModel):
+    invites: list[CreateInvite]
+
+
+class ListOrganizationInvites(PaginationResponse):
+    items: Invites
+
+
+class ListOrganizationMembers(PaginationResponse):
+    items: OrganizationMembers
+
+
+class ClientHeader1(BaseModel):
+    name: str
+    value: ConnectorValueValue
+
+
 class ListPipelines(PaginationResponse):
     pipelines: SpacePipelines
 
@@ -495,11 +539,6 @@ class SinkConnectorSnowflakeCDCJSON(BaseModel):
     kind: Literal["snowflake_cdc_json"]
     config: Optional[Config6] = None
     configuration: Optional[Configuration6] = None
-
-
-class ClientHeader1(BaseModel):
-    name: str
-    value: ConnectorValue
 
 
 class Configuration7(BaseModel):

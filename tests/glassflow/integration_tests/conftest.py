@@ -49,7 +49,38 @@ def space_with_random_id_and_invalid_token():
 
 
 @pytest.fixture
-def pipeline(client, creating_space):
+def secret(client):
+    return Secret(
+        key="SecretKey",
+        value="SecretValue",
+        personal_access_token=client.personal_access_token,
+    )
+
+
+@pytest.fixture
+def creating_secret(secret):
+    secret.create()
+    yield secret
+    secret.delete()
+
+
+@pytest.fixture
+def secret_with_invalid_key_and_token():
+    return Secret(
+        key="InvalidSecretKey",
+        personal_access_token="invalid-token",
+    )
+
+
+@pytest.fixture
+def secret_with_invalid_key(client):
+    return Secret(
+        key="InvalidSecretKey", personal_access_token=client.personal_access_token
+    )
+
+
+@pytest.fixture
+def pipeline(client, creating_space, creating_secret):
     return Pipeline(
         name="test_pipeline",
         space_id=creating_space.id,
@@ -60,7 +91,7 @@ def pipeline(client, creating_space):
         source_config={
             "project_id": "my-project-id",
             "subscription_id": "my-subscription-id",
-            "credentials_json": "my-credentials.json",
+            "credentials_json": creating_secret,
         },
     )
 
@@ -122,35 +153,4 @@ def sink(source_with_published_events):
     return PipelineDataSink(
         pipeline_id=source_with_published_events.pipeline_id,
         pipeline_access_token=source_with_published_events.pipeline_access_token,
-    )
-
-
-@pytest.fixture
-def secret(client):
-    return Secret(
-        key="SecretKey",
-        value="SecretValue",
-        personal_access_token=client.personal_access_token,
-    )
-
-
-@pytest.fixture
-def creating_secret(secret):
-    secret.create()
-    yield secret
-    secret.delete()
-
-
-@pytest.fixture
-def secret_with_invalid_key_and_token():
-    return Secret(
-        key="InvalidSecretKey",
-        personal_access_token="invalid-token",
-    )
-
-
-@pytest.fixture
-def secret_with_invalid_key(client):
-    return Secret(
-        key="InvalidSecretKey", personal_access_token=client.personal_access_token
     )

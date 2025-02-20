@@ -2,7 +2,7 @@
 
 from .api_client import APIClient
 from .models import errors, responses
-from .pipeline import Pipeline
+from .pipeline import ConnectorConfiguration, Pipeline
 from .secret import Secret
 from .space import Space
 
@@ -65,9 +65,9 @@ class GlassFlowClient(APIClient):
         transformation_file: str = None,
         requirements: str = None,
         source_kind: str = None,
-        source_config: dict = None,
+        source_config: ConnectorConfiguration = None,
         sink_kind: str = None,
-        sink_config: dict = None,
+        sink_config: ConnectorConfiguration = None,
         env_vars: list[dict[str, str]] = None,
         state: str = "running",
         metadata: dict = None,
