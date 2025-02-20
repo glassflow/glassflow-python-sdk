@@ -1,9 +1,16 @@
 from __future__ import annotations
 
+from typing import Union
+
+from typing_extensions import TypeAlias
+
 from .client import APIClient
 from .models import api, errors, operations, responses
 from .models.responses.pipeline import AccessToken
 from .pipeline_data import PipelineDataSink, PipelineDataSource
+from .secret import Secret
+
+ConnectorConfiguration: TypeAlias = dict[str, Union[str, list, Secret]]
 
 
 class Pipeline(APIClient):
@@ -14,9 +21,9 @@ class Pipeline(APIClient):
         space_id: str | None = None,
         id: str | None = None,
         source_kind: str | None = None,
-        source_config: dict | None = None,
+        source_config: ConnectorConfiguration | None = None,
         sink_kind: str | None = None,
-        sink_config: dict | None = None,
+        sink_config: ConnectorConfiguration | None = None,
         requirements: str | None = None,
         transformation_file: str | None = None,
         env_vars: list[dict[str, str]] | None = None,
@@ -182,9 +189,9 @@ class Pipeline(APIClient):
         requirements: str | None = None,
         metadata: dict | None = None,
         source_kind: str | None = None,
-        source_config: dict | None = None,
+        source_config: ConnectorConfiguration | None = None,
         sink_kind: str | None = None,
-        sink_config: dict | None = None,
+        sink_config: ConnectorConfiguration | None = None,
         env_vars: list[dict[str, str]] | None = None,
     ) -> Pipeline:
         """
@@ -405,15 +412,19 @@ class Pipeline(APIClient):
                 ) from e
             raise e
 
-    @staticmethod
     def _fill_connector(
-        connector_type: str, kind: str, config: dict
+        self, connector_type: str, kind: str, config: dict
     ) -> api.SourceConnector | api.SinkConnector:
         """Format connector input"""
         if not kind and not config:
             connector = None
         elif kind and config:
-            connector = dict(kind=kind, config=config)
+            connector = dict(
+                kind=kind,
+                configuration={
+                    k: self._format_connector_config_value(v) for k, v in config.items()
+                },
+            )
         else:
             raise errors.ConnectorConfigValueError(connector_type)
 
@@ -423,6 +434,21 @@ class Pipeline(APIClient):
             return api.SinkConnector(root=connector)
         else:
             raise ValueError("connector_type must be 'source' or 'sink'")
+
+    @staticmethod
+    def _format_connector_config_value(value: str | list | Secret):
+        """Formats configuration values to match API expectations"""
+        if isinstance(value, Secret):
+            config_value = api.ConnectorValueSecretRef(
+                **{"secret_ref": {"type": "organization", "key": value.key}}
+            )
+        elif isinstance(value, list):
+            config_value = value
+        else:
+            config_value = api.ConnectorValueValue(
+                value=value,
+            )
+        return config_value
 
     def _list_access_tokens(self) -> Pipeline:
         endpoint = f"/pipelines/{self.id}/access_tokens"

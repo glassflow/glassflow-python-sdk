@@ -1,7 +1,7 @@
 import pytest
 
+from glassflow import Pipeline, Secret
 from glassflow.models import errors
-from glassflow.pipeline import Pipeline
 
 
 def test_pipeline_with_transformation_file():
@@ -45,6 +45,54 @@ def test_pipeline_fail_with_connection_config_value_error():
             personal_access_token="test-token",
             source_config={"url": "test-url"},
         )
+
+
+def test_pipeline_with_connector_secret_ok():
+    p = Pipeline(
+        transformation_file="tests/data/transformation.py",
+        personal_access_token="test-token",
+        sink_kind="webhook",
+        sink_config={
+            "url": Secret(key="testKey", personal_access_token="test-token"),
+            "method": "POST",
+            "headers": [{"name": "Content-Type", "value": "application/json"}],
+        },
+        source_kind="google_pubsub",
+        source_config={
+            "project_id": "test-project-id",
+            "subscription_id": "test-subscription-id",
+            "credentials_json": Secret(
+                key="testCredentials", personal_access_token="test-token"
+            ),
+        },
+    )
+
+    expected_source_connector = {
+        "kind": "google_pubsub",
+        "configuration": {
+            "project_id": {"value": "test-project-id"},
+            "subscription_id": {"value": "test-subscription-id"},
+            "credentials_json": {
+                "secret_ref": {"type": "organization", "key": "testCredentials"}
+            },
+        },
+    }
+    expected_sink_connector = {
+        "kind": "webhook",
+        "configuration": {
+            "url": {"secret_ref": {"type": "organization", "key": "testKey"}},
+            "method": {"value": "POST"},
+            "headers": [{"name": "Content-Type", "value": "application/json"}],
+        },
+    }
+    assert (
+        p.source_connector.model_dump(mode="json", exclude_none=True)
+        == expected_source_connector
+    )
+    assert (
+        p.sink_connector.model_dump(mode="json", exclude_none=True)
+        == expected_sink_connector
+    )
 
 
 def test_fetch_pipeline_ok(

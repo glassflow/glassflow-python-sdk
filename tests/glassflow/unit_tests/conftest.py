@@ -70,10 +70,12 @@ def fetch_pipeline_response():
             "space_name": "test-space-name",
             "source_connector": {
                 "kind": "google_pubsub",
-                "config": {
-                    "project_id": "test-project",
-                    "subscription_id": "test-subscription",
-                    "credentials_json": "credentials.json",
+                "configuration": {
+                    "project_id": {"value": "test-project"},
+                    "subscription_id": {"value": "test-subscription"},
+                    "credentials_json": {
+                        "secret_ref": {"type": "organization", "key": "credentialsJson"}
+                    },
                 },
             },
             "sink_connector": {
