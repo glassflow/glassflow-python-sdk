@@ -1,0 +1,107 @@
+name: Version Bump
+
+on:
+  pull_request:
+    types: [labeled]
+    branches:
+      - main
+
+jobs:
+  determine-bump:
+    runs-on: ubuntu-latest
+    outputs:
+      bump_type: ${{ steps.bump_type.outputs.bump_type }}
+    steps:
+      - name: Determine highest bump type
+        id: bump_type
+        run: |
+          LABEL="${{ github.event.label.name }}"
+          BUMP_TYPE="patch"  # Default to lowest impact
+          
+          if [[ "$LABEL" == "bump:major" ]]; then
+            BUMP_TYPE="major"
+          elif [[ "$LABEL" == "bump:minor" ]]; then
+            BUMP_TYPE="minor"
+          fi
+          
+          echo "bump_type=$BUMP_TYPE" >> $GITHUB_OUTPUT
+          echo "Using $BUMP_TYPE version bump (highest impact label found)"
+
+  bump-version:
+    needs: determine-bump
+    runs-on: ubuntu-latest
+    if: |
+      ${{ github.event.label.name == 'bump:major' }} ||
+      ${{ github.event.label.name == 'bump:minor' }} ||
+      ${{ github.event.label.name == 'bump:patch' }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+    
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        id: setup-python
+        with:
+          python-version-file: "pyproject.toml"
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+            enable-cache: true
+            cache-dependency-glob: "uv.lock"
+      
+      - name: Set up venv
+        run: |
+          uv venv --python ${{ steps.setup-python.outputs.python-path }}
+
+      - name: Install dependencies
+        run: |
+          uv pip install -e .[build]
+
+      - name: Get current version
+        id: current_version
+        run: |
+          CURRENT_VERSION=$(cat VERSION)
+          echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Calculate new version
+        id: new_version
+        run: |
+          CURRENT=${{ steps.current_version.outputs.current_version }}
+          BUMP_TYPE=${{ needs.determine-bump.outputs.bump_type }}
+          
+          # Split version into parts
+          IFS='.' read -r major minor patch <<< "$CURRENT"
+          
+          # Bump version based on type
+          case "$BUMP_TYPE" in
+            "major")
+              major=$((major + 1))
+              minor=0
+              patch=0
+              ;;
+            "minor")
+              minor=$((minor + 1))
+              patch=0
+              ;;
+            "patch")
+              patch=$((patch + 1))
+              ;;
+          esac
+          
+          NEW_VERSION="${major}.${minor}.${patch}"
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Update VERSION file
+        run: |
+          echo "${{ steps.new_version.outputs.new_version }}" > VERSION
+
+      - name: Commit and push version changes
+        uses: actions-js/push@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.head_ref }}
+          message: "chore: bump version to ${{ steps.new_version.outputs.new_version }}" 
