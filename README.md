@@ -1,4 +1,4 @@
-# GlassFlow ETL Python SDK
+# GlassFlow Python SDK
 
 <p align="left">
   <a target="_blank" href="https://pypi.python.org/pypi/glassflow">
