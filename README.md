@@ -37,7 +37,7 @@ pip install glassflow
 ## Quick Start
 
 ```python
-from glassflow_clickhouse_etl import Pipeline
+from glassflow.etl import Pipeline
 
 
 pipeline_config = {
