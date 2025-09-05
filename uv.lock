@@ -1,5 +1,4 @@
 version = 1
-revision = 1
 requires-python = ">=3.9"
 
 [[package]]
@@ -373,7 +372,7 @@ wheels = [
 ]
 
 [[package]]
-name = "glassflow-clickhouse-etl"
+name = "glassflow"
 source = { editable = "." }
 dependencies = [
     { name = "httpx" },
@@ -411,7 +410,6 @@ requires-dist = [
     { name = "ruff", marker = "extra == 'test'", specifier = ">=0.1.0" },
     { name = "twine", marker = "extra == 'build'", specifier = ">=4.0.0" },
 ]
-provides-extras = ["build", "test"]
 
 [[package]]
 name = "h11"

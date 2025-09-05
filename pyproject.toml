@@ -25,6 +25,7 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "httpx>=0.26.0",
     "mixpanel>=4.10.0",
+    "pyyaml>=6.0.2",
 ]
 
 [project.optional-dependencies]
@@ -41,7 +42,7 @@ build = [
 
 [project.urls]
 Homepage = "https://github.com/glassflow/glassflow-python-sdk"
-Documentation = "https://glassflow.github.io/clickhouse-etl-py-sdk"
+Documentation = "https://glassflow.github.io/glassflow-python-sdk"
 Repository = "https://github.com/glassflow/glassflow-python-sdk.git"
 Issues = "https://github.com/glassflow/glassflow-python-sdk/issues"
 
@@ -88,4 +89,22 @@ select = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
-addopts = "-v --cov=src/glassflow --cov-report=term-missing"
+addopts = "-v --cov=src/glassflow --cov-report=term-missing -p no:warnings"
+
+[tool.coverage.run]
+source = ["src/glassflow"]
+data_file = ".coverage"
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
