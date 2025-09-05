@@ -1,51 +1,91 @@
-[build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
-
-[tool.pytest.ini_options]
-addopts = """
-    --import-mode=importlib \
-    --junitxml=tests/reports/pytest.xml \
-    --cov=src/glassflow \
-    --cov-report xml:tests/reports/coverage.xml \
-    -ra -q
-"""
-testpaths = [
-    "tests",
+[project]
+name = "glassflow"
+dynamic = ["version"]
+description = "GlassFlow Clickhouse ETL Python SDK: Create GlassFlow pipelines between Kafka and ClickHouse"
+authors = [
+    {name = "GlassFlow", email = "hello@glassflow.dev"}
+]
+requires-python = ">=3.9"
+readme = "README.md"
+license = {text = "MIT"}
+keywords = ["clickhouse", "etl", "kafka", "data-pipeline", "glassflow", "streaming", "data-engineering"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "pydantic>=2.0.0",
+    "requests>=2.31.0",
+    "python-dotenv>=1.0.0",
+    "httpx>=0.26.0",
+    "mixpanel>=4.10.0",
 ]
 
-[tool.coverage.html]
-skip_covered = true
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "ruff>=0.1.0",
+]
+build = [
+    "build>=1.0.0",
+    "hatch>=1.0.0",
+    "twine>=4.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/glassflow/glassflow-python-sdk"
+Documentation = "https://glassflow.github.io/clickhouse-etl-py-sdk"
+Repository = "https://github.com/glassflow/glassflow-python-sdk.git"
+Issues = "https://github.com/glassflow/glassflow-python-sdk/issues"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "regex"
+path = "VERSION"
+pattern = "(?P<version>.+)"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/glassflow"]
+include-paths = [
+    "src/glassflow/",
+    "README.md",
+    "LICENSE"
+] 
+
+[tool.hatch.build]
+exclude = [
+    "tests",
+    "secrets",
+    ".venv",
+    "*.json",
+    "*.yml",
+    "*.yaml"
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py39"
 
 [tool.ruff.lint]
 select = [
-    # pycodestyle
-    "E",
-    # Pyflakes
-    "F",
-    # pyupgrade
-    "UP",
-    # flake8-bugbear
-    "B",
-    # flake8-simplify
-    "SIM",
-    # isort
-    "I",
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
 ]
 
-[tool.ruff.lint.pydocstyle]
-convention = "google"
-
-[tool.datamodel-codegen]
-field-constraints = true
-snake-case-field = true
-strip-default-none = false
-target-python-version = "3.8"
-use-title-as-name = true
-disable-timestamp = true
-enable-version-header = true
-use-double-quotes = true
-use-subclass-enum=true
-use-standard-collections=true
-input-file-type = "openapi"
-output-model-type = "pydantic_v2.BaseModel"
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v --cov=src/glassflow --cov-report=term-missing"
