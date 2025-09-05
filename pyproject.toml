@@ -1,7 +1,7 @@
 [project]
 name = "glassflow"
 dynamic = ["version"]
-description = "GlassFlow Clickhouse ETL Python SDK: Create GlassFlow pipelines between Kafka and ClickHouse"
+description = "GlassFlow Python SDK: Create GlassFlow pipelines between Kafka and ClickHouse"
 authors = [
     {name = "GlassFlow", email = "hello@glassflow.dev"}
 ]
