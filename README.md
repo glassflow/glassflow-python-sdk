@@ -1,248 +1,153 @@
-<div align="center">
-  <img src="https://gfassets.fra1.cdn.digitaloceanspaces.com/logo/logo-color.png" /><br /><br />
-</div>
-<p align="center">
-        <a href="https://github.com/glassflow/glassflow-python-sdk/blob/main/LICENSE.md">
-        <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"/></a>
-<a href="https://join.slack.com/t/glassflowhub/shared_invite/zt-2g3s6nhci-bb8cXP9g9jAQ942gHP5tqg">
-        <img src="https://img.shields.io/badge/slack-join-community?logo=slack&amp;logoColor=white&amp;style=flat"
-            alt="Chat on Slack"></a>
-<a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json" alt="Ruff" style="max-width:100%;"></a>
+# GlassFlow ETL Python SDK
+
+<p align="left">
+  <a target="_blank" href="https://pypi.python.org/pypi/glassflow">
+    <img src="https://img.shields.io/pypi/v/glassflow.svg?labelColor=&color=e69e3a">
+  </a>
+  <a target="_blank" href="https://github.com/glassflow/glassflow-python-sdk/blob/main/LICENSE">
+    <img src="https://img.shields.io/pypi/l/glassflow.svg?labelColor=&color=e69e3a">
+  </a>
+  <a target="_blank" href="https://pypi.python.org/pypi/glassflow">
+    <img src="https://img.shields.io/pypi/pyversions/glassflow.svg?labelColor=&color=e69e3a">
+  </a>
+  <br />
+  <a target="_blank" href="(https://github.com/glassflow/glassflow-python-sdk/actions">
+    <img src="https://github.com/glassflow/glassflow-python-sdk/workflows/Test/badge.svg?labelColor=&color=e69e3a">
+  </a>
 <!-- Pytest Coverage Comment:Begin -->
+  <img src=https://img.shields.io/badge/coverage-94%25-brightgreen>
 <!-- Pytest Coverage Comment:End -->
+</p>
 
+A Python SDK for creating and managing data pipelines between Kafka and ClickHouse.
 
-# GlassFlow Python SDK
+## Features
 
-The [GlassFlow](https://www.glassflow.dev/) Python SDK provides a convenient way to interact with the GlassFlow API in your Python applications. The SDK is used to publish and consume events to your [GlassFlow pipelines](https://www.glassflow.dev/docs/concepts/pipeline).
+- Create and manage data pipelines between Kafka and ClickHouse
+- Deduplication of events during a time window based on a key
+- Temporal joins between topics based on a common key with a given time window
+- Schema validation and configuration management
 
 ## Installation
 
-You can install the GlassFlow Python SDK using pip:
-
-```shell
+```bash
 pip install glassflow
 ```
 
-## Data Operations
-
-* [publish](#publish) - Publish a new event into the pipeline
-* [consume](#consume) - Consume the transformed event from the pipeline
-* [consume failed](#consume-failed) - Consume the events that failed from the pipeline
-* [validate credentials](#validate-credentials) - Validate pipeline credentials
-
-
-## publish
-
-Publish a new event into the pipeline
-
-### Example Usage
+## Quick Start
 
 ```python
-from glassflow import PipelineDataSource
-
-source = PipelineDataSource(pipeline_id="<str value", pipeline_access_token="<str token>")
-data = {} # your json event
-res = source.publish(request_body=data)
-
-if res.status_code == 200:
-    print("Published sucessfully")
-```
+from glassflow.etl import Pipeline
 
 
-## consume
-
-Consume the transformed event from the pipeline
-
-### Example Usage
-
-```python
-from glassflow import PipelineDataSink
-
-sink = PipelineDataSink(pipeline_id="<str value", pipeline_access_token="<str value>")
-res = sink.consume()
-
-if res.status_code == 200:
-    print(res.json())
-```
-
-
-## consume failed
-
-If the transformation failed for any event, they are available in a failed queue. You can consume those events from the pipeline
-
-### Example Usage
-
-```python
-from glassflow import PipelineDataSink
-
-sink = PipelineDataSink(pipeline_id="<str value", pipeline_access_token="<str value>")
-res = sink.consume_failed()
-
-if res.status_code == 200:
-    print(res.json())
-```
-
-
-## validate credentials
-
-Validate pipeline credentials (`pipeline_id` and `pipeline_access_token`) from source or sink
-
-### Example Usage
-
-```python
-from glassflow import PipelineDataSource, errors
-
-try:
-    source = PipelineDataSource(pipeline_id="<str value", pipeline_access_token="<str value>")
-    source.validate_credentials()
-except errors.PipelineNotFoundError as e:
-    print("Pipeline ID does not exist!")
-    raise e
-except errors.PipelineAccessTokenInvalidError as e:
-    print("Pipeline Access Token is invalid!")
-    raise e
-```
-
-
-## Pipeline Management
-
-In order to manage your pipelines with this SDK, one needs to provide the `PERSONAL_ACCESS_TOKEN` 
-to the GlassFlow client.
-
-```python
-from glassflow import GlassFlowClient
-
-client = GlassFlowClient(personal_access_token="<your personal access token>")
-```
-
-Now you can perform CRUD operations on your pipelines:
-
-* [list_pipelines](#list_pipelines) - Returns the list of pipelines available
-* [get_pipeline](#get_pipeline) - Returns a pipeline object from a given pipeline ID
-* [create](#create) - Create a new pipeline
-* [delete](#delete) - Delete an existing pipeline
-
-## list_pipelines
-
-Returns information about the available pipelines. It can be restricted to a
-specific space by passing the `space_id`.
-
-### Example Usage
-
-```python
-from glassflow import GlassFlowClient
-
-client = GlassFlowClient(personal_access_token="<your access token>")
-res = client.list_pipelines()
-```
-
-## get_pipeline
-
-Gets information about a pipeline from a given pipeline ID. It returns a Pipeline object
-which can be used manage the Pipeline. 
-
-### Example Usage
-
-```python
-from glassflow import GlassFlowClient
-
-client = GlassFlowClient(personal_access_token="<your access token>")
-pipeline = client.get_pipeline(pipeline_id="<your pipeline id>")
-
-print("Name:", pipeline.name)
-```
-
-## create
-
-The Pipeline object has a create method that creates a new GlassFlow pipeline.
-
-### Example Usage
-
-```python
-from glassflow import Pipeline
-
-pipeline = Pipeline(
-    name="<your pipeline name>",
-    transformation_file="path/to/transformation.py",
-    space_id="<your space id>",
-    personal_access_token="<your personal access token>"
-).create()
-```
-
-In the next example we create a pipeline with Google PubSub source 
-and a webhook sink:
-
-```python
-from glassflow import Pipeline
-
-pipeline = Pipeline(
-    name="<your pipeline name>",
-    transformation_file="path/to/transformation.py",
-    space_id="<your space id>",
-    personal_access_token="<your personal access token>",
-    source_kind="google_pubsub",
-    source_config={
-        "project_id": "<your gcp project id>",
-        "subscription_id": "<your subscription id>",
-        "credentials_json": "<your credentials json>"
-    },
-    sink_kind="webhook",
-    sink_config={
-        "url": "<webhook url>",
-        "method": "<GET | POST | PUT | PATCH | DELETE>",
-        "headers": [{"header1": "header1_value"}]
+pipeline_config = {
+  "pipeline_id": "test-pipeline",
+  "source": {
+    "type": "kafka",
+    "provider": "aiven",
+    "connection_params": {
+      "brokers": ["localhoust:9092"],
+      "protocol": "SASL_SSL",
+      "mechanism": "SCRAM-SHA-256",
+      "username": "user",
+      "password": "pass"
     }
-).create()
+    "topics": [
+      {
+        "consumer_group_initial_offset": "earliest",
+        "id": "test-topic",
+        "name": "test-topic",
+        "schema": {
+          "type": "json",
+          "fields": [
+            {"name": "id", "type": "string" },
+            {"name": "email", "type": "string"}
+          ]
+        },
+        "deduplication": {
+          "id_field": "id",
+          "id_field_type": "string",
+          "time_window": "1h",
+          "enabled": True
+        }
+      }
+    ],
+  },
+  "sink": {
+    "type": "clickhouse",
+    "host": "localhost:8443",
+    "port": 8443,
+    "database": "test",
+    "username": "default",
+    "password": "pass",
+    "table_mapping": [
+      {
+        "source_id": "test_table",
+        "field_name": "id",
+        "column_name": "user_id",
+        "column_type": "UUID"
+      },
+      {
+        "source_id": "test_table",
+        "field_name": "email",
+        "column_name": "email",
+        "column_type": "String"
+      }
+    ]
+  }
+}
+
+# Create a pipeline from a JSON configuration
+pipeline = Pipeline(pipeline_config)
+
+# Create the pipeline
+pipeline.create()
 ```
 
-## delete
+## Pipeline Configuration
 
-The Pipeline object has a delete method to delete a pipeline
+For detailed information about the pipeline configuration, see [GlassFlow docs](https://docs.glassflow.dev/pipeline/pipeline-configuration).
 
-### Example Usage
+## Tracking
 
+The SDK includes anonymous usage tracking to help improve the product. Tracking is enabled by default but can be disabled in two ways:
+
+1. Using an environment variable:
+```bash
+export GF_TRACKING_ENABLED=false
+```
+
+2. Programmatically using the `disable_tracking` method:
 ```python
-from glassflow import Pipeline
-
-pipeline = Pipeline(
-    name="<your pipeline name>",
-    transformation_file="path/to/transformation.py",
-    space_id="<your space id>",
-    personal_access_token="<your personal access token>"
-).create()
-
-pipeline.delete()
+pipeline = Pipeline(pipeline_config)
+pipeline.disable_tracking()
 ```
 
-## Quickstart
+The tracking collects anonymous information about:
+- SDK version
+- Platform (operating system)
+- Python version
+- Pipeline ID
+- Whether joins or deduplication are enabled
+- Kafka security protocol, auth mechanism used and whether authentication is disabled
+- Errors during pipeline creation and deletion
 
-Follow the quickstart guide [here](https://www.glassflow.dev/docs)
+## Development
 
-## Code Samples
+### Setup
 
-[GlassFlow Examples](https://github.com/glassflow/glassflow-examples)
+1. Clone the repository
+2. Create a virtual environment
+3. Install dependencies:
 
-## SDK Maturity
+```bash
+uv venv
+source .venv/bin/activate
+uv pip install -e .[dev]
+```
 
-Please note that the GlassFlow Python SDK is currently in beta and is subject to potential breaking changes. We recommend keeping an eye on the official documentation and updating your code accordingly to ensure compatibility with future versions of the SDK.
+### Testing
 
-
-## Contributing
-
-Anyone who wishes to contribute to this project, whether documentation, features, bug fixes, code cleanup, testing, or code reviews, is very much encouraged to do so.
-
-1. Join the [Slack channel](https://join.slack.com/t/glassflowhub/shared_invite/zt-2g3s6nhci-bb8cXP9g9jAQ942gHP5tqg).
-
-2. Just raise your hand on the GitHub [discussion](https://github.com/glassflow/glassflow-python-sdk/discussions) board.
-
-If you are unfamiliar with how to contribute to GitHub projects, here is a [Get Started Guide](https://docs.github.com/en/get-started/quickstart/contributing-to-projects). A full set of contribution guidelines, along with templates, are in progress.
-
-## Troubleshooting
-
-For any questions, comments, or additional help, please reach out to us via email at [help@glassflow.dev](mailto:help@glassflow.dev).
-Please check out our [Q&A](https://github.com/glassflow/glassflow-python-sdk/discussions/categories/q-a) to get solutions for common installation problems and other issues.
-
-### Raise an issue
-
-To provide feedback or report a bug, please [raise an issue on our issue tracker](https://github.com/glassflow/glassflow-python-sdk/issues).
+```bash
+pytest
+```

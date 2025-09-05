@@ -1,0 +1,128 @@
+name: Test
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        id: setup-python
+        with:
+          python-version-file: "pyproject.toml"
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+            enable-cache: true
+            cache-dependency-glob: "uv.lock"
+
+      - name: Set up venv
+        run: |
+          uv venv --python ${{ steps.setup-python.outputs.python-path }}
+
+      - name: Install dependencies
+        run: |
+          uv pip install -e .[test]
+
+      - name: Run Ruff checks
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+
+  test:
+    needs: lint
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11"]
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      checks: write
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        id: setup-python
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up venv
+        run: |
+          uv venv --python ${{ steps.setup-python.outputs.python-path }}
+
+      - name: Install dependencies
+        run: |
+          uv pip install -e .[test]
+
+      - name: Run tests with coverage
+        run: |
+          uv run pytest --cov=src --cov-report=term-missing
+
+      - name: Generate coverage report
+        if: matrix.python-version == '3.11'
+        run: |
+          uv run pytest --cov=src --cov-report=xml:coverage.xml
+
+      - name: Pytest coverage comment
+        if: matrix.python-version == '3.11'
+        id: coverageComment
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          pytest-xml-coverage-path: ./coverage.xml
+          title: "Test Coverage Report"
+          badge-title: "Coverage"
+          hide-badge: false
+          hide-report: false
+          create-new-comment: true
+          hide-comment: false
+          report-only-changed-files: false
+          remove-link-from-badge: false
+          unique-id-for-comment: "python-coverage"
+
+      - name: Update README with coverage badge
+        if: matrix.python-version == '3.11'
+        run: |
+          # Extract coverage percentage and color from the coverageComment step
+          COVERAGE_PERCENTAGE=$(echo "${{ steps.coverageComment.outputs.coverage }}" | grep -o '[0-9]*%' | tr -d '%')
+          BADGE_COLOR=$(echo "${{ steps.coverageComment.outputs.color }}" | tr -d '#')
+          
+          # Create the badge URL
+          BADGE_URL="https://img.shields.io/badge/coverage-${COVERAGE_PERCENTAGE}%25-${BADGE_COLOR}"
+          
+          # Update README with the badge
+          sed -i "/<!-- Pytest Coverage Comment:Begin -->/,/<!-- Pytest Coverage Comment:End -->/c\\
+          <!-- Pytest Coverage Comment:Begin -->\\
+            <img src="${BADGE_URL}">\\
+          <!-- Pytest Coverage Comment:End -->" README.md
+
+      - name: Clean up coverage file
+        if: matrix.python-version == '3.11'
+        run: |
+          rm -f coverage.xml
+
+      - name: Commit and push README changes
+        if: matrix.python-version == '3.11'
+        uses: actions-js/push@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.head_ref }}
+          message: "docs: update coverage badge"

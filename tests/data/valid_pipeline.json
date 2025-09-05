@@ -1,0 +1,140 @@
+{
+    "pipeline_id": "test-pipeline",
+    "name": "Test Pipeline",
+    "source": {
+        "type": "kafka",
+        "provider": "aiven",
+        "connection_params": {
+            "brokers": [
+                "kafka-broker-0:9092",
+                "kafka-broker-1:9092"
+            ],
+            "protocol": "SASL_SSL",
+            "mechanism": "SCRAM-SHA-256",
+            "username": "<user>",
+            "password": "<password>",
+            "root_ca": "<base64 encoded ca>",
+            "skip_auth": false
+        },
+        "topics": [
+            {
+                "consumer_group_initial_offset": "earliest",
+                "name": "user_logins",
+                "schema": {
+                    "type": "json",
+                    "fields": [
+                        {
+                            "name": "session_id",
+                            "type": "string"
+                        },
+                        {
+                            "name": "user_id",
+                            "type": "string"
+                        },
+                        {
+                            "name": "timestamp",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "deduplication": {
+                    "enabled": true,
+                    "id_field": "session_id",
+                    "id_field_type": "string",
+                    "time_window": "12h"
+                }
+            },
+            {
+                "consumer_group_initial_offset": "earliest",
+                "name": "orders",
+                "schema": {
+                    "type": "json",
+                    "fields": [
+                        {
+                            "name": "user_id",
+                            "type": "string"
+                        },
+                        {
+                            "name": "order_id",
+                            "type": "string"
+                        },
+                        {
+                            "name": "timestamp",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "deduplication": {
+                    "enabled": true,
+                    "id_field": "order_id",
+                    "id_field_type": "string",
+                    "time_window": "12h"
+                }
+            }
+        ]
+    },
+    "join": {
+        "enabled": true,
+        "type": "temporal",
+        "sources": [
+            {
+                "source_id": "user_logins",
+                "join_key": "user_id",
+                "time_window": "1h",
+                "orientation": "left"
+            },
+            {
+                "source_id": "orders",
+                "join_key": "user_id",
+                "time_window": "1h",
+                "orientation": "right"
+            }
+        ]
+    },
+    "sink": {
+        "type": "clickhouse",
+        "provider": "aiven",
+        "host": "<host>",
+        "port": "12753",
+        "http_port": "12754",
+        "database": "default",
+        "username": "<user>",
+        "password": "<password>",
+        "secure": true,
+        "max_batch_size": 1,
+        "max_delay_time": "10m",
+        "table": "user_orders",
+        "table_mapping": [
+            {
+                "source_id": "user_logins",
+                "field_name": "session_id",
+                "column_name": "session_id",
+                "column_type": "String"
+            },
+            {
+                "source_id": "user_logins",
+                "field_name": "user_id",
+                "column_name": "user_id",
+                "column_type": "String"
+            },
+            {
+                "source_id": "orders",
+                "field_name": "order_id",
+                "column_name": "order_id",
+                "column_type": "String"
+            },
+            {
+                "source_id": "user_logins",
+                "field_name": "timestamp",
+                "column_name": "login_at",
+                "column_type": "DateTime"
+            },
+            {
+                "source_id": "orders",
+                "field_name": "timestamp",
+                "column_name": "order_placed_at",
+                "column_type": "DateTime"
+            }
+        ]
+    }
+}
