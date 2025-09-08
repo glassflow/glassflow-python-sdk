@@ -9,6 +9,10 @@ on:
 jobs:
   determine-bump:
     runs-on: ubuntu-latest
+    if: |
+      contains(github.event.pull_request.labels.*.name, 'bump:major') ||
+      contains(github.event.pull_request.labels.*.name, 'bump:minor') ||
+      contains(github.event.pull_request.labels.*.name, 'bump:patch')
     outputs:
       bump_type: ${{ steps.bump_type.outputs.bump_type }}
     steps:
@@ -31,9 +35,9 @@ jobs:
     needs: determine-bump
     runs-on: ubuntu-latest
     if: |
-      ${{ github.event.label.name == 'bump:major' }} ||
-      ${{ github.event.label.name == 'bump:minor' }} ||
-      ${{ github.event.label.name == 'bump:patch' }}
+      contains(github.event.pull_request.labels.*.name, 'bump:major') ||
+      contains(github.event.pull_request.labels.*.name, 'bump:minor') ||
+      contains(github.event.pull_request.labels.*.name, 'bump:patch')
     
     steps:
       - name: Checkout repository
