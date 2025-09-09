@@ -66,13 +66,9 @@ class DeduplicationConfig(BaseModel):
 
                 # Validate id_field_type is a valid type when enabled
                 id_field_type = values.get("id_field_type")
-                if id_field_type not in [
-                    KafkaDataType.STRING,
-                    KafkaDataType.INT32,
-                    KafkaDataType.INT64,
-                ]:
+                if id_field_type not in [KafkaDataType.STRING, KafkaDataType.INT]:
                     raise ValueError(
-                        "id_field_type must be a string, int32, or int64 when "
+                        "id_field_type must be a string or int when "
                         "deduplication is enabled"
                     )
 

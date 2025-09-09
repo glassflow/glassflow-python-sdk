@@ -3,10 +3,17 @@ from .base import CaseInsensitiveStrEnum
 
 class KafkaDataType(CaseInsensitiveStrEnum):
     STRING = "string"
+    INT = "int"
     INT8 = "int8"
     INT16 = "int16"
     INT32 = "int32"
     INT64 = "int64"
+    UINT = "uint"
+    UINT8 = "uint8"
+    UINT16 = "uint16"
+    UINT32 = "uint32"
+    UINT64 = "uint64"
+    FLOAT = "float"
     FLOAT32 = "float32"
     FLOAT64 = "float64"
     BOOL = "bool"
@@ -19,6 +26,10 @@ class ClickhouseDataType(CaseInsensitiveStrEnum):
     INT16 = "Int16"
     INT32 = "Int32"
     INT64 = "Int64"
+    UINT8 = "UInt8"
+    UINT16 = "UInt16"
+    UINT32 = "UInt32"
+    UINT64 = "UInt64"
     FLOAT32 = "Float32"
     FLOAT64 = "Float64"
     STRING = "String"
@@ -62,6 +73,12 @@ kafka_to_clickhouse_data_type_mappings = {
         ClickhouseDataType.LC_FIXEDSTRING,
         ClickhouseDataType.LC_DATETIME,
     ],
+    KafkaDataType.INT: [
+        ClickhouseDataType.INT8,
+        ClickhouseDataType.INT16,
+        ClickhouseDataType.INT32,
+        ClickhouseDataType.INT64,
+    ],
     KafkaDataType.INT8: [ClickhouseDataType.INT8, ClickhouseDataType.LC_INT8],
     KafkaDataType.INT16: [ClickhouseDataType.INT16, ClickhouseDataType.LC_INT16],
     KafkaDataType.INT32: [ClickhouseDataType.INT32, ClickhouseDataType.LC_INT32],
@@ -72,6 +89,18 @@ kafka_to_clickhouse_data_type_mappings = {
         ClickhouseDataType.LC_INT64,
         ClickhouseDataType.LC_DATETIME,
     ],
+    KafkaDataType.UINT: [
+        ClickhouseDataType.UINT8,
+        ClickhouseDataType.UINT16,
+        ClickhouseDataType.UINT32,
+        ClickhouseDataType.UINT64,
+    ],
+    KafkaDataType.UINT8: [ClickhouseDataType.UINT8],
+    KafkaDataType.UINT16: [ClickhouseDataType.UINT16],
+    KafkaDataType.UINT32: [ClickhouseDataType.UINT32],
+    KafkaDataType.UINT64: [ClickhouseDataType.UINT64],
+    KafkaDataType.UINT8: [ClickhouseDataType.UINT8],
+    KafkaDataType.FLOAT: [ClickhouseDataType.FLOAT64],
     KafkaDataType.FLOAT32: [ClickhouseDataType.FLOAT32, ClickhouseDataType.LC_FLOAT32],
     KafkaDataType.FLOAT64: [
         ClickhouseDataType.FLOAT64,
