@@ -117,13 +117,6 @@ class TopicConfig(BaseModel):
                 "the event schema"
             )
 
-        # Check if the field type matches the deduplication ID field type
-        if field.type.value != v.id_field_type.value:
-            raise ValueError(
-                f"Deduplication ID field type '{v.id_field_type.value}' does not match "
-                f"schema field type '{field.type.value}' for field '{v.id_field}'"
-            )
-
         return v
 
 
