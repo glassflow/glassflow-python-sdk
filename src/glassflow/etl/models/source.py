@@ -66,13 +66,9 @@ class DeduplicationConfig(BaseModel):
 
                 # Validate id_field_type is a valid type when enabled
                 id_field_type = values.get("id_field_type")
-                if id_field_type not in [
-                    KafkaDataType.STRING,
-                    KafkaDataType.INT32,
-                    KafkaDataType.INT64,
-                ]:
+                if id_field_type not in [KafkaDataType.STRING, KafkaDataType.INT]:
                     raise ValueError(
-                        "id_field_type must be a string, int32, or int64 when "
+                        "id_field_type must be a string or int when "
                         "deduplication is enabled"
                     )
 
@@ -119,13 +115,6 @@ class TopicConfig(BaseModel):
             raise ValueError(
                 f"Deduplication ID field '{v.id_field}' does not exist in "
                 "the event schema"
-            )
-
-        # Check if the field type matches the deduplication ID field type
-        if field.type.value != v.id_field_type.value:
-            raise ValueError(
-                f"Deduplication ID field type '{v.id_field_type.value}' does not match "
-                f"schema field type '{field.type.value}' for field '{v.id_field}'"
             )
 
         return v
