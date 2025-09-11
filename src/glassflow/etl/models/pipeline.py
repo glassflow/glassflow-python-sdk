@@ -21,6 +21,7 @@ class PipelineStatus(CaseInsensitiveStrEnum):
     TERMINATED = "Terminated"
     FAILED = "Failed"
 
+
 class PipelineConfig(BaseModel):
     pipeline_id: str
     name: Optional[str] = Field(default=None)

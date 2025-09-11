@@ -21,7 +21,6 @@ def valid_config() -> dict:
     return pipeline_configs.get_valid_pipeline_config()
 
 
-
 @pytest.fixture
 def get_pipeline_response(valid_config) -> dict:
     """Fixture for a valid pipeline configuration with status."""

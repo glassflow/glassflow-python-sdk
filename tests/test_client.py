@@ -19,9 +19,7 @@ class TestClient:
         assert client.http_client.base_url == "https://example.com"
 
     def test_client_get_pipeline_success(
-        self,
-        get_pipeline_response,
-        mock_success_response
+        self, get_pipeline_response, mock_success_response
     ):
         """Test successful pipeline retrieval by ID."""
         client = Client()
