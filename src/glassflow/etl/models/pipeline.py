@@ -4,10 +4,22 @@ from typing import Any, Optional
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from ..errors import InvalidDataTypeMappingError
+from .base import CaseInsensitiveStrEnum
 from .data_types import kafka_to_clickhouse_data_type_mappings
 from .join import JoinConfig, JoinConfigPatch
 from .sink import SinkConfig, SinkConfigPatch
 from .source import SourceConfig, SourceConfigPatch
+
+
+class PipelineStatus(CaseInsensitiveStrEnum):
+    CREATED = "Created"
+    RUNNING = "Running"
+    PAUSING = "Pausing"
+    PAUSED = "Paused"
+    RESUMING = "Resuming"
+    TERMINATING = "Terminating"
+    TERMINATED = "Terminated"
+    FAILED = "Failed"
 
 
 class PipelineConfig(BaseModel):

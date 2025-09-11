@@ -8,7 +8,7 @@ from .join import (
     JoinSourceConfigPatch,
     JoinType,
 )
-from .pipeline import PipelineConfig, PipelineConfigPatch
+from .pipeline import PipelineConfig, PipelineConfigPatch, PipelineStatus
 from .sink import SinkConfig, SinkConfigPatch, SinkType, TableMapping
 from .source import (
     ConsumerGroupOffset,
@@ -40,6 +40,7 @@ __all__ = [
     "JoinType",
     "PipelineConfig",
     "PipelineConfigPatch",
+    "PipelineStatus",
     "SinkConfig",
     "SinkType",
     "TableMapping",
