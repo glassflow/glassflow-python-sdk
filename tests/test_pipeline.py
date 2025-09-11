@@ -91,14 +91,14 @@ class TestPipelineLifecycle:
         method,
         endpoint,
         params,
-        valid_config,
+        get_pipeline_response,
     ):
         """Test common pipeline lifecycle operations."""
         with patch(
             "httpx.Client.request", return_value=mock_success_response
         ) as mock_request:
             if method == "GET":
-                mock_request.return_value.json.return_value = valid_config
+                mock_request.return_value.json.return_value = get_pipeline_response
             result = getattr(pipeline, operation)(**params)
             expected_endpoint = f"{pipeline.ENDPOINT}/{pipeline.pipeline_id}{endpoint}"
             mock_request.assert_called_once_with(method, expected_endpoint)

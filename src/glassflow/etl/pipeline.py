@@ -52,6 +52,7 @@ class Pipeline(APIClient):
             self.config = None
 
         self._dlq = DLQ(pipeline_id=self.pipeline_id, host=host)
+        self.status: models.PipelineStatus | None = None
 
     def get(self) -> Pipeline:
         """Fetch a pipeline by its ID.
@@ -67,6 +68,7 @@ class Pipeline(APIClient):
             "GET", f"{self.ENDPOINT}/{self.pipeline_id}", event_name="PipelineGet"
         )
         self.config = models.PipelineConfig.model_validate(response.json())
+        self.status = models.PipelineStatus(response.json()["status"])
         self._dlq = DLQ(pipeline_id=self.pipeline_id, host=self.host)
         return self
 
@@ -94,6 +96,7 @@ class Pipeline(APIClient):
                 ),
                 event_name="PipelineCreated",
             )
+            self.status = models.PipelineStatus.CREATED
             return self
 
         except errors.ForbiddenError as e:
@@ -160,6 +163,7 @@ class Pipeline(APIClient):
             self.get()
         endpoint = f"{self.ENDPOINT}/{self.pipeline_id}/terminate"
         self._request("DELETE", endpoint, event_name="PipelineDeleted")
+        self.status = models.PipelineStatus.TERMINATING
 
     def pause(self) -> Pipeline:
         """Pauses the pipeline with the given ID.
@@ -191,11 +195,13 @@ class Pipeline(APIClient):
         Returns:
             dict: Pipeline health
         """
-        return self._request(
+        response = self._request(
             "GET",
             f"{self.ENDPOINT}/{self.pipeline_id}/health",
             event_name="PipelineHealth",
         ).json()
+        self.status = models.PipelineStatus(response["overall_status"])
+        return response
 
     def to_dict(self) -> dict[str, Any]:
         """Convert the pipeline configuration to a dictionary.
