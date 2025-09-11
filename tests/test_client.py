@@ -18,12 +18,16 @@ class TestClient:
         assert client.host == "https://example.com"
         assert client.http_client.base_url == "https://example.com"
 
-    def test_client_get_pipeline_success(self, valid_config, mock_success_response):
+    def test_client_get_pipeline_success(
+        self,
+        get_pipeline_response,
+        mock_success_response
+    ):
         """Test successful pipeline retrieval by ID."""
         client = Client()
         pipeline_id = "test-pipeline-id"
 
-        mock_success_response.json.return_value = valid_config
+        mock_success_response.json.return_value = get_pipeline_response
 
         with patch(
             "httpx.Client.request", return_value=mock_success_response

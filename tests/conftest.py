@@ -21,6 +21,15 @@ def valid_config() -> dict:
     return pipeline_configs.get_valid_pipeline_config()
 
 
+
+@pytest.fixture
+def get_pipeline_response(valid_config) -> dict:
+    """Fixture for a valid pipeline configuration with status."""
+    config = valid_config
+    config["status"] = "Running"
+    return config
+
+
 @pytest.fixture
 def valid_config_without_joins() -> dict:
     """Fixture for a valid pipeline configuration without joins."""
@@ -88,11 +97,11 @@ def mock_connection_error():
 
 
 @pytest.fixture
-def mock_success_get_pipeline(valid_config):
+def mock_success_get_pipeline(get_pipeline_response):
     """Fixture for a successful GET pipeline response."""
     return mock_responses.create_mock_response_factory()(
         status_code=200,
-        json_data=valid_config,
+        json_data=get_pipeline_response,
     )
 
 
