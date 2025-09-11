@@ -175,7 +175,10 @@ class Pipeline(APIClient):
             PipelineNotFoundError: If pipeline is not found
             APIError: If the API request fails
         """
-        raise NotImplementedError("Pausing is not implemented")
+        endpoint = f"{self.ENDPOINT}/{self.pipeline_id}/pause"
+        self._request("POST", endpoint, event_name="PipelinePaused")
+        self.status = models.PipelineStatus.PAUSING
+        return self
 
     def resume(self) -> Pipeline:
         """Resumes the pipeline with the given ID.
@@ -187,7 +190,10 @@ class Pipeline(APIClient):
             PipelineNotFoundError: If pipeline is not found
             APIError: If the API request fails
         """
-        raise NotImplementedError("Resuming is not implemented")
+        endpoint = f"{self.ENDPOINT}/{self.pipeline_id}/resume"
+        self._request("POST", endpoint, event_name="PipelineResumed")
+        self.status = models.PipelineStatus.RESUMING
+        return self
 
     def health(self) -> dict[str, Any]:
         """Get the health of the pipeline.
