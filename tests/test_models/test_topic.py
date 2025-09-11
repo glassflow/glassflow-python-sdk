@@ -94,7 +94,9 @@ class TestTopicConfig:
                 schema=models.Schema(
                     type=models.SchemaType.JSON,
                     fields=[
-                        models.SchemaField(name="name", type=models.KafkaDataType.STRING),
+                        models.SchemaField(
+                            name="name", type=models.KafkaDataType.STRING
+                        ),
                     ],
                 ),
                 replicas=0,

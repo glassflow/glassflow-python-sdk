@@ -119,7 +119,7 @@ class TopicConfig(BaseModel):
             )
 
         return v
-    
+
     @field_validator("replicas")
     @classmethod
     def validate_replicas(cls, v: int) -> int:
