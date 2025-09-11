@@ -25,6 +25,7 @@ def get_valid_pipeline_config() -> dict:
                 {
                     "consumer_group_initial_offset": "earliest",
                     "name": "user_logins",
+                    "replicas": 3,
                     "schema": {
                         "type": "json",
                         "fields": [
@@ -52,6 +53,7 @@ def get_valid_pipeline_config() -> dict:
                 {
                     "consumer_group_initial_offset": "earliest",
                     "name": "orders",
+                    "replicas": 1,
                     "schema": {
                         "type": "json",
                         "fields": [
