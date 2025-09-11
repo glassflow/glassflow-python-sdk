@@ -170,6 +170,20 @@ for pipeline in pipelines:
     print(f"State: {pipeline['state']}")
 ```
 
+### Pause / Resume Pipeline
+
+```python
+pipeline = client.get_pipeline("my-pipeline-id")
+pipeline.pause()
+print(pipeline.status)
+```
+
+```python
+pipeline = client.get_pipeline("my-pipeline-id")
+pipeline.resume()
+print(pipeline.status)
+```
+
 ### Delete pipeline
 
 ```python

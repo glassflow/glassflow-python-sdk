@@ -5,7 +5,7 @@ from unittest.mock import patch
 import pytest
 from pydantic import ValidationError
 
-from glassflow.etl import errors
+from glassflow.etl import errors, models
 from glassflow.etl.models import PipelineConfig
 from glassflow.etl.pipeline import Pipeline
 from tests.data import error_scenarios, mock_responses
@@ -26,6 +26,7 @@ class TestPipelineCreation:
                 json=pipeline.config.model_dump(mode="json", by_alias=True),
             )
             assert result == pipeline
+            assert pipeline.status == models.PipelineStatus.CREATED
 
     def test_create_invalid_config(self, invalid_config):
         """Test pipeline creation with invalid configuration."""
@@ -77,10 +78,18 @@ class TestPipelineLifecycle:
     """Tests for pause, resume, delete operations."""
 
     @pytest.mark.parametrize(
-        "operation,method,endpoint,params",
+        "operation,method,endpoint,params,status",
         [
-            ("get", "GET", "", {}),
-            ("delete", "DELETE", "/terminate", {"terminate": True}),
+            ("get", "GET", "", {}, models.PipelineStatus.RUNNING),
+            ("pause", "POST", "/pause", {}, models.PipelineStatus.PAUSING),
+            ("resume", "POST", "/resume", {}, models.PipelineStatus.RESUMING),
+            (
+                "delete",
+                "DELETE",
+                "/terminate",
+                {"terminate": True},
+                models.PipelineStatus.TERMINATING,
+            ),
         ],
     )
     def test_lifecycle_operations(
@@ -92,6 +101,7 @@ class TestPipelineLifecycle:
         endpoint,
         params,
         get_pipeline_response,
+        status,
     ):
         """Test common pipeline lifecycle operations."""
         with patch(
@@ -106,15 +116,16 @@ class TestPipelineLifecycle:
                 assert result is None
             else:
                 assert result == pipeline
+            assert pipeline.status == status
 
-    @pytest.mark.parametrize("operation", ["get", "delete"])
+    @pytest.mark.parametrize("operation", ["get", "delete", "pause", "resume"])
     def test_lifecycle_not_found(self, pipeline, mock_not_found_response, operation):
         """Test lifecycle operations when pipeline is not found."""
         with patch("httpx.Client.request", return_value=mock_not_found_response):
             with pytest.raises(errors.PipelineNotFoundError):
                 getattr(pipeline, operation)()
 
-    @pytest.mark.parametrize("operation", ["get", "delete"])
+    @pytest.mark.parametrize("operation", ["get", "delete", "pause", "resume"])
     def test_lifecycle_connection_error(
         self, pipeline, mock_connection_error, operation
     ):
@@ -313,7 +324,7 @@ class TestPipelineHealth:
         expected = {
             "pipeline_id": "test-pipeline",
             "pipeline_name": "Test Pipeline",
-            "overall_status": "Running",
+            "overall_status": "Terminating",
             "created_at": "2025-08-31T16:05:09.163872763Z",
             "updated_at": "2025-08-31T16:05:10.638243216Z",
         }
@@ -328,3 +339,4 @@ class TestPipelineHealth:
                 f"{pipeline.ENDPOINT}/{pipeline.pipeline_id}/health",
             )
             assert result == expected
+            assert pipeline.status == models.PipelineStatus.TERMINATING
