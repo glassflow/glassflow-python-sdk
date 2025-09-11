@@ -71,3 +71,32 @@ class TestTopicConfig:
             ),
         )
         assert config.deduplication.enabled is False
+
+    def test_topic_config_replicas_validation(self):
+        """Test TopicConfig validation for replicas."""
+        config = models.TopicConfig(
+            name="test-topic",
+            consumer_group_initial_offset=models.ConsumerGroupOffset.EARLIEST,
+            schema=models.Schema(
+                type=models.SchemaType.JSON,
+                fields=[
+                    models.SchemaField(name="name", type=models.KafkaDataType.STRING),
+                ],
+            ),
+            replicas=3,
+        )
+        assert config.replicas == 3
+
+        with pytest.raises(ValueError) as exc_info:
+            models.TopicConfig(
+                name="test-topic",
+                consumer_group_initial_offset=models.ConsumerGroupOffset.EARLIEST,
+                schema=models.Schema(
+                    type=models.SchemaType.JSON,
+                    fields=[
+                        models.SchemaField(name="name", type=models.KafkaDataType.STRING),
+                    ],
+                ),
+                replicas=0,
+            )
+        assert "Replicas must be at least 1" in str(exc_info.value)

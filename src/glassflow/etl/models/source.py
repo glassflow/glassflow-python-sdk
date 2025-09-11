@@ -85,6 +85,7 @@ class TopicConfig(BaseModel):
     name: str
     event_schema: Schema = Field(alias="schema")
     deduplication: Optional[DeduplicationConfig] = Field(default=DeduplicationConfig())
+    replicas: Optional[int] = Field(default=1)
 
     @field_validator("deduplication")
     @classmethod
@@ -117,6 +118,13 @@ class TopicConfig(BaseModel):
                 "the event schema"
             )
 
+        return v
+    
+    @field_validator("replicas")
+    @classmethod
+    def validate_replicas(cls, v: int) -> int:
+        if v < 1:
+            raise ValueError("Replicas must be at least 1")
         return v
 
 
