@@ -107,18 +107,34 @@ class Client(APIClient):
 
         return pipeline.create()
 
-    def delete_pipeline(self, pipeline_id: str, terminate: bool = True) -> None:
+    def stop_pipeline(self, pipeline_id: str, terminate: bool = False) -> None:
+        """Stops the pipeline with the given ID.
+
+        Args:
+            pipeline_id: The ID of the pipeline to stop
+            terminate: Whether to terminate the pipeline (i.e. delete all the pipeline
+                components and potentially all the events in the pipeline)
+
+        Raises:
+            PipelineInTransitionError: If pipeline is in transition
+            PipelineNotFoundError: If pipeline is not found
+            APIError: If the API request fails
+        """
+        Pipeline(host=self.host, pipeline_id=pipeline_id).stop(terminate=terminate)
+
+    def delete_pipeline(self, pipeline_id: str) -> None:
         """Deletes the pipeline with the given ID.
 
         Args:
             pipeline_id: The ID of the pipeline to delete
-            terminate: Whether to terminate the pipeline (i.e. delete all the pipeline
-                components and potentially all the events in the pipeline)
+
         Raises:
+            PipelineDeletionStateViolationError: If pipeline is not stopped or
+            terminating
             PipelineNotFoundError: If pipeline is not found
             APIError: If the API request fails
         """
-        Pipeline(host=self.host, pipeline_id=pipeline_id).delete(terminate=terminate)
+        Pipeline(host=self.host, pipeline_id=pipeline_id).delete()
 
     def disable_tracking(self) -> None:
         """Disable tracking of pipeline events."""

@@ -64,11 +64,51 @@ class APIClient:
         """Raise an APIError based on the response."""
         status_code = response.status_code
         try:
-            message = response.json().get("message", None)
+            error_data = response.json()
+            message = error_data.get("message", None)
+            code = error_data.get("code", None)
         except json.JSONDecodeError:
             message = f"{status_code} {response.reason_phrase}"
+            code = None
+            error_data = {}
+
         if status_code == 400:
-            raise errors.ValidationError(status_code, message, response=response)
+            # Handle specific status validation error codes
+            if code == "TERMINAL_STATE_VIOLATION":
+                raise errors.TerminalStateViolationError(
+                    status_code, message, response=response
+                )
+            elif code == "INVALID_STATUS_TRANSITION":
+                raise errors.InvalidStatusTransitionError(
+                    status_code,
+                    message,
+                    response=response,
+                )
+            elif code == "UNKNOWN_STATUS":
+                raise errors.UnknownStatusError(status_code, message, response=response)
+            elif code == "PIPELINE_ALREADY_IN_STATE":
+                raise errors.PipelineAlreadyInStateError(
+                    status_code, message, response=response
+                )
+            elif code == "PIPELINE_IN_TRANSITION":
+                raise errors.PipelineInTransitionError(
+                    status_code, message, response=response
+                )
+            elif message and message.startswith("invalid json:"):
+                raise errors.InvalidJsonError(status_code, message, response=response)
+            elif message and message == "pipeline id cannot be empty":
+                raise errors.EmptyPipelineIdError(
+                    status_code, message, response=response
+                )
+            elif message and message.startswith(
+                "pipeline can only be deleted if it's stopped or terminated"
+            ):
+                raise errors.PipelineDeletionStateViolationError(
+                    status_code, message, response=response
+                )
+            else:
+                # Generic 400 error for unknown codes
+                raise errors.ValidationError(status_code, message, response=response)
         elif status_code == 403:
             raise errors.ForbiddenError(status_code, message, response=response)
         elif status_code == 404:

@@ -17,9 +17,12 @@ class PipelineStatus(CaseInsensitiveStrEnum):
     PAUSING = "Pausing"
     PAUSED = "Paused"
     RESUMING = "Resuming"
+    STOPPING = "Stopping"
+    STOPPED = "Stopped"
     TERMINATING = "Terminating"
     TERMINATED = "Terminated"
     FAILED = "Failed"
+    DELETED = "Deleted"
 
 
 class PipelineConfig(BaseModel):

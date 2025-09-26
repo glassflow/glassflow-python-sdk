@@ -188,22 +188,18 @@ class TestClient:
         with pytest.raises(ValueError):
             client.create_pipeline()
 
-    def test_client_delete_pipeline_success(
-        self, mock_success_response, mock_success_get_pipeline
-    ):
+    def test_client_delete_pipeline_success(self, mock_success_response):
         """Test successful pipeline deletion."""
         client = Client()
         pipeline_id = "test-pipeline-id"
 
-        with patch("glassflow.etl.pipeline.Pipeline.get") as pipeline_get:
-            with patch(
-                "httpx.Client.request", return_value=mock_success_response
-            ) as mock_delete_request:
-                client.delete_pipeline(pipeline_id, terminate=True)
-                pipeline_get.assert_called_once_with()
-                mock_delete_request.assert_called_once_with(
-                    "DELETE", f"{client.ENDPOINT}/{pipeline_id}/terminate"
-                )
+        with patch(
+            "httpx.Client.request", return_value=mock_success_response
+        ) as mock_delete_request:
+            client.delete_pipeline(pipeline_id)
+            mock_delete_request.assert_called_once_with(
+                "DELETE", f"{client.ENDPOINT}/{pipeline_id}"
+            )
 
     def test_client_delete_pipeline_not_found(self, mock_not_found_response):
         """Test pipeline deletion when pipeline is not found."""
@@ -213,6 +209,42 @@ class TestClient:
         with patch("httpx.Client.request", return_value=mock_not_found_response):
             with pytest.raises(errors.PipelineNotFoundError) as exc_info:
                 client.delete_pipeline(pipeline_id)
+            assert "not found" in str(exc_info.value)
+
+    def test_client_stop_pipeline_success(self, mock_success_response):
+        """Test successful pipeline stop."""
+        client = Client()
+        pipeline_id = "test-pipeline-id"
+
+        with patch(
+            "httpx.Client.request", return_value=mock_success_response
+        ) as mock_request:
+            client.stop_pipeline(pipeline_id)
+            mock_request.assert_called_once_with(
+                "POST", f"{client.ENDPOINT}/{pipeline_id}/stop"
+            )
+
+    def test_client_stop_pipeline_terminate_success(self, mock_success_response):
+        """Test successful pipeline stop with terminate=True."""
+        client = Client()
+        pipeline_id = "test-pipeline-id"
+
+        with patch(
+            "httpx.Client.request", return_value=mock_success_response
+        ) as mock_request:
+            client.stop_pipeline(pipeline_id, terminate=True)
+            mock_request.assert_called_once_with(
+                "POST", f"{client.ENDPOINT}/{pipeline_id}/terminate"
+            )
+
+    def test_client_stop_pipeline_not_found(self, mock_not_found_response):
+        """Test pipeline stop when pipeline is not found."""
+        client = Client()
+        pipeline_id = "non-existent-pipeline"
+
+        with patch("httpx.Client.request", return_value=mock_not_found_response):
+            with pytest.raises(errors.PipelineNotFoundError) as exc_info:
+                client.stop_pipeline(pipeline_id)
             assert "not found" in str(exc_info.value)
 
     def test_pipeline_to_dict(self, valid_config):
@@ -229,8 +261,8 @@ class TestClient:
         with patch(
             "httpx.Client.request", return_value=mock_success_response
         ) as mock_request:
-            pipeline_from_id.delete(terminate=True)
+            pipeline_from_id.delete()
             mock_request.assert_called_once_with(
                 "DELETE",
-                f"{pipeline_from_id.ENDPOINT}/{pipeline_from_id.pipeline_id}/terminate",
+                f"{pipeline_from_id.ENDPOINT}/{pipeline_from_id.pipeline_id}",
             )
