@@ -184,6 +184,19 @@ pipeline.resume()
 print(pipeline.status)
 ```
 
+### Stop pipeline
+
+```python
+# Stop a pipeline gracefully
+client.stop_pipeline("my-pipeline-id")
+
+# Stop a pipeline ungracefully (terminate)
+client.stop_pipeline("my-pipeline-id", terminate=True)
+
+# Or stop via pipeline instance
+pipeline.stop()
+```
+
 ### Delete pipeline
 
 ```python

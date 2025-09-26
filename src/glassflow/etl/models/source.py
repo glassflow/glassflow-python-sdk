@@ -81,7 +81,7 @@ class ConsumerGroupOffset(CaseInsensitiveStrEnum):
 
 
 class TopicConfig(BaseModel):
-    consumer_group_initial_offset: ConsumerGroupOffset = ConsumerGroupOffset.EARLIEST
+    consumer_group_initial_offset: ConsumerGroupOffset = ConsumerGroupOffset.LATEST
     name: str
     event_schema: Schema = Field(alias="schema")
     deduplication: Optional[DeduplicationConfig] = Field(default=DeduplicationConfig())
