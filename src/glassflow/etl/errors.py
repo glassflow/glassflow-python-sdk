@@ -60,3 +60,39 @@ class InvalidDataTypeMappingError(GlassFlowError):
 
 class InvalidBatchSizeError(GlassFlowError):
     """Exception raised when a batch size is invalid."""
+
+
+# Status validation error classes for 400 Bad Request responses
+class TerminalStateViolationError(ValidationError):
+    """Raised when attempting to transition from a terminal state to another state."""
+
+
+class InvalidStatusTransitionError(ValidationError):
+    """Raised when attempting an invalid status transition."""
+
+
+class UnknownStatusError(ValidationError):
+    """Raised when an unknown pipeline status is encountered."""
+
+
+class PipelineAlreadyInStateError(ValidationError):
+    """Raised when pipeline is already in the requested state."""
+
+
+class PipelineInTransitionError(ValidationError):
+    """
+    Raised when pipeline is currently transitioning and cannot perform the
+    requested operation.
+    """
+
+
+class InvalidJsonError(ValidationError):
+    """Raised when malformed JSON is provided in request body."""
+
+
+class EmptyPipelineIdError(ValidationError):
+    """Raised when pipeline ID parameter is empty or whitespace."""
+
+
+class PipelineDeletionStateViolationError(ValidationError):
+    """Raised when attempting to delete a pipeline that's not in a deletable state."""

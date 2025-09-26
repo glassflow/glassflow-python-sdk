@@ -145,25 +145,52 @@ class Pipeline(APIClient):
         """
         raise NotImplementedError("Updating is not implemented")
 
-    def delete(self, terminate: bool = True) -> None:
-        """Deletes the pipeline with the given ID.
+    def delete(self) -> None:
+        """
+        Deletes the pipeline from the database. Only pipelines that are stopped or
+        terminating can be deleted.
+
+        Raises:
+            PipelineDeletionStateViolationError: If pipeline is not stopped or
+                terminating
+            PipelineNotFoundError: If pipeline is not found
+            APIError: If the API request fails
+        """
+        endpoint = f"{self.ENDPOINT}/{self.pipeline_id}"
+        self._request("DELETE", endpoint, event_name="PipelineDeleted")
+        self.status = models.PipelineStatus.DELETED
+
+    def stop(self, terminate: bool = False) -> Pipeline:
+        """
+        Stops the pipeline. Gracefully by default, ungracefully if terminate is True.
+        Ungracefully means deleting all the pipeline components without waiting for the
+        events in the pipeline to be processed.
 
         Args:
             terminate: Whether to terminate the pipeline (i.e. delete all the pipeline
                 components and potentially all the events in the pipeline)
 
+        Returns:
+            Pipeline: A Pipeline instance for the stopped pipeline
+
         Raises:
+            PipelineInTransitionError: If pipeline is in transition
             PipelineNotFoundError: If pipeline is not found
+            InvalidStatusTransitionError: If pipeline is not in a state that can be
+                stopped
             APIError: If the API request fails
         """
-        if not terminate:
-            raise NotImplementedError("Graceful deletion is not implemented")
-
-        if self.config is None:
-            self.get()
-        endpoint = f"{self.ENDPOINT}/{self.pipeline_id}/terminate"
-        self._request("DELETE", endpoint, event_name="PipelineDeleted")
-        self.status = models.PipelineStatus.TERMINATING
+        if terminate:
+            endpoint = f"{self.ENDPOINT}/{self.pipeline_id}/terminate"
+            next_status = models.PipelineStatus.TERMINATING
+            event_name = "PipelineTerminated"
+        else:
+            endpoint = f"{self.ENDPOINT}/{self.pipeline_id}/stop"
+            next_status = models.PipelineStatus.STOPPING
+            event_name = "PipelineStopped"
+        self._request("POST", endpoint, event_name=event_name)
+        self.status = next_status
+        return self
 
     def pause(self) -> Pipeline:
         """Pauses the pipeline with the given ID.
@@ -172,7 +199,10 @@ class Pipeline(APIClient):
             Pipeline: A Pipeline instance for the paused pipeline
 
         Raises:
+            PipelineInTransitionError: If pipeline is in transition
             PipelineNotFoundError: If pipeline is not found
+            InvalidStatusTransitionError: If pipeline is not in a state that can be
+                paused
             APIError: If the API request fails
         """
         endpoint = f"{self.ENDPOINT}/{self.pipeline_id}/pause"
@@ -187,7 +217,10 @@ class Pipeline(APIClient):
             Pipeline: A Pipeline instance for the resumed pipeline
 
         Raises:
+            PipelineInTransitionError: If pipeline is in transition
             PipelineNotFoundError: If pipeline is not found
+            InvalidStatusTransitionError: If pipeline is not in a state that can be
+                resumed
             APIError: If the API request fails
         """
         endpoint = f"{self.ENDPOINT}/{self.pipeline_id}/resume"

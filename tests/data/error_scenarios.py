@@ -51,30 +51,131 @@ def get_http_error_scenarios():
         {
             "name": "not_found",
             "status_code": 404,
-            "text": "Pipeline not found",
+            "json_data": {"message": "Pipeline not found"},
             "expected_error": errors.PipelineNotFoundError,
             "error_message": "not found",
         },
         {
             "name": "forbidden",
             "status_code": 403,
-            "text": "Pipeline already active",
+            "json_data": {"message": "Pipeline already active"},
             "expected_error": errors.PipelineAlreadyExistsError,
             "error_message": "already exists",
         },
         {
             "name": "bad_request",
             "status_code": 400,
-            "text": "Bad request",
+            "json_data": {"message": "Bad request"},
             "expected_error": errors.ValidationError,
             "error_message": "Bad request",
         },
         {
             "name": "server_error",
             "status_code": 500,
-            "text": "Internal server error",
+            "json_data": {"message": "Internal server error"},
             "expected_error": errors.ServerError,
             "error_message": "Internal server error",
+        },
+        # Status validation error scenarios for 400 Bad Request responses
+        {
+            "name": "terminal_state_violation",
+            "status_code": 400,
+            "json_data": {
+                "message": (
+                    "Cannot transition from terminal state Terminated to Running"
+                ),
+                "code": "TERMINAL_STATE_VIOLATION",
+                "current_status": "Terminated",
+                "requested_status": "Running",
+            },
+            "expected_error": errors.TerminalStateViolationError,
+            "error_message": (
+                "Cannot transition from terminal state Terminated to Running"
+            ),
+        },
+        {
+            "name": "invalid_status_transition",
+            "status_code": 400,
+            "json_data": {
+                "message": "Invalid status transition from Running to Paused",
+                "code": "INVALID_STATUS_TRANSITION",
+                "current_status": "Running",
+                "requested_status": "Paused",
+                "valid_transitions": ["Stopping", "Terminating"],
+            },
+            "expected_error": errors.InvalidStatusTransitionError,
+            "error_message": "Invalid status transition from Running to Paused",
+        },
+        {
+            "name": "unknown_status",
+            "status_code": 400,
+            "json_data": {
+                "message": "Unknown pipeline status: InvalidStatus",
+                "code": "UNKNOWN_STATUS",
+                "current_status": "InvalidStatus",
+            },
+            "expected_error": errors.UnknownStatusError,
+            "error_message": "Unknown pipeline status: InvalidStatus",
+        },
+        {
+            "name": "pipeline_already_in_state",
+            "status_code": 400,
+            "json_data": {
+                "message": "Pipeline is already in Running state",
+                "code": "PIPELINE_ALREADY_IN_STATE",
+                "current_status": "Running",
+                "requested_status": "Running",
+            },
+            "expected_error": errors.PipelineAlreadyInStateError,
+            "error_message": "Pipeline is already in Running state",
+        },
+        {
+            "name": "pipeline_in_transition",
+            "status_code": 400,
+            "json_data": {
+                "message": (
+                    "Pipeline is currently transitioning from Pausing state, "
+                    "cannot perform Stopping operation"
+                ),
+                "code": "PIPELINE_IN_TRANSITION",
+                "current_status": "Pausing",
+                "requested_status": "Stopping",
+            },
+            "expected_error": errors.PipelineInTransitionError,
+            "error_message": (
+                "Pipeline is currently transitioning from Pausing state, "
+                "cannot perform Stopping operation"
+            ),
+        },
+        {
+            "name": "invalid_json",
+            "status_code": 400,
+            "json_data": {"message": "invalid json: unexpected end of JSON input"},
+            "expected_error": errors.InvalidJsonError,
+            "error_message": "invalid json: unexpected end of JSON input",
+        },
+        {
+            "name": "empty_pipeline_id",
+            "status_code": 400,
+            "json_data": {"message": "pipeline id cannot be empty"},
+            "expected_error": errors.EmptyPipelineIdError,
+            "error_message": "pipeline id cannot be empty",
+        },
+        {
+            "name": "pipeline_deletion_state_violation",
+            "status_code": 400,
+            "json_data": {
+                "message": (
+                    "pipeline can only be deleted if it's stopped or terminated, "
+                    "current status: Running"
+                ),
+                "field": {"current_status": "Running"},
+            },
+            "expected_error": errors.PipelineDeletionStateViolationError,
+            "error_message": (
+                "pipeline can only be deleted if it's stopped or terminated, "
+                "current status: Running"
+            ),
         },
     ]
 
