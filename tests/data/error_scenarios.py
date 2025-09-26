@@ -86,7 +86,7 @@ def get_http_error_scenarios():
                 ),
                 "code": "TERMINAL_STATE_VIOLATION",
                 "current_status": "Terminated",
-                "requested_status": "Running"
+                "requested_status": "Running",
             },
             "expected_error": errors.TerminalStateViolationError,
             "error_message": (
@@ -101,7 +101,7 @@ def get_http_error_scenarios():
                 "code": "INVALID_STATUS_TRANSITION",
                 "current_status": "Running",
                 "requested_status": "Paused",
-                "valid_transitions": ["Stopping", "Terminating"]
+                "valid_transitions": ["Stopping", "Terminating"],
             },
             "expected_error": errors.InvalidStatusTransitionError,
             "error_message": "Invalid status transition from Running to Paused",
@@ -112,7 +112,7 @@ def get_http_error_scenarios():
             "json_data": {
                 "message": "Unknown pipeline status: InvalidStatus",
                 "code": "UNKNOWN_STATUS",
-                "current_status": "InvalidStatus"
+                "current_status": "InvalidStatus",
             },
             "expected_error": errors.UnknownStatusError,
             "error_message": "Unknown pipeline status: InvalidStatus",
@@ -124,7 +124,7 @@ def get_http_error_scenarios():
                 "message": "Pipeline is already in Running state",
                 "code": "PIPELINE_ALREADY_IN_STATE",
                 "current_status": "Running",
-                "requested_status": "Running"
+                "requested_status": "Running",
             },
             "expected_error": errors.PipelineAlreadyInStateError,
             "error_message": "Pipeline is already in Running state",
@@ -139,7 +139,7 @@ def get_http_error_scenarios():
                 ),
                 "code": "PIPELINE_IN_TRANSITION",
                 "current_status": "Pausing",
-                "requested_status": "Stopping"
+                "requested_status": "Stopping",
             },
             "expected_error": errors.PipelineInTransitionError,
             "error_message": (
@@ -150,18 +150,14 @@ def get_http_error_scenarios():
         {
             "name": "invalid_json",
             "status_code": 400,
-            "json_data": {
-                "message": "invalid json: unexpected end of JSON input"
-            },
+            "json_data": {"message": "invalid json: unexpected end of JSON input"},
             "expected_error": errors.InvalidJsonError,
             "error_message": "invalid json: unexpected end of JSON input",
         },
         {
             "name": "empty_pipeline_id",
             "status_code": 400,
-            "json_data": {
-                "message": "pipeline id cannot be empty"
-            },
+            "json_data": {"message": "pipeline id cannot be empty"},
             "expected_error": errors.EmptyPipelineIdError,
             "error_message": "pipeline id cannot be empty",
         },
@@ -173,9 +169,7 @@ def get_http_error_scenarios():
                     "pipeline can only be deleted if it's stopped or terminated, "
                     "current status: Running"
                 ),
-                "field": {
-                    "current_status": "Running"
-                }
+                "field": {"current_status": "Running"},
             },
             "expected_error": errors.PipelineDeletionStateViolationError,
             "error_message": (
