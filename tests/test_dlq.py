@@ -16,17 +16,13 @@ class TestDLQ:
         assert dlq.http_client.base_url == "http://localhost:8080"
         assert dlq.endpoint == "/api/v1/pipeline/test-pipeline/dlq"
 
-    def test_consume_success(self, dlq):
+    def test_consume_success(self, dlq, mock_success):
         """Test successful DLQ consume operation."""
-        mock_response = mock_responses.create_mock_response_factory()(
-            status_code=200,
-            json_data=[
-                {"id": "msg1", "content": "test message 1"},
-                {"id": "msg2", "content": "test message 2"},
-            ],
-        )
-
-        with patch("httpx.Client.request", return_value=mock_response) as mock_get:
+        payload = [
+            {"id": "msg1", "content": "test message 1"},
+            {"id": "msg2", "content": "test message 2"},
+        ]
+        with mock_success(json_payloads=[payload]) as mock_get:
             result = dlq.consume(batch_size=50)
 
             mock_get.assert_called_once_with(
@@ -79,18 +75,14 @@ class TestDLQ:
 
             assert scenario["error_message"] in str(exc_info.value)
 
-    def test_state_success(self, dlq):
+    def test_state_success(self, dlq, mock_success):
         """Test successful DLQ state operation."""
-        mock_response = mock_responses.create_mock_response_factory()(
-            status_code=200,
-            json_data={
-                "total_messages": 42,
-                "pending_messages": 5,
-                "last_updated": "2023-01-01T00:00:00Z",
-            },
-        )
-
-        with patch("httpx.Client.request", return_value=mock_response) as mock_get:
+        state_payload = {
+            "total_messages": 42,
+            "pending_messages": 5,
+            "last_updated": "2023-01-01T00:00:00Z",
+        }
+        with mock_success(state_payload) as mock_get:
             result = dlq.state()
 
             mock_get.assert_called_once_with("GET", f"{dlq.endpoint}/state")
@@ -133,26 +125,16 @@ class TestPipelineDLQIntegration:
         assert pipeline.http_client.base_url == custom_url
         assert pipeline.dlq.http_client.base_url == custom_url
 
-    def test_pipeline_dlq_consume_integration(self, pipeline):
+    def test_pipeline_dlq_consume_integration(self, pipeline, mock_success):
         """Test Pipeline DLQ consume functionality."""
-        mock_response = mock_responses.create_mock_response_factory()(
-            status_code=200,
-            json_data=[{"id": "msg1", "content": "test"}],
-        )
-
-        with patch("httpx.Client.request", return_value=mock_response):
+        with mock_success(json_payloads=[[{"id": "msg1", "content": "test"}]]):
             result = pipeline.dlq.consume(batch_size=10)
 
             assert result == [{"id": "msg1", "content": "test"}]
 
-    def test_pipeline_dlq_state_integration(self, pipeline):
+    def test_pipeline_dlq_state_integration(self, pipeline, mock_success):
         """Test Pipeline DLQ state functionality."""
-        mock_response = mock_responses.create_mock_response_factory()(
-            status_code=200,
-            json_data={"total_messages": 10},
-        )
-
-        with patch("httpx.Client.request", return_value=mock_response):
+        with mock_success({"total_messages": 10}):
             result = pipeline.dlq.state()
 
             assert result == {"total_messages": 10}

@@ -272,3 +272,14 @@ def get_invalid_config() -> dict:
             "table_mapping": [],  # Empty table mapping should trigger validation error
         },
     }
+
+
+def get_health_payload(pipeline_id: str) -> dict:
+    """Get a health payload for a pipeline."""
+    return {
+        "pipeline_id": pipeline_id,
+        "pipeline_name": "Test Pipeline",
+        "overall_status": "Running",
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z",
+    }
