@@ -1,6 +1,6 @@
 import os
 import tempfile
-from unittest.mock import patch
+from unittest.mock import call, patch
 
 import pytest
 from pydantic import ValidationError
@@ -14,11 +14,9 @@ from tests.data import error_scenarios, mock_responses
 class TestPipelineCreation:
     """Tests for pipeline creation operations."""
 
-    def test_create_success(self, pipeline, mock_success_response):
+    def test_create_success(self, pipeline, mock_success):
         """Test successful pipeline creation."""
-        with patch(
-            "httpx.Client.request", return_value=mock_success_response
-        ) as mock_request:
+        with mock_success() as mock_request:
             result = pipeline.create()
             mock_request.assert_called_once_with(
                 "POST",
@@ -103,23 +101,38 @@ class TestPipelineLifecycle:
     def test_lifecycle_operations(
         self,
         pipeline,
-        mock_success_response,
+        mock_success,
+        get_pipeline_response,
+        get_health_payload,
         operation,
         method,
         endpoint,
         params,
-        get_pipeline_response,
         status,
     ):
         """Test common pipeline lifecycle operations."""
-        with patch(
-            "httpx.Client.request", return_value=mock_success_response
-        ) as mock_request:
-            if method == "GET":
-                mock_request.return_value.json.return_value = get_pipeline_response
+        if operation == "get":
+            mocked = mock_success(
+                [get_pipeline_response, get_health_payload(pipeline.pipeline_id)]
+            )
+        else:
+            mocked = mock_success()
+        with mocked as mock_request:
             result = getattr(pipeline, operation)(**params)
-            expected_endpoint = f"{pipeline.ENDPOINT}/{pipeline.pipeline_id}{endpoint}"
-            mock_request.assert_called_once_with(method, expected_endpoint)
+            expected_endpoint = (
+                f"{pipeline.ENDPOINT}/{pipeline.pipeline_id}{endpoint}"
+            )
+            if operation == "get":
+                assert mock_request.call_args_list == [
+                    call("GET", expected_endpoint),
+                    call(
+                        "GET",
+                        f"{pipeline.ENDPOINT}/{pipeline.pipeline_id}/health",
+                    ),
+                ]
+            else:
+                mock_request.assert_called_once_with(method, expected_endpoint)
+
             if operation == "delete":
                 assert result is None
             else:
@@ -147,12 +160,10 @@ class TestPipelineLifecycle:
 class TestPipelineModification:
     """Tests for update, rename operations."""
 
-    def test_rename_success(self, pipeline, mock_success_response):
+    def test_rename_success(self, pipeline, mock_success):
         """Test successful pipeline rename."""
         new_name = "renamed-pipeline"
-        with patch(
-            "httpx.Client.request", return_value=mock_success_response
-        ) as mock_request:
+        with mock_success() as mock_request:
             result = pipeline.rename(new_name)
             mock_request.assert_called_once_with(
                 "PATCH",
@@ -327,7 +338,7 @@ class TestPipelineIO:
 class TestPipelineHealth:
     """Tests for pipeline health endpoint."""
 
-    def test_health_success(self, pipeline, mock_success_response):
+    def test_health_success(self, pipeline, mock_success):
         """Test successful health fetch returns expected payload."""
         expected = {
             "pipeline_id": "test-pipeline",
@@ -336,11 +347,7 @@ class TestPipelineHealth:
             "created_at": "2025-08-31T16:05:09.163872763Z",
             "updated_at": "2025-08-31T16:05:10.638243216Z",
         }
-        mock_success_response.json.return_value = expected
-
-        with patch(
-            "httpx.Client.request", return_value=mock_success_response
-        ) as mock_request:
+        with mock_success(expected) as mock_request:
             result = pipeline.health()
             mock_request.assert_called_once_with(
                 "GET",

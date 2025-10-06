@@ -30,6 +30,25 @@ def get_pipeline_response(valid_config) -> dict:
 
 
 @pytest.fixture
+def get_health_payload():
+    """Factory to create a health endpoint payload for a pipeline id."""
+    def factory(
+        pipeline_id: str,
+        name: str = "Test Pipeline",
+        status: str = "Running",
+    ) -> dict:
+        return {
+            "pipeline_id": pipeline_id,
+            "pipeline_name": name,
+            "overall_status": status,
+            "created_at": "2025-01-01T00:00:00Z",
+            "updated_at": "2025-01-01T00:00:00Z",
+        }
+
+    return factory
+
+
+@pytest.fixture
 def valid_config_without_joins() -> dict:
     """Fixture for a valid pipeline configuration without joins."""
     return pipeline_configs.get_valid_config_without_joins()
@@ -96,18 +115,44 @@ def mock_connection_error():
 
 
 @pytest.fixture
-def mock_success_get_pipeline(get_pipeline_response):
-    """Fixture for a successful GET pipeline response."""
-    return mock_responses.create_mock_response_factory()(
-        status_code=200,
-        json_data=get_pipeline_response,
-    )
+def mock_success():
+    """Factory-context fixture that patches httpx and returns 200 with JSON.
 
+    - Accepts either a single dict payload or a list of dict payloads via the
+      optional argument to the returned context manager. If a list is provided,
+      they are returned sequentially from response.json() to simulate multiple
+      HTTP calls within the same test flow.
+    - If no payload is provided, it defaults to {"message": "Success"}.
+
+    Usage:
+        with mock_success(payload_or_list) as mock_request:
+            # invoke code under test
+            assert mock_request.call_args_list == [...]
+    """
+    from contextlib import contextmanager
+
+    @contextmanager
+    def factory(json_payloads=None):
+        if json_payloads is None:
+            json_payloads = [{"message": "Success"}]
+        payload_list = (
+            list(json_payloads) if isinstance(json_payloads, list) else [json_payloads]
+        )
+        response = mock_responses.create_mock_response_factory()(
+            status_code=200,
+            json_data=payload_list[0] if payload_list else {},
+        )
+        with patch("httpx.Client.request", return_value=response) as mock:
+            if payload_list:
+                response.json.side_effect = payload_list
+            yield mock
+
+    return factory
 
 @pytest.fixture
-def pipeline_from_id(mock_success_get_pipeline):
+def pipeline_from_id(mock_success, get_pipeline_response, get_health_payload):
     """Fixture for a successful GET request."""
-    with patch("httpx.Client.request", return_value=mock_success_get_pipeline):
+    with mock_success([get_pipeline_response, get_health_payload("test-pipeline-id")]):
         return Pipeline(pipeline_id="test-pipeline-id").get()
 
 

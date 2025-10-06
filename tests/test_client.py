@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import call, patch
 
 import pytest
 
@@ -19,21 +19,21 @@ class TestClient:
         assert client.http_client.base_url == "https://example.com"
 
     def test_client_get_pipeline_success(
-        self, get_pipeline_response, mock_success_response
+        self, mock_success, get_pipeline_response, get_health_payload
     ):
         """Test successful pipeline retrieval by ID."""
         client = Client()
         pipeline_id = "test-pipeline-id"
 
-        mock_success_response.json.return_value = get_pipeline_response
-
-        with patch(
-            "httpx.Client.request", return_value=mock_success_response
-        ) as mock_request:
+        with mock_success([
+            get_pipeline_response,
+            get_health_payload(pipeline_id),
+        ]) as mock_request:
             pipeline = client.get_pipeline(pipeline_id)
-            mock_request.assert_called_once_with(
-                "GET", f"{client.ENDPOINT}/{pipeline_id}"
-            )
+            assert mock_request.call_args_list == [
+                call("GET", f"{client.ENDPOINT}/{pipeline_id}"),
+                call("GET", f"{client.ENDPOINT}/{pipeline_id}/health"),
+            ]
             assert isinstance(pipeline, Pipeline)
             assert pipeline.pipeline_id == pipeline_id
 
@@ -126,13 +126,11 @@ class TestClient:
             mock_request.assert_called_once_with("GET", client.ENDPOINT)
             assert pipelines == []
 
-    def test_client_create_pipeline_success(self, valid_config, mock_success_response):
+    def test_client_create_pipeline_success(self, valid_config, mock_success):
         """Test successful pipeline creation."""
         client = Client()
 
-        with patch(
-            "httpx.Client.request", return_value=mock_success_response
-        ) as mock_request:
+        with mock_success() as mock_request:
             pipeline = client.create_pipeline(valid_config)
             mock_request.assert_called_once_with(
                 "POST", client.ENDPOINT, json=mock_request.call_args[1]["json"]
@@ -150,12 +148,10 @@ class TestClient:
             with pytest.raises(errors.PipelineAlreadyExistsError):
                 client.create_pipeline(valid_config)
 
-    def test_client_create_pipeline_from_yaml_success(self, mock_success_response):
+    def test_client_create_pipeline_from_yaml_success(self, mock_success):
         """Test pipeline creation from YAML file."""
         client = Client()
-        with patch(
-            "httpx.Client.request", return_value=mock_success_response
-        ) as mock_request:
+        with mock_success() as mock_request:
             client.create_pipeline(
                 pipeline_config_yaml_path="tests/data/valid_pipeline.yaml"
             )
@@ -163,12 +159,10 @@ class TestClient:
                 "POST", client.ENDPOINT, json=mock_request.call_args[1]["json"]
             )
 
-    def test_client_create_pipeline_from_json_success(self, mock_success_response):
+    def test_client_create_pipeline_from_json_success(self, mock_success):
         """Test pipeline creation from JSON file."""
         client = Client()
-        with patch(
-            "httpx.Client.request", return_value=mock_success_response
-        ) as mock_request:
+        with mock_success() as mock_request:
             client.create_pipeline(
                 pipeline_config_json_path="tests/data/valid_pipeline.json"
             )
@@ -188,14 +182,12 @@ class TestClient:
         with pytest.raises(ValueError):
             client.create_pipeline()
 
-    def test_client_delete_pipeline_success(self, mock_success_response):
+    def test_client_delete_pipeline_success(self, mock_success):
         """Test successful pipeline deletion."""
         client = Client()
         pipeline_id = "test-pipeline-id"
 
-        with patch(
-            "httpx.Client.request", return_value=mock_success_response
-        ) as mock_delete_request:
+        with mock_success() as mock_delete_request:
             client.delete_pipeline(pipeline_id)
             mock_delete_request.assert_called_once_with(
                 "DELETE", f"{client.ENDPOINT}/{pipeline_id}"
@@ -211,27 +203,23 @@ class TestClient:
                 client.delete_pipeline(pipeline_id)
             assert "not found" in str(exc_info.value)
 
-    def test_client_stop_pipeline_success(self, mock_success_response):
+    def test_client_stop_pipeline_success(self, mock_success):
         """Test successful pipeline stop."""
         client = Client()
         pipeline_id = "test-pipeline-id"
 
-        with patch(
-            "httpx.Client.request", return_value=mock_success_response
-        ) as mock_request:
+        with mock_success() as mock_request:
             client.stop_pipeline(pipeline_id)
             mock_request.assert_called_once_with(
                 "POST", f"{client.ENDPOINT}/{pipeline_id}/stop"
             )
 
-    def test_client_stop_pipeline_terminate_success(self, mock_success_response):
+    def test_client_stop_pipeline_terminate_success(self, mock_success):
         """Test successful pipeline stop with terminate=True."""
         client = Client()
         pipeline_id = "test-pipeline-id"
 
-        with patch(
-            "httpx.Client.request", return_value=mock_success_response
-        ) as mock_request:
+        with mock_success() as mock_request:
             client.stop_pipeline(pipeline_id, terminate=True)
             mock_request.assert_called_once_with(
                 "POST", f"{client.ENDPOINT}/{pipeline_id}/terminate"
@@ -256,11 +244,9 @@ class TestClient:
         assert isinstance(pipeline_dict, dict)
         assert pipeline_dict["pipeline_id"] == valid_config["pipeline_id"]
 
-    def test_pipeline_delete(self, pipeline_from_id, mock_success_response):
+    def test_pipeline_delete(self, pipeline_from_id, mock_success):
         """Test Pipeline delete with explicit pipeline_id."""
-        with patch(
-            "httpx.Client.request", return_value=mock_success_response
-        ) as mock_request:
+        with mock_success() as mock_request:
             pipeline_from_id.delete()
             mock_request.assert_called_once_with(
                 "DELETE",
