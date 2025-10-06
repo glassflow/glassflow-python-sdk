@@ -273,6 +273,7 @@ def get_invalid_config() -> dict:
         },
     }
 
+
 def get_health_payload(pipeline_id: str) -> dict:
     """Get a health payload for a pipeline."""
     return {

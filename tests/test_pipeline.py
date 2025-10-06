@@ -119,9 +119,7 @@ class TestPipelineLifecycle:
             mocked = mock_success()
         with mocked as mock_request:
             result = getattr(pipeline, operation)(**params)
-            expected_endpoint = (
-                f"{pipeline.ENDPOINT}/{pipeline.pipeline_id}{endpoint}"
-            )
+            expected_endpoint = f"{pipeline.ENDPOINT}/{pipeline.pipeline_id}{endpoint}"
             if operation == "get":
                 assert mock_request.call_args_list == [
                     call("GET", expected_endpoint),

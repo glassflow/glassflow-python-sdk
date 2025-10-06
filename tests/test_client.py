@@ -25,10 +25,12 @@ class TestClient:
         client = Client()
         pipeline_id = "test-pipeline-id"
 
-        with mock_success([
-            get_pipeline_response,
-            get_health_payload(pipeline_id),
-        ]) as mock_request:
+        with mock_success(
+            [
+                get_pipeline_response,
+                get_health_payload(pipeline_id),
+            ]
+        ) as mock_request:
             pipeline = client.get_pipeline(pipeline_id)
             assert mock_request.call_args_list == [
                 call("GET", f"{client.ENDPOINT}/{pipeline_id}"),

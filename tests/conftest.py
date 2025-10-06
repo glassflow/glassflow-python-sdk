@@ -32,6 +32,7 @@ def get_pipeline_response(valid_config) -> dict:
 @pytest.fixture
 def get_health_payload():
     """Factory to create a health endpoint payload for a pipeline id."""
+
     def factory(
         pipeline_id: str,
         name: str = "Test Pipeline",
@@ -148,6 +149,7 @@ def mock_success():
             yield mock
 
     return factory
+
 
 @pytest.fixture
 def pipeline_from_id(mock_success, get_pipeline_response, get_health_payload):
