@@ -148,11 +148,11 @@ class Pipeline(APIClient):
     def delete(self) -> None:
         """
         Deletes the pipeline from the database. Only pipelines that are stopped or
-        terminating can be deleted.
+        terminated can be deleted.
 
         Raises:
             PipelineDeletionStateViolationError: If pipeline is not stopped or
-                terminating
+                terminated
             PipelineNotFoundError: If pipeline is not found
             APIError: If the API request fails
         """
@@ -162,9 +162,8 @@ class Pipeline(APIClient):
 
     def stop(self, terminate: bool = False) -> Pipeline:
         """
-        Stops the pipeline. Gracefully by default, ungracefully if terminate is True.
-        Ungracefully means deleting all the pipeline components without waiting for the
-        events in the pipeline to be processed.
+        Stops the pipeline, waiting for all the events in the pipeline to be processed.
+        If terminate is True, the pipeline will be terminated instead.
 
         Args:
             terminate: Whether to terminate the pipeline (i.e. delete all the pipeline
@@ -192,26 +191,10 @@ class Pipeline(APIClient):
         self.status = next_status
         return self
 
-    def pause(self) -> Pipeline:
-        """Pauses the pipeline with the given ID.
-
-        Returns:
-            Pipeline: A Pipeline instance for the paused pipeline
-
-        Raises:
-            PipelineInTransitionError: If pipeline is in transition
-            PipelineNotFoundError: If pipeline is not found
-            InvalidStatusTransitionError: If pipeline is not in a state that can be
-                paused
-            APIError: If the API request fails
-        """
-        endpoint = f"{self.ENDPOINT}/{self.pipeline_id}/pause"
-        self._request("POST", endpoint, event_name="PipelinePaused")
-        self.status = models.PipelineStatus.PAUSING
-        return self
-
     def resume(self) -> Pipeline:
-        """Resumes the pipeline with the given ID.
+        """
+        Resumes the pipeline with the given ID.
+        Only stopped or terminated pipelines can be resumed.
 
         Returns:
             Pipeline: A Pipeline instance for the resumed pipeline

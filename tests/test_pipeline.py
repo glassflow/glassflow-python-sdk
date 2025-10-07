@@ -75,13 +75,12 @@ class TestPipelineCreation:
 
 
 class TestPipelineLifecycle:
-    """Tests for pause, resume, stop, terminate, delete operations."""
+    """Tests for resume, stop, terminate, delete operations."""
 
     @pytest.mark.parametrize(
         "operation,method,endpoint,params,status",
         [
             ("get", "GET", "", {}, models.PipelineStatus.RUNNING),
-            ("pause", "POST", "/pause", {}, models.PipelineStatus.PAUSING),
             ("resume", "POST", "/resume", {}, models.PipelineStatus.RESUMING),
             ("delete", "DELETE", "", {}, models.PipelineStatus.DELETED),
             (
@@ -126,14 +125,14 @@ class TestPipelineLifecycle:
                 assert result == pipeline
             assert pipeline.status == status
 
-    @pytest.mark.parametrize("operation", ["get", "delete", "pause", "resume", "stop"])
+    @pytest.mark.parametrize("operation", ["get", "delete", "resume", "stop"])
     def test_lifecycle_not_found(self, pipeline, mock_not_found_response, operation):
         """Test lifecycle operations when pipeline is not found."""
         with patch("httpx.Client.request", return_value=mock_not_found_response):
             with pytest.raises(errors.PipelineNotFoundError):
                 getattr(pipeline, operation)()
 
-    @pytest.mark.parametrize("operation", ["get", "delete", "pause", "resume", "stop"])
+    @pytest.mark.parametrize("operation", ["get", "delete", "resume", "stop"])
     def test_lifecycle_connection_error(
         self, pipeline, mock_connection_error, operation
     ):
