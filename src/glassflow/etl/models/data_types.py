@@ -58,6 +58,26 @@ class ClickhouseDataType(CaseInsensitiveStrEnum):
     ARRAY_INT16 = "Array(Int16)"
     ARRAY_INT32 = "Array(Int32)"
     ARRAY_INT64 = "Array(Int64)"
+    ARRAY_FLOAT32 = "Array(Float32)"
+    ARRAY_FLOAT64 = "Array(Float64)"
+    ARRAY_BOOL = "Array(Bool)"
+    ARRAY_UINT8 = "Array(UInt8)"
+    ARRAY_UINT16 = "Array(UInt16)"
+    ARRAY_UINT32 = "Array(UInt32)"
+    ARRAY_UINT64 = "Array(UInt64)"
+    ARRAY_LC_STRING = "Array(LowCardinality(String))"
+    ARRAY_LC_INT8 = "Array(LowCardinality(Int8))"
+    ARRAY_LC_INT16 = "Array(LowCardinality(Int16))"
+    ARRAY_LC_INT32 = "Array(LowCardinality(Int32))"
+    ARRAY_LC_INT64 = "Array(LowCardinality(Int64))"
+    ARRAY_LC_UINT8 = "Array(LowCardinality(UInt8))"
+    ARRAY_LC_UINT16 = "Array(LowCardinality(UInt16))"
+    ARRAY_LC_UINT32 = "Array(LowCardinality(UInt32))"
+    ARRAY_LC_UINT64 = "Array(LowCardinality(UInt64))"
+    ARRAY_LC_FLOAT32 = "Array(LowCardinality(Float32))"
+    ARRAY_LC_FLOAT64 = "Array(LowCardinality(Float64))"
+    ARRAY_LC_DATETIME = "Array(LowCardinality(DateTime))"
+    ARRAY_LC_FIXEDSTRING = "Array(LowCardinality(FixedString))"
 
 
 kafka_to_clickhouse_data_type_mappings = {
@@ -100,7 +120,7 @@ kafka_to_clickhouse_data_type_mappings = {
     KafkaDataType.UINT32: [ClickhouseDataType.UINT32],
     KafkaDataType.UINT64: [ClickhouseDataType.UINT64],
     KafkaDataType.UINT8: [ClickhouseDataType.UINT8],
-    KafkaDataType.FLOAT: [ClickhouseDataType.FLOAT64],
+    KafkaDataType.FLOAT: [ClickhouseDataType.FLOAT32, ClickhouseDataType.FLOAT64],
     KafkaDataType.FLOAT32: [ClickhouseDataType.FLOAT32, ClickhouseDataType.LC_FLOAT32],
     KafkaDataType.FLOAT64: [
         ClickhouseDataType.FLOAT64,
@@ -118,5 +138,25 @@ kafka_to_clickhouse_data_type_mappings = {
         ClickhouseDataType.ARRAY_INT16,
         ClickhouseDataType.ARRAY_INT32,
         ClickhouseDataType.ARRAY_INT64,
+        ClickhouseDataType.ARRAY_FLOAT32,
+        ClickhouseDataType.ARRAY_FLOAT64,
+        ClickhouseDataType.ARRAY_BOOL,
+        ClickhouseDataType.ARRAY_UINT8,
+        ClickhouseDataType.ARRAY_UINT16,
+        ClickhouseDataType.ARRAY_UINT32,
+        ClickhouseDataType.ARRAY_UINT64,
+        ClickhouseDataType.ARRAY_LC_STRING,
+        ClickhouseDataType.ARRAY_LC_INT8,
+        ClickhouseDataType.ARRAY_LC_INT16,
+        ClickhouseDataType.ARRAY_LC_INT32,
+        ClickhouseDataType.ARRAY_LC_INT64,
+        ClickhouseDataType.ARRAY_LC_UINT8,
+        ClickhouseDataType.ARRAY_LC_UINT16,
+        ClickhouseDataType.ARRAY_LC_UINT32,
+        ClickhouseDataType.ARRAY_LC_UINT64,
+        ClickhouseDataType.ARRAY_LC_FLOAT32,
+        ClickhouseDataType.ARRAY_LC_FLOAT64,
+        ClickhouseDataType.ARRAY_LC_DATETIME,
+        ClickhouseDataType.ARRAY_LC_FIXEDSTRING,
     ],
 }
