@@ -14,8 +14,6 @@ from .source import SourceConfig, SourceConfigPatch
 class PipelineStatus(CaseInsensitiveStrEnum):
     CREATED = "Created"
     RUNNING = "Running"
-    PAUSING = "Pausing"
-    PAUSED = "Paused"
     RESUMING = "Resuming"
     STOPPING = "Stopping"
     STOPPED = "Stopped"

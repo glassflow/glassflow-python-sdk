@@ -170,12 +170,26 @@ for pipeline in pipelines:
     print(f"State: {pipeline['state']}")
 ```
 
-### Pause / Resume Pipeline
+### Stop / Terminate / Resume Pipeline
 
 ```python
 pipeline = client.get_pipeline("my-pipeline-id")
-pipeline.pause()
+pipeline.stop()
 print(pipeline.status)
+```
+
+```
+STOPPING
+```
+
+```python
+# Stop a pipeline ungracefully (terminate)
+client.stop_pipeline("my-pipeline-id", terminate=True)
+print(pipeline.status)
+```
+
+```
+TERMINATING
 ```
 
 ```python
@@ -184,20 +198,13 @@ pipeline.resume()
 print(pipeline.status)
 ```
 
-### Stop pipeline
-
-```python
-# Stop a pipeline gracefully
-client.stop_pipeline("my-pipeline-id")
-
-# Stop a pipeline ungracefully (terminate)
-client.stop_pipeline("my-pipeline-id", terminate=True)
-
-# Or stop via pipeline instance
-pipeline.stop()
+```
+RESUMING
 ```
 
 ### Delete pipeline
+
+Only stopped or terminated pipelines can be deleted.
 
 ```python
 # Delete a pipeline
