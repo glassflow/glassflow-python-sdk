@@ -21,7 +21,9 @@ class TestPipelineCreation:
             mock_request.assert_called_once_with(
                 "POST",
                 pipeline.ENDPOINT,
-                json=pipeline.config.model_dump(mode="json", by_alias=True),
+                json=pipeline.config.model_dump(
+                    mode="json", by_alias=True, exclude_none=True
+                ),
             )
             assert result == pipeline
             assert pipeline.status == models.PipelineStatus.CREATED
@@ -325,7 +327,7 @@ class TestPipelineIO:
     def test_to_dict(self, pipeline):
         """Test pipeline to dictionary."""
         assert pipeline.to_dict() == pipeline.config.model_dump(
-            mode="json", by_alias=True
+            mode="json", by_alias=True, exclude_none=True
         )
 
         pipeline = Pipeline(host="http://localhost:8080", pipeline_id="test-pipeline")
