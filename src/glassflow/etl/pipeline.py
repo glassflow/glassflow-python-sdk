@@ -68,7 +68,7 @@ class Pipeline(APIClient):
             "GET", f"{self.ENDPOINT}/{self.pipeline_id}", event_name="PipelineGet"
         )
         self.config = models.PipelineConfig.model_validate(response.json())
-        self.status = models.PipelineStatus(response.json()["status"])
+        self.health()
         self._dlq = DLQ(pipeline_id=self.pipeline_id, host=self.host)
         return self
 
