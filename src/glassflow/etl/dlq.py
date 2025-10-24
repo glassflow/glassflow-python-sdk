@@ -74,3 +74,26 @@ class DLQ(APIClient):
             ) from e
         except errors.APIError as e:
             raise e
+
+    def purge(self) -> None:
+        """
+        Purge all messages from the Dead Letter Queue.
+
+        This operation removes all messages currently in the DLQ and cannot be undone.
+
+        Raises:
+            PipelineNotFoundError: If the pipeline does not exist
+            ConnectionError: If there is a network error
+            InternalServerError: If the API request fails
+        """
+        try:
+            response = self._request("POST", f"{self.endpoint}/purge")
+            response.raise_for_status()
+        except errors.NotFoundError as e:
+            raise errors.PipelineNotFoundError(
+                status_code=e.status_code,
+                message=f"Pipeline with id '{self.pipeline_id}' not found",
+                response=e.response,
+            ) from e
+        except errors.APIError as e:
+            raise e
