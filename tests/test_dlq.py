@@ -108,6 +108,45 @@ class TestDLQ:
 
             assert "Internal server error" in str(exc_info.value)
 
+    def test_purge_success(self, dlq, mock_success):
+        """Test successful DLQ purge operation."""
+        with mock_success() as mock_post:
+            dlq.purge()
+
+            mock_post.assert_called_once_with("POST", f"{dlq.endpoint}/purge")
+
+    def test_purge_pipeline_not_found(self, dlq):
+        """Test DLQ purge with pipeline not found error."""
+        mock_response = mock_responses.create_mock_response_factory()(
+            status_code=404,
+            json_data={"message": "Pipeline not found"},
+        )
+
+        with patch(
+            "httpx.Client.request",
+            side_effect=mock_response.raise_for_status.side_effect,
+        ):
+            with pytest.raises(errors.PipelineNotFoundError) as exc_info:
+                dlq.purge()
+
+            assert "test-pipeline" in str(exc_info.value)
+
+    def test_purge_server_error(self, dlq):
+        """Test DLQ purge with server error."""
+        mock_response = mock_responses.create_mock_response_factory()(
+            status_code=500,
+            json_data={"message": "Internal server error"},
+        )
+
+        with patch(
+            "httpx.Client.request",
+            side_effect=mock_response.raise_for_status.side_effect,
+        ):
+            with pytest.raises(errors.ServerError) as exc_info:
+                dlq.purge()
+
+            assert "Internal server error" in str(exc_info.value)
+
 
 class TestPipelineDLQIntegration:
     """Test cases for Pipeline-DLQ integration."""
@@ -138,3 +177,9 @@ class TestPipelineDLQIntegration:
             result = pipeline.dlq.state()
 
             assert result == {"total_messages": 10}
+
+    def test_pipeline_dlq_purge_integration(self, pipeline, mock_success):
+        """Test Pipeline DLQ purge functionality."""
+        with mock_success():
+            pipeline.dlq.purge()
+            # If no exception is raised, the test passes
