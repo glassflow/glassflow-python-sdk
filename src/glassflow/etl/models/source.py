@@ -137,9 +137,9 @@ class KafkaConnectionParams(BaseModel):
     password: Optional[str] = Field(default=None)
     root_ca: Optional[str] = Field(default=None)
     kerberos_service_name: Optional[str] = Field(default=None)
-    kerberos_principal: Optional[str] = Field(default=None)
     kerberos_keytab: Optional[str] = Field(default=None)
     kerberos_realm: Optional[str] = Field(default=None)
+    kerberos_config: Optional[str] = Field(default=None)
     skip_auth: bool = Field(default=False)
 
     @model_validator(mode="before")
