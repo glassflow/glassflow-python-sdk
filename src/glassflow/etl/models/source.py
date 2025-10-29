@@ -17,6 +17,7 @@ class KafkaMechanism(CaseInsensitiveStrEnum):
     SCRAM_SHA_256 = "SCRAM-SHA-256"
     SCRAM_SHA_512 = "SCRAM-SHA-512"
     PLAIN = "PLAIN"
+    GSSAPI = "GSSAPI"
 
 
 class SchemaField(BaseModel):
@@ -135,6 +136,10 @@ class KafkaConnectionParams(BaseModel):
     username: Optional[str] = Field(default=None)
     password: Optional[str] = Field(default=None)
     root_ca: Optional[str] = Field(default=None)
+    kerberos_service_name: Optional[str] = Field(default=None)
+    kerberos_keytab: Optional[str] = Field(default=None)
+    kerberos_realm: Optional[str] = Field(default=None)
+    kerberos_config: Optional[str] = Field(default=None)
     skip_auth: bool = Field(default=False)
 
     @model_validator(mode="before")
