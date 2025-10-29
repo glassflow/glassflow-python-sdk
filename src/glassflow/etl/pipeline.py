@@ -131,7 +131,7 @@ class Pipeline(APIClient):
     def update(
         self, config_patch: models.PipelineConfigPatch | dict[str, Any]
     ) -> Pipeline:
-        """Updates the pipeline with the given config.
+        """Updates the pipeline with the given config patch.
 
         Args:
             config_patch: Pipeline configuration patch
@@ -143,7 +143,23 @@ class Pipeline(APIClient):
             PipelineNotFoundError: If pipeline is not found
             APIError: If the API request fails
         """
-        raise NotImplementedError("Updating is not implemented")
+        self.get()  # Get latest config
+        updated_config = self.config.update(config_patch)
+
+        self._request(
+            "POST",
+            f"{self.ENDPOINT}/{self.pipeline_id}/edit",
+            json=updated_config.model_dump(
+                mode="json",
+                by_alias=True,
+                exclude_none=True,
+            ),
+            event_name="PipelineUpdated",
+        )
+
+        # Update self.config with the updated configuration
+        self.config = updated_config
+        return self
 
     def delete(self) -> None:
         """
