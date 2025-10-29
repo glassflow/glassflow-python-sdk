@@ -187,6 +187,90 @@ class TestPipelineModification:
                 pipeline.rename(new_name)
             assert "Failed to connect to GlassFlow ETL API" in str(exc_info.value)
 
+    def test_update_success(
+        self, pipeline, mock_success, get_pipeline_response, get_health_payload
+    ):
+        """Test successful pipeline update."""
+        config_patch = models.PipelineConfigPatch(name="Updated Name")
+
+        with mock_success(
+            [get_pipeline_response, get_health_payload(pipeline.pipeline_id)]
+        ) as mock_request:
+            result = pipeline.update(config_patch)
+            # Should call GET pipeline, GET health (from get()),
+            # then POST to edit endpoint
+            assert len(mock_request.call_args_list) == 3
+            assert mock_request.call_args_list[0][0] == (
+                "GET",
+                f"{pipeline.ENDPOINT}/{pipeline.pipeline_id}",
+            )
+            assert mock_request.call_args_list[1][0] == (
+                "GET",
+                f"{pipeline.ENDPOINT}/{pipeline.pipeline_id}/health",
+            )
+            # Check the update request includes the merged config
+            edit_call = mock_request.call_args_list[2]
+            assert edit_call[0][0] == "POST"
+            assert edit_call[0][1] == f"{pipeline.ENDPOINT}/{pipeline.pipeline_id}/edit"
+            # The request should include the full updated config
+            edit_json = edit_call[1]["json"]
+            assert edit_json["name"] == "Updated Name"
+            assert result == pipeline
+            assert pipeline.config.name == "Updated Name"
+
+    def test_update_with_dict(
+        self, pipeline, mock_success, get_pipeline_response, get_health_payload
+    ):
+        """Test pipeline update with dictionary patch."""
+        patch_dict = {"name": "Dict Updated Name"}
+
+        with mock_success(
+            [get_pipeline_response, get_health_payload(pipeline.pipeline_id)]
+        ):
+            result = pipeline.update(patch_dict)
+            assert result == pipeline
+            assert pipeline.config.name == "Dict Updated Name"
+
+    def test_update_nested_config(
+        self, pipeline, mock_success, get_pipeline_response, get_health_payload
+    ):
+        """Test pipeline update with nested configuration."""
+        config_patch = models.PipelineConfigPatch(
+            source=models.SourceConfigPatch(
+                connection_params=models.KafkaConnectionParamsPatch(
+                    brokers=["new-broker:9092"]
+                )
+            )
+        )
+
+        with mock_success(
+            [get_pipeline_response, get_health_payload(pipeline.pipeline_id)]
+        ):
+            result = pipeline.update(config_patch)
+            assert result == pipeline
+            assert pipeline.config.source.connection_params.brokers == [
+                "new-broker:9092"
+            ]
+
+    def test_update_not_found(self, pipeline, mock_not_found_response):
+        """Test pipeline update when pipeline is not found."""
+        from unittest.mock import patch as mock_patch
+
+        config_patch = models.PipelineConfigPatch(name="Updated Name")
+        with mock_patch("httpx.Client.request", return_value=mock_not_found_response):
+            with pytest.raises(errors.PipelineNotFoundError):
+                pipeline.update(config_patch)
+
+    def test_update_connection_error(self, pipeline, mock_connection_error):
+        """Test pipeline update with connection error."""
+        from unittest.mock import patch as mock_patch
+
+        config_patch = models.PipelineConfigPatch(name="Updated Name")
+        with mock_patch("httpx.Client.request", side_effect=mock_connection_error):
+            with pytest.raises(errors.ConnectionError) as exc_info:
+                pipeline.update(config_patch)
+            assert "Failed to connect to GlassFlow ETL API" in str(exc_info.value)
+
 
 class TestPipelineValidation:
     """Tests for config validation."""
