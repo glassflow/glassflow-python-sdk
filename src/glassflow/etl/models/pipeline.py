@@ -190,9 +190,7 @@ class PipelineConfig(BaseModel):
 
         return v
 
-    def update(
-        self, config_patch: "PipelineConfigPatch"
-    ) -> "PipelineConfig":
+    def update(self, config_patch: "PipelineConfigPatch") -> "PipelineConfig":
         """
         Apply a patch configuration to this pipeline configuration.
 
