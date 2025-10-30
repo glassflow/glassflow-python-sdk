@@ -132,6 +132,7 @@ class Pipeline(APIClient):
         self, config_patch: models.PipelineConfigPatch | dict[str, Any]
     ) -> Pipeline:
         """Updates the pipeline with the given config patch.
+        Pipeline must be stopped or terminated before updating.
 
         Args:
             config_patch: Pipeline configuration patch
@@ -141,9 +142,16 @@ class Pipeline(APIClient):
 
         Raises:
             PipelineNotFoundError: If pipeline is not found
+            PipelineInTransitionError: If pipeline is in transition
+            InvalidStatusTransitionError: If pipeline is not in a state that can be
+                updated
             APIError: If the API request fails
         """
         self.get()  # Get latest config
+        if isinstance(config_patch, dict):
+            config_patch = models.PipelineConfigPatch.model_validate(config_patch)
+        else:
+            config_patch = config_patch
         updated_config = self.config.update(config_patch)
 
         self._request(
@@ -156,6 +164,7 @@ class Pipeline(APIClient):
             ),
             event_name="PipelineUpdated",
         )
+        self.status = models.PipelineStatus.RESUMING
 
         # Update self.config with the updated configuration
         self.config = updated_config

@@ -191,7 +191,7 @@ class PipelineConfig(BaseModel):
         return v
 
     def update(
-        self, config_patch: "PipelineConfigPatch | dict[str, Any]"
+        self, config_patch: "PipelineConfigPatch"
     ) -> "PipelineConfig":
         """
         Apply a patch configuration to this pipeline configuration.
@@ -202,31 +202,26 @@ class PipelineConfig(BaseModel):
         Returns:
             PipelineConfig: A new PipelineConfig instance with the patch applied
         """
-        if isinstance(config_patch, dict):
-            patch = PipelineConfigPatch.model_validate(config_patch)
-        else:
-            patch = config_patch
-
         # Start with a deep copy of the current config
         updated_config = self.model_copy(deep=True)
 
         # Update name if provided
-        if patch.name is not None:
-            updated_config.name = patch.name
+        if config_patch.name is not None:
+            updated_config.name = config_patch.name
 
         # Update source if provided
-        if patch.source is not None:
-            updated_config.source = updated_config.source.update(patch.source)
+        if config_patch.source is not None:
+            updated_config.source = updated_config.source.update(config_patch.source)
 
         # Update join if provided
-        if patch.join is not None:
+        if config_patch.join is not None:
             updated_config.join = (updated_config.join or JoinConfig()).update(
-                patch.join
+                config_patch.join
             )
 
         # Update sink if provided
-        if patch.sink is not None:
-            updated_config.sink = updated_config.sink.update(patch.sink)
+        if config_patch.sink is not None:
+            updated_config.sink = updated_config.sink.update(config_patch.sink)
 
         return updated_config
 

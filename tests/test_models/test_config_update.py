@@ -20,15 +20,6 @@ class TestPipelineConfigUpdate:
         # Original config should be unchanged (immutable)
         assert config.name != "Updated Name"
 
-    def test_update_with_dict(self, valid_config):
-        """Test updating with a dictionary patch."""
-        config = models.PipelineConfig(**valid_config)
-        patch_dict = {"name": "Dict Updated Name"}
-
-        updated = config.update(patch_dict)
-
-        assert updated.name == "Dict Updated Name"
-
     def test_update_source(self, valid_config):
         """Test updating source configuration."""
         config = models.PipelineConfig(**valid_config)
