@@ -5,7 +5,6 @@ from .join import (
     JoinConfigPatch,
     JoinOrientation,
     JoinSourceConfig,
-    JoinSourceConfigPatch,
     JoinType,
 )
 from .pipeline import PipelineConfig, PipelineConfigPatch, PipelineStatus
@@ -24,7 +23,6 @@ from .source import (
     SourceConfigPatch,
     SourceType,
     TopicConfig,
-    TopicConfigPatch,
 )
 
 __all__ = [
@@ -42,6 +40,7 @@ __all__ = [
     "PipelineConfigPatch",
     "PipelineStatus",
     "SinkConfig",
+    "SinkConfigPatch",
     "SinkType",
     "TableMapping",
     "Schema",
@@ -52,10 +51,7 @@ __all__ = [
     "TopicConfig",
     "GlassFlowConfig",
     "SourceConfigPatch",
-    "TopicConfigPatch",
     "KafkaConnectionParamsPatch",
     "DeduplicationConfigPatch",
     "JoinConfigPatch",
-    "JoinSourceConfigPatch",
-    "SinkConfigPatch",
 ]
