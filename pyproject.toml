@@ -5,7 +5,7 @@ description = "GlassFlow Python SDK: Create GlassFlow pipelines between Kafka an
 authors = [
     {name = "GlassFlow", email = "hello@glassflow.dev"}
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.9,<3.14"
 readme = "README.md"
 license = {text = "MIT"}
 keywords = ["clickhouse", "etl", "kafka", "data-pipeline", "glassflow", "streaming", "data-engineering"]
