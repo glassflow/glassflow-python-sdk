@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator, model_validator
 
@@ -39,6 +39,29 @@ class DeduplicationConfig(BaseModel):
     id_field: Optional[str] = Field(default=None)
     id_field_type: Optional[KafkaDataType] = Field(default=None)
     time_window: Optional[str] = Field(default=None)
+
+    def update(self, patch: "DeduplicationConfigPatch") -> "DeduplicationConfig":
+        """Apply a patch to this deduplication config."""
+        update_dict: dict[str, Any] = {}
+
+        # Check each field explicitly - use model_fields_set to distinguish
+        # between "not provided" and "set to None"
+        fields_set = (
+            patch.model_fields_set if hasattr(patch, "model_fields_set") else set()
+        )
+
+        if "enabled" in fields_set or patch.enabled is not None:
+            update_dict["enabled"] = patch.enabled
+        if "id_field" in fields_set:
+            update_dict["id_field"] = patch.id_field
+        if "id_field_type" in fields_set:
+            update_dict["id_field_type"] = patch.id_field_type
+        if "time_window" in fields_set:
+            update_dict["time_window"] = patch.time_window
+
+        if update_dict:
+            return self.model_copy(update=update_dict)
+        return self
 
     @model_validator(mode="before")
     @classmethod
@@ -148,6 +171,13 @@ class KafkaConnectionParams(BaseModel):
             values["mechanism"] = None
         return values
 
+    def update(self, patch: "KafkaConnectionParamsPatch") -> "KafkaConnectionParams":
+        """Apply a patch to this connection params config."""
+        current_dict = self.model_dump()
+        patch_dict = patch.model_dump(exclude_none=True)
+        merged_dict = {**current_dict, **patch_dict}
+        return KafkaConnectionParams.model_validate(merged_dict)
+
 
 class SourceType(CaseInsensitiveStrEnum):
     KAFKA = "kafka"
@@ -159,19 +189,35 @@ class SourceConfig(BaseModel):
     connection_params: KafkaConnectionParams
     topics: List[TopicConfig]
 
+    def update(self, patch: "SourceConfigPatch") -> "SourceConfig":
+        """Apply a patch to this source config."""
+        update_dict: dict[str, Any] = {}
+
+        if patch.type is not None:
+            update_dict["type"] = patch.type
+        if patch.provider is not None:
+            update_dict["provider"] = patch.provider
+
+        # Handle connection_params patch
+        if patch.connection_params is not None:
+            update_dict["connection_params"] = self.connection_params.update(
+                patch.connection_params
+            )
+
+        # Handle topics patch - full replacement only if provided
+        if patch.topics is not None:
+            update_dict["topics"] = patch.topics
+
+        if update_dict:
+            return self.model_copy(update=update_dict)
+        return self
+
 
 class DeduplicationConfigPatch(BaseModel):
     enabled: Optional[bool] = Field(default=None)
     id_field: Optional[str] = Field(default=None)
     id_field_type: Optional[KafkaDataType] = Field(default=None)
     time_window: Optional[str] = Field(default=None)
-
-
-class TopicConfigPatch(BaseModel):
-    consumer_group_initial_offset: Optional[ConsumerGroupOffset] = Field(default=None)
-    name: Optional[str] = Field(default=None)
-    event_schema: Optional[Schema] = Field(default=None)
-    deduplication: Optional[DeduplicationConfigPatch] = Field(default=None)
 
 
 class KafkaConnectionParamsPatch(BaseModel):
@@ -181,10 +227,16 @@ class KafkaConnectionParamsPatch(BaseModel):
     username: Optional[str] = Field(default=None)
     password: Optional[str] = Field(default=None)
     root_ca: Optional[str] = Field(default=None)
+    kerberos_service_name: Optional[str] = Field(default=None)
+    kerberos_keytab: Optional[str] = Field(default=None)
+    kerberos_realm: Optional[str] = Field(default=None)
+    kerberos_config: Optional[str] = Field(default=None)
     skip_auth: Optional[bool] = Field(default=None)
 
 
 class SourceConfigPatch(BaseModel):
+    type: Optional[SourceType] = Field(default=None)
     provider: Optional[str] = Field(default=None)
     connection_params: Optional[KafkaConnectionParamsPatch] = Field(default=None)
-    topics: Optional[List[TopicConfigPatch]] = Field(default=None)
+    # Full replacement only; users must provide complete TopicConfig entries
+    topics: Optional[List[TopicConfig]] = Field(default=None)

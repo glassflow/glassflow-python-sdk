@@ -190,6 +190,39 @@ class PipelineConfig(BaseModel):
 
         return v
 
+    def update(self, config_patch: "PipelineConfigPatch") -> "PipelineConfig":
+        """
+        Apply a patch configuration to this pipeline configuration.
+
+        Args:
+            config_patch: The patch configuration (PipelineConfigPatch or dict)
+
+        Returns:
+            PipelineConfig: A new PipelineConfig instance with the patch applied
+        """
+        # Start with a deep copy of the current config
+        updated_config = self.model_copy(deep=True)
+
+        # Update name if provided
+        if config_patch.name is not None:
+            updated_config.name = config_patch.name
+
+        # Update source if provided
+        if config_patch.source is not None:
+            updated_config.source = updated_config.source.update(config_patch.source)
+
+        # Update join if provided
+        if config_patch.join is not None:
+            updated_config.join = (updated_config.join or JoinConfig()).update(
+                config_patch.join
+            )
+
+        # Update sink if provided
+        if config_patch.sink is not None:
+            updated_config.sink = updated_config.sink.update(config_patch.sink)
+
+        return updated_config
+
 
 class PipelineConfigPatch(BaseModel):
     name: Optional[str] = Field(default=None)

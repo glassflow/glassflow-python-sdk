@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
@@ -64,16 +64,23 @@ class JoinConfig(BaseModel):
             raise ValueError("type is required when join is enabled")
         return v
 
+    def update(self, patch: "JoinConfigPatch") -> "JoinConfig":
+        """Apply a patch to this join config."""
+        update_dict: dict[str, Any] = {}
 
-class JoinSourceConfigPatch(BaseModel):
-    source_id: Optional[str] = Field(default=None)
-    join_key: Optional[str] = Field(default=None)
-    time_window: Optional[str] = Field(default=None)
-    orientation: Optional[JoinOrientation] = Field(default=None)
+        if patch.enabled is not None:
+            update_dict["enabled"] = patch.enabled
+        if patch.type is not None:
+            update_dict["type"] = patch.type
+        if patch.sources is not None:
+            update_dict["sources"] = patch.sources
+
+        if update_dict:
+            return self.model_copy(update=update_dict)
+        return self
 
 
 class JoinConfigPatch(BaseModel):
     enabled: Optional[bool] = Field(default=None)
     type: Optional[JoinType] = Field(default=None)
-    # TODO: How to patch an element in a list?
     sources: Optional[List[JoinSourceConfig]] = Field(default=None)
