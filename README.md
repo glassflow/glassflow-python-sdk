@@ -57,7 +57,7 @@ pipeline_config = {
           "http://my.kafka.broker:9093"
         ],
         "protocol": "PLAINTEXT",
-        "skip_auth": True
+        "mechanism": "NO_AUTH"
       },
       "topics": [
         {
