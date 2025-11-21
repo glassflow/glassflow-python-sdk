@@ -1,5 +1,5 @@
-from typing import Any, List, Optional
 import warnings
+from typing import Any, List, Optional
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator, model_validator
 
@@ -168,8 +168,8 @@ class KafkaConnectionParams(BaseModel):
     skip_auth: bool = Field(
         default=False,
         exclude=True,
-        description="skip_auth is deprecated, use mechanism \"NO_AUTH\" instead or \
-        set skip_tls_verification to True if you want to skip TLS verification"
+        description='skip_auth is deprecated, use mechanism "NO_AUTH" instead or \
+        set skip_tls_verification to True if you want to skip TLS verification',
     )
     skip_tls_verification: bool = Field(default=False)
 
@@ -198,7 +198,7 @@ class KafkaConnectionParams(BaseModel):
                     f"Mechanism is set to {self.mechanism}, but skip_auth is True. \
                     Setting mechanism to NO_AUTH.",
                     category=RuntimeWarning,
-                    stacklevel=1
+                    stacklevel=1,
                 )
             self.mechanism = KafkaMechanism.NO_AUTH
         return self
