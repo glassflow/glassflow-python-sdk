@@ -1,4 +1,5 @@
 from typing import Any, List, Optional
+import warnings
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator, model_validator
 
@@ -18,6 +19,7 @@ class KafkaMechanism(CaseInsensitiveStrEnum):
     SCRAM_SHA_512 = "SCRAM-SHA-512"
     PLAIN = "PLAIN"
     GSSAPI = "GSSAPI"
+    NO_AUTH = "NO_AUTH"
 
 
 class SchemaField(BaseModel):
@@ -163,7 +165,13 @@ class KafkaConnectionParams(BaseModel):
     kerberos_keytab: Optional[str] = Field(default=None)
     kerberos_realm: Optional[str] = Field(default=None)
     kerberos_config: Optional[str] = Field(default=None)
-    skip_auth: bool = Field(default=False)
+    skip_auth: bool = Field(
+        default=False,
+        exclude=True,
+        description="skip_auth is deprecated, use mechanism \"NO_AUTH\" instead or \
+        set skip_tls_verification to True if you want to skip TLS verification"
+    )
+    skip_tls_verification: bool = Field(default=False)
 
     @model_validator(mode="before")
     def empty_str_to_none(values):
@@ -177,6 +185,23 @@ class KafkaConnectionParams(BaseModel):
         patch_dict = patch.model_dump(exclude_none=True)
         merged_dict = {**current_dict, **patch_dict}
         return KafkaConnectionParams.model_validate(merged_dict)
+
+    @model_validator(mode="after")
+    def correct_skip_auth(self) -> "KafkaConnectionParams":
+        """
+        While the skip_auth field is deprecated,
+        we need to make sure the mechanism is NO_AUTH if skip_auth is True
+        """
+        if self.skip_auth:
+            if self.mechanism is not None and self.mechanism != KafkaMechanism.NO_AUTH:
+                warnings.warn(
+                    f"Mechanism is set to {self.mechanism}, but skip_auth is True. \
+                    Setting mechanism to NO_AUTH.",
+                    category=RuntimeWarning,
+                    stacklevel=1
+                )
+            self.mechanism = KafkaMechanism.NO_AUTH
+        return self
 
 
 class SourceType(CaseInsensitiveStrEnum):
