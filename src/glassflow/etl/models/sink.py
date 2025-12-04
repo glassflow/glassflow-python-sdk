@@ -1,16 +1,8 @@
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
 from .base import CaseInsensitiveStrEnum
-from .data_types import ClickhouseDataType
-
-
-class TableMapping(BaseModel):
-    source_id: str
-    field_name: str
-    column_name: str
-    column_type: ClickhouseDataType
 
 
 class SinkType(CaseInsensitiveStrEnum):
@@ -31,7 +23,6 @@ class SinkConfig(BaseModel):
     max_batch_size: int = Field(default=1000)
     max_delay_time: str = Field(default="10m")
     table: str
-    table_mapping: List[TableMapping]
 
     def update(self, patch: "SinkConfigPatch") -> "SinkConfig":
         """Apply a patch to this sink config."""
@@ -64,8 +55,6 @@ class SinkConfig(BaseModel):
             update_dict["max_delay_time"] = patch.max_delay_time
         if patch.table is not None:
             update_dict["table"] = patch.table
-        if patch.table_mapping is not None:
-            update_dict["table_mapping"] = patch.table_mapping
 
         if update_dict:
             return self.model_copy(update=update_dict)
@@ -85,4 +74,3 @@ class SinkConfigPatch(BaseModel):
     max_batch_size: Optional[int] = Field(default=None)
     max_delay_time: Optional[str] = Field(default=None)
     table: Optional[str] = Field(default=None)
-    table_mapping: Optional[List[TableMapping]] = Field(default=None)

@@ -1,5 +1,6 @@
 from .config import GlassFlowConfig
 from .data_types import ClickhouseDataType, KafkaDataType
+from .filter import FilterConfig, FilterConfigPatch
 from .join import (
     JoinConfig,
     JoinConfigPatch,
@@ -7,8 +8,10 @@ from .join import (
     JoinSourceConfig,
     JoinType,
 )
+from .metadata import MetadataConfig
 from .pipeline import PipelineConfig, PipelineConfigPatch, PipelineStatus
-from .sink import SinkConfig, SinkConfigPatch, SinkType, TableMapping
+from .schema import Schema, SchemaField
+from .sink import SinkConfig, SinkConfigPatch, SinkType
 from .source import (
     ConsumerGroupOffset,
     DeduplicationConfig,
@@ -16,9 +19,7 @@ from .source import (
     KafkaConnectionParams,
     KafkaConnectionParamsPatch,
     KafkaMechanism,
-    Schema,
-    SchemaField,
-    SchemaType,
+    KafkaProtocol,
     SourceConfig,
     SourceConfigPatch,
     SourceType,
@@ -29,23 +30,25 @@ __all__ = [
     "ClickhouseDataType",
     "ConsumerGroupOffset",
     "DeduplicationConfig",
+    "FilterConfig",
+    "FilterConfigPatch",
     "KafkaConnectionParams",
     "KafkaDataType",
     "KafkaMechanism",
+    "KafkaProtocol",
     "JoinConfig",
     "JoinOrientation",
     "JoinSourceConfig",
     "JoinType",
+    "MetadataConfig",
     "PipelineConfig",
     "PipelineConfigPatch",
     "PipelineStatus",
     "SinkConfig",
     "SinkConfigPatch",
     "SinkType",
-    "TableMapping",
     "Schema",
     "SchemaField",
-    "SchemaType",
     "SourceConfig",
     "SourceType",
     "TopicConfig",

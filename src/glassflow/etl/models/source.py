@@ -1,7 +1,6 @@
-import warnings
 from typing import Any, List, Optional
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from .base import CaseInsensitiveStrEnum
 from .data_types import KafkaDataType
@@ -20,20 +19,6 @@ class KafkaMechanism(CaseInsensitiveStrEnum):
     PLAIN = "PLAIN"
     GSSAPI = "GSSAPI"
     NO_AUTH = "NO_AUTH"
-
-
-class SchemaField(BaseModel):
-    name: str
-    type: KafkaDataType
-
-
-class SchemaType(CaseInsensitiveStrEnum):
-    JSON = "json"
-
-
-class Schema(BaseModel):
-    type: SchemaType = SchemaType.JSON
-    fields: List[SchemaField]
 
 
 class DeduplicationConfig(BaseModel):
@@ -109,42 +94,8 @@ class ConsumerGroupOffset(CaseInsensitiveStrEnum):
 class TopicConfig(BaseModel):
     consumer_group_initial_offset: ConsumerGroupOffset = ConsumerGroupOffset.LATEST
     name: str
-    event_schema: Schema = Field(alias="schema")
     deduplication: Optional[DeduplicationConfig] = Field(default=DeduplicationConfig())
     replicas: Optional[int] = Field(default=1)
-
-    @field_validator("deduplication")
-    @classmethod
-    def validate_deduplication_id_field(
-        cls, v: DeduplicationConfig, info: ValidationInfo
-    ) -> DeduplicationConfig:
-        """
-        Validate that the deduplication ID field exists in the
-        schema and has matching type.
-        """
-        if v is None or not v.enabled:
-            return v
-
-        # Skip validation if id_field is empty when deduplication is disabled
-        if not v.id_field or v.id_field == "":
-            return v
-
-        # Get the schema from the parent model's data
-        schema = info.data.get("event_schema", {})
-        if isinstance(schema, dict):
-            fields = schema.get("fields", [])
-        else:
-            fields = schema.fields
-
-        # Find the field in the schema
-        field = next((f for f in fields if f.name == v.id_field), None)
-        if not field:
-            raise ValueError(
-                f"Deduplication ID field '{v.id_field}' does not exist in "
-                "the event schema"
-            )
-
-        return v
 
     @field_validator("replicas")
     @classmethod
@@ -165,12 +116,6 @@ class KafkaConnectionParams(BaseModel):
     kerberos_keytab: Optional[str] = Field(default=None)
     kerberos_realm: Optional[str] = Field(default=None)
     kerberos_config: Optional[str] = Field(default=None)
-    skip_auth: bool = Field(
-        default=False,
-        exclude=True,
-        description='skip_auth is deprecated, use mechanism "NO_AUTH" instead or \
-        set skip_tls_verification to True if you want to skip TLS verification',
-    )
     skip_tls_verification: bool = Field(default=False)
 
     @model_validator(mode="before")
@@ -185,23 +130,6 @@ class KafkaConnectionParams(BaseModel):
         patch_dict = patch.model_dump(exclude_none=True)
         merged_dict = {**current_dict, **patch_dict}
         return KafkaConnectionParams.model_validate(merged_dict)
-
-    @model_validator(mode="after")
-    def correct_skip_auth(self) -> "KafkaConnectionParams":
-        """
-        While the skip_auth field is deprecated,
-        we need to make sure the mechanism is NO_AUTH if skip_auth is True
-        """
-        if self.skip_auth:
-            if self.mechanism is not None and self.mechanism != KafkaMechanism.NO_AUTH:
-                warnings.warn(
-                    f"Mechanism is set to {self.mechanism}, but skip_auth is True. \
-                    Setting mechanism to NO_AUTH.",
-                    category=RuntimeWarning,
-                    stacklevel=1,
-                )
-            self.mechanism = KafkaMechanism.NO_AUTH
-        return self
 
 
 class SourceType(CaseInsensitiveStrEnum):
@@ -256,7 +184,7 @@ class KafkaConnectionParamsPatch(BaseModel):
     kerberos_keytab: Optional[str] = Field(default=None)
     kerberos_realm: Optional[str] = Field(default=None)
     kerberos_config: Optional[str] = Field(default=None)
-    skip_auth: Optional[bool] = Field(default=None)
+    skip_tls_verification: Optional[bool] = Field(default=None)
 
 
 class SourceConfigPatch(BaseModel):
