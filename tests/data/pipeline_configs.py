@@ -129,7 +129,7 @@ def get_valid_pipeline_config() -> dict:
                     "source_id": "orders",
                     "name": "skip_sink_field",
                     "type": "string",
-                },
+                }
             ],
         },
     }
