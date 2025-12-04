@@ -1,7 +1,7 @@
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
 
 class MetadataConfig(BaseModel):
-    tags: List[str] = Field(default=[])
+    tags: Optional[List[str]] = Field(default=None)

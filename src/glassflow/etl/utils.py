@@ -8,18 +8,15 @@ def migrate_pipeline_v1_to_v2(pipeline: dict[str, Any]) -> models.PipelineConfig
     schema_fields = {}
     for topic in pipeline["source"]["topics"]:
         for field in topic["schema"]["fields"]:
-            schema_fields[f"{topic["name"]}_{field["name"]}"] = {
+            schema_fields[f"{topic['name']}_{field['name']}"] = {
                 "source_id": topic["name"],
                 "name": field["name"],
-                "type": field["type"]
+                "type": field["type"],
             }
 
     for field in pipeline["sink"]["table_mapping"]:
-        schema_fields[f"{field["source_id"]}_{field["field_name"]}"].update(
-            {
-                "column_name": field["column_name"],
-                "column_type": field["column_type"]
-            }
+        schema_fields[f"{field['source_id']}_{field['field_name']}"].update(
+            {"column_name": field["column_name"], "column_type": field["column_type"]}
         )
 
     schema = models.Schema(
