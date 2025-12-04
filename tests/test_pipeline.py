@@ -315,11 +315,12 @@ class TestPipelineTracking:
         assert pipeline._tracking_info() == {
             "pipeline_id": valid_config["pipeline_id"],
             "join_enabled": True,
+            "filter_enabled": True,
             "deduplication_enabled": True,
             "source_auth_method": "SCRAM-SHA-256",
             "source_security_protocol": "SASL_SSL",
             "source_root_ca_provided": True,
-            "source_skip_auth": False,
+            "source_skip_tls_verification": False,
         }
 
         pipeline = Pipeline(
@@ -329,11 +330,12 @@ class TestPipelineTracking:
         assert pipeline._tracking_info() == {
             "pipeline_id": valid_config_with_dedup_disabled["pipeline_id"],
             "join_enabled": True,
+            "filter_enabled": True,
             "deduplication_enabled": False,
             "source_auth_method": "SCRAM-SHA-256",
             "source_security_protocol": "SASL_SSL",
             "source_root_ca_provided": True,
-            "source_skip_auth": False,
+            "source_skip_tls_verification": False,
         }
 
         pipeline = Pipeline(
@@ -342,11 +344,12 @@ class TestPipelineTracking:
         assert pipeline._tracking_info() == {
             "pipeline_id": valid_config_without_joins["pipeline_id"],
             "join_enabled": False,
+            "filter_enabled": False,
             "deduplication_enabled": True,
             "source_auth_method": "SCRAM-SHA-256",
             "source_security_protocol": "SASL_SSL",
             "source_root_ca_provided": True,
-            "source_skip_auth": False,
+            "source_skip_tls_verification": False,
         }
 
         pipeline = Pipeline(
@@ -357,11 +360,12 @@ class TestPipelineTracking:
         assert pipeline._tracking_info() == {
             "pipeline_id": pipeline_id,
             "join_enabled": False,
+            "filter_enabled": False,
             "deduplication_enabled": False,
             "source_auth_method": "SCRAM-SHA-256",
             "source_security_protocol": "SASL_SSL",
             "source_root_ca_provided": True,
-            "source_skip_auth": False,
+            "source_skip_tls_verification": False,
         }
 
 

@@ -357,7 +357,7 @@ class Pipeline(APIClient):
 
         # Extract join info
         join_enabled = getattr(self.config.join, "enabled", False)
-
+        filter_enabled = getattr(self.config.filter, "enabled", False)
         # Extract deduplication info
         deduplication_enabled = any(
             t.deduplication and t.deduplication.enabled
@@ -368,18 +368,19 @@ class Pipeline(APIClient):
         conn_params = self.config.source.connection_params
 
         root_ca_provided = conn_params.root_ca is not None
-        skip_auth = conn_params.skip_auth
+        skip_tls_verification = conn_params.skip_tls_verification
         protocol = str(conn_params.protocol)
         mechanism = str(conn_params.mechanism)
 
         return {
             "pipeline_id": self.config.pipeline_id,
             "join_enabled": join_enabled,
+            "filter_enabled": filter_enabled,
             "deduplication_enabled": deduplication_enabled,
             "source_auth_method": mechanism,
             "source_security_protocol": protocol,
             "source_root_ca_provided": root_ca_provided,
-            "source_skip_auth": skip_auth,
+            "source_skip_tls_verification": skip_tls_verification,
         }
 
     def _track_event(self, event_name: str, **kwargs: Any) -> None:
