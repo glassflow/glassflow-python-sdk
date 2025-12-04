@@ -177,12 +177,6 @@ class TestSourceConfigUpdate:
         source = models.SourceConfig(**valid_config["source"])
         new_topic = models.TopicConfig(
             name="new-topic",
-            schema=models.Schema(
-                type=models.SchemaType.JSON,
-                fields=[
-                    models.SchemaField(name="id", type=models.KafkaDataType.STRING)
-                ],
-            ),
         )
         patch = models.SourceConfigPatch(topics=[new_topic])
 
@@ -230,24 +224,6 @@ class TestSinkConfigUpdate:
         assert updated.username == "new-user"
         assert updated.password == "new-password"
         assert updated.host == sink.host
-
-    def test_update_table_mapping(self, valid_config):
-        """Test updating table mapping."""
-        sink = models.SinkConfig(**valid_config["sink"])
-        new_mapping = [
-            models.TableMapping(
-                source_id="test",
-                field_name="id",
-                column_name="id",
-                column_type=models.ClickhouseDataType.STRING,
-            )
-        ]
-        patch = models.SinkConfigPatch(table_mapping=new_mapping)
-
-        updated = sink.update(patch)
-
-        assert len(updated.table_mapping) == 1
-        assert updated.table_mapping[0].source_id == "test"
 
     def test_update_multiple_sink_fields(self, valid_config):
         """Test updating multiple sink fields at once."""

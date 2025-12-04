@@ -26,23 +26,6 @@ def get_valid_pipeline_config() -> dict:
                     "consumer_group_initial_offset": "earliest",
                     "name": "user_logins",
                     "replicas": 3,
-                    "schema": {
-                        "type": "json",
-                        "fields": [
-                            {
-                                "name": "session_id",
-                                "type": "string",
-                            },
-                            {
-                                "name": "user_id",
-                                "type": "string",
-                            },
-                            {
-                                "name": "timestamp",
-                                "type": "String",
-                            },
-                        ],
-                    },
                     "deduplication": {
                         "enabled": True,
                         "id_field": "session_id",
@@ -54,23 +37,6 @@ def get_valid_pipeline_config() -> dict:
                     "consumer_group_initial_offset": "earliest",
                     "name": "orders",
                     "replicas": 1,
-                    "schema": {
-                        "type": "json",
-                        "fields": [
-                            {
-                                "name": "user_id",
-                                "type": "string",
-                            },
-                            {
-                                "name": "order_id",
-                                "type": "string",
-                            },
-                            {
-                                "name": "timestamp",
-                                "type": "string",
-                            },
-                        ],
-                    },
                     "deduplication": {
                         "enabled": True,
                         "id_field": "order_id",
@@ -98,6 +64,10 @@ def get_valid_pipeline_config() -> dict:
                 },
             ],
         },
+        "filter": {
+            "enabled": True,
+            "expression": "user_id = '123'",
+        },
         "sink": {
             "type": "clickhouse",
             "provider": "aiven",
@@ -110,36 +80,55 @@ def get_valid_pipeline_config() -> dict:
             "secure": True,
             "max_batch_size": 1,
             "table": "user_orders",
-            "table_mapping": [
+        },
+        "schema": {
+            "fields": [
                 {
                     "source_id": "user_logins",
-                    "field_name": "session_id",
+                    "name": "session_id",
+                    "type": "string",
                     "column_name": "session_id",
-                    "column_type": "string",
+                    "column_type": "String",
                 },
                 {
                     "source_id": "user_logins",
-                    "field_name": "user_id",
+                    "name": "user_id",
+                    "type": "string",
                     "column_name": "user_id",
-                    "column_type": "STRING",
+                    "column_type": "String",
                 },
                 {
                     "source_id": "orders",
-                    "field_name": "order_id",
+                    "name": "order_id",
+                    "type": "string",
                     "column_name": "order_id",
-                    "column_type": "string",
+                    "column_type": "String",
+                },
+                {
+                    "source_id": "orders",
+                    "name": "user_id",
+                    "type": "string",
+                    "column_name": "user_id",
+                    "column_type": "String",
                 },
                 {
                     "source_id": "user_logins",
-                    "field_name": "timestamp",
+                    "name": "timestamp",
+                    "type": "string",
                     "column_name": "login_at",
                     "column_type": "DateTime",
                 },
                 {
                     "source_id": "orders",
-                    "field_name": "timestamp",
+                    "name": "timestamp",
+                    "type": "string",
                     "column_name": "order_placed_at",
                     "column_type": "DateTime",
+                },
+                {
+                    "source_id": "orders",
+                    "name": "skip_sink_field",
+                    "type": "string",
                 },
             ],
         },
@@ -168,23 +157,6 @@ def get_valid_config_without_joins() -> dict:
                 {
                     "consumer_group_initial_offset": "earliest",
                     "name": "user_logins",
-                    "schema": {
-                        "type": "json",
-                        "fields": [
-                            {
-                                "name": "session_id",
-                                "type": "string",
-                            },
-                            {
-                                "name": "user_id",
-                                "type": "string",
-                            },
-                            {
-                                "name": "timestamp",
-                                "type": "String",
-                            },
-                        ],
-                    },
                     "deduplication": {
                         "enabled": True,
                         "id_field": "session_id",
@@ -206,22 +178,27 @@ def get_valid_config_without_joins() -> dict:
             "secure": True,
             "max_batch_size": 1,
             "table": "user_orders",
-            "table_mapping": [
+        },
+        "schema": {
+            "fields": [
                 {
                     "source_id": "user_logins",
-                    "field_name": "session_id",
+                    "name": "session_id",
+                    "type": "string",
                     "column_name": "session_id",
-                    "column_type": "string",
+                    "column_type": "String",
                 },
                 {
                     "source_id": "user_logins",
-                    "field_name": "user_id",
+                    "name": "user_id",
+                    "type": "string",
                     "column_name": "user_id",
-                    "column_type": "STRING",
+                    "column_type": "String",
                 },
                 {
                     "source_id": "user_logins",
-                    "field_name": "timestamp",
+                    "name": "timestamp",
+                    "type": "string",
                     "column_name": "login_at",
                     "column_type": "DateTime",
                 },
@@ -269,7 +246,9 @@ def get_invalid_config() -> dict:
             "username": "default",
             "password": "pass",
             "table": "test_table",
-            "table_mapping": [],  # Empty table mapping should trigger validation error
+        },
+        "schema": {
+            "fields": [],  # Empty schema fields should trigger validation error
         },
     }
 

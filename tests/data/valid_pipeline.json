@@ -20,23 +20,6 @@
             {
                 "consumer_group_initial_offset": "earliest",
                 "name": "user_logins",
-                "schema": {
-                    "type": "json",
-                    "fields": [
-                        {
-                            "name": "session_id",
-                            "type": "string"
-                        },
-                        {
-                            "name": "user_id",
-                            "type": "string"
-                        },
-                        {
-                            "name": "timestamp",
-                            "type": "string"
-                        }
-                    ]
-                },
                 "deduplication": {
                     "enabled": true,
                     "id_field": "session_id",
@@ -47,23 +30,6 @@
             {
                 "consumer_group_initial_offset": "earliest",
                 "name": "orders",
-                "schema": {
-                    "type": "json",
-                    "fields": [
-                        {
-                            "name": "user_id",
-                            "type": "string"
-                        },
-                        {
-                            "name": "order_id",
-                            "type": "string"
-                        },
-                        {
-                            "name": "timestamp",
-                            "type": "string"
-                        }
-                    ]
-                },
                 "deduplication": {
                     "enabled": true,
                     "id_field": "order_id",
@@ -91,6 +57,10 @@
             }
         ]
     },
+    "filter": {
+        "enabled": true,
+        "expression": "user_id = '123'"
+    },
     "sink": {
         "type": "clickhouse",
         "provider": "aiven",
@@ -103,37 +73,56 @@
         "secure": true,
         "max_batch_size": 1,
         "max_delay_time": "10m",
-        "table": "user_orders",
-        "table_mapping": [
+        "table": "user_orders"
+    },
+    "schema": {
+        "fields": [
             {
                 "source_id": "user_logins",
-                "field_name": "session_id",
+                "name": "session_id",
+                "type": "string",
                 "column_name": "session_id",
                 "column_type": "String"
             },
             {
                 "source_id": "user_logins",
-                "field_name": "user_id",
+                "name": "user_id",
+                "type": "string",
                 "column_name": "user_id",
                 "column_type": "String"
             },
             {
                 "source_id": "orders",
-                "field_name": "order_id",
+                "name": "order_id",
+                "type": "string",
                 "column_name": "order_id",
                 "column_type": "String"
             },
             {
+                "source_id": "orders",
+                "name": "user_id",
+                "type": "string",
+                "column_name": "user_id",
+                "column_type": "String"
+            },
+            {
                 "source_id": "user_logins",
-                "field_name": "timestamp",
+                "name": "timestamp",
+                "type": "string",
                 "column_name": "login_at",
                 "column_type": "DateTime"
             },
             {
                 "source_id": "orders",
-                "field_name": "timestamp",
+                "name": "timestamp",
+                "type": "string",
                 "column_name": "order_placed_at",
                 "column_type": "DateTime"
+            },
+            {
+                "source_id": "orders",
+                "name": "skip_sink_field",
+                "type": "string"
             }
         ]
     }

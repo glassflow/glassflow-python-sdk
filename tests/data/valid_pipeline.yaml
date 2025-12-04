@@ -12,6 +12,9 @@ join:
   type: temporal
 name: Test Pipeline
 pipeline_id: test-pipeline
+filter:
+  enabled: true
+  expression: user_id = '123'
 sink:
   database: default
   host: <host>
@@ -23,27 +26,6 @@ sink:
   provider: aiven
   secure: true
   table: user_orders
-  table_mapping:
-  - column_name: session_id
-    column_type: String
-    field_name: session_id
-    source_id: user_logins
-  - column_name: user_id
-    column_type: String
-    field_name: user_id
-    source_id: user_logins
-  - column_name: order_id
-    column_type: String
-    field_name: order_id
-    source_id: orders
-  - column_name: login_at
-    column_type: DateTime
-    field_name: timestamp
-    source_id: user_logins
-  - column_name: order_placed_at
-    column_type: DateTime
-    field_name: timestamp
-    source_id: orders
   type: clickhouse
   username: <user>
 source:
@@ -66,15 +48,6 @@ source:
       id_field_type: string
       time_window: 12h
     name: user_logins
-    schema:
-      fields:
-      - name: session_id
-        type: string
-      - name: user_id
-        type: string
-      - name: timestamp
-        type: string
-      type: json
   - consumer_group_initial_offset: earliest
     deduplication:
       enabled: true
@@ -82,13 +55,39 @@ source:
       id_field_type: string
       time_window: 12h
     name: orders
-    schema:
-      fields:
-      - name: user_id
-        type: string
-      - name: order_id
-        type: string
-      - name: timestamp
-        type: string
-      type: json
   type: kafka
+schema:
+  fields:
+  - column_name: session_id
+    column_type: String
+    name: session_id
+    source_id: user_logins
+    type: string
+  - column_name: user_id
+    column_type: String
+    name: user_id
+    source_id: user_logins
+    type: string
+  - column_name: order_id
+    column_type: String
+    name: order_id
+    source_id: orders
+    type: string
+  - column_name: user_id
+    column_type: String
+    name: user_id
+    source_id: orders
+    type: string
+  - column_name: login_at
+    column_type: DateTime
+    name: timestamp
+    source_id: user_logins
+    type: string
+  - column_name: order_placed_at
+    column_type: DateTime
+    name: timestamp
+    source_id: orders
+    type: string
+  - name: skip_sink_field
+    source_id: orders
+    type: string
