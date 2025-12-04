@@ -33,7 +33,7 @@ class PipelineConfig(BaseModel):
     filter: Optional[FilterConfig] = Field(default=FilterConfig())
     metadata: Optional[MetadataConfig] = Field(default=MetadataConfig())
     sink: SinkConfig
-    schema: Schema
+    pipeline_schema: Schema = Field(alias="schema")
 
     @field_validator("pipeline_id")
     @classmethod
@@ -63,7 +63,7 @@ class PipelineConfig(BaseModel):
 
         # Validate schema
         topic_names = [topic.name for topic in self.source.topics]
-        for field in self.schema.fields:
+        for field in self.pipeline_schema.fields:
             if field.source_id not in topic_names:
                 raise ValueError(
                     f"Source '{field.source_id}' does not exist in any topic"
@@ -74,7 +74,7 @@ class PipelineConfig(BaseModel):
             if topic.deduplication is None or not topic.deduplication.enabled:
                 continue
 
-            if not self.schema.is_field_in_schema(
+            if not self.pipeline_schema.is_field_in_schema(
                 topic.deduplication.id_field, topic.name
             ):
                 raise ValueError(
@@ -92,7 +92,7 @@ class PipelineConfig(BaseModel):
                         "topic"
                     )
 
-                if not self.schema.is_field_in_schema(
+                if not self.pipeline_schema.is_field_in_schema(
                     join_source.join_key,
                     join_source.source_id,
                 ):
@@ -141,8 +141,8 @@ class PipelineConfig(BaseModel):
             updated_config.sink = updated_config.sink.update(config_patch.sink)
 
         # Update schema if provided
-        if config_patch.schema is not None:
-            updated_config.schema = config_patch.schema
+        if config_patch.pipeline_schema is not None:
+            updated_config.pipeline_schema = config_patch.pipeline_schema
 
         if config_patch.metadata is not None:
             updated_config.metadata = config_patch.metadata
@@ -155,6 +155,6 @@ class PipelineConfigPatch(BaseModel):
     join: Optional[JoinConfigPatch] = Field(default=None)
     filter: Optional[FilterConfigPatch] = Field(default=None)
     metadata: Optional[MetadataConfig] = Field(default=None)
-    schema: Optional[Schema] = Field(default=None)
+    pipeline_schema: Optional[Schema] = Field(default=None, alias="schema")
     sink: Optional[SinkConfigPatch] = Field(default=None)
     source: Optional[SourceConfigPatch] = Field(default=None)
