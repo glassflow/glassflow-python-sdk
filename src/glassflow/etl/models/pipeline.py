@@ -1,12 +1,13 @@
 import re
-from typing import Any, Optional
+from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from ..errors import InvalidDataTypeMappingError
 from .base import CaseInsensitiveStrEnum
-from .data_types import kafka_to_clickhouse_data_type_mappings
+from .filter import FilterConfig, FilterConfigPatch
 from .join import JoinConfig, JoinConfigPatch
+from .metadata import MetadataConfig
+from .schema import Schema
 from .sink import SinkConfig, SinkConfigPatch
 from .source import SourceConfig, SourceConfigPatch
 
@@ -24,11 +25,15 @@ class PipelineStatus(CaseInsensitiveStrEnum):
 
 
 class PipelineConfig(BaseModel):
+    version: str = Field(default="2.0.0")
     pipeline_id: str
     name: Optional[str] = Field(default=None)
     source: SourceConfig
     join: Optional[JoinConfig] = Field(default=JoinConfig())
+    filter: Optional[FilterConfig] = Field(default=FilterConfig())
+    metadata: Optional[MetadataConfig] = Field(default=MetadataConfig())
     sink: SinkConfig
+    pipeline_schema: Schema = Field(alias="schema")
 
     @field_validator("pipeline_id")
     @classmethod
@@ -48,147 +53,55 @@ class PipelineConfig(BaseModel):
         return v
 
     @model_validator(mode="after")
-    def set_pipeline_name(self) -> "PipelineConfig":
+    def validate_config(self) -> "PipelineConfig":
         """
-        If name is not provided, use the pipeline_id and replace hyphens
-        with spaces.
+        Set pipeline name if not provided and validate configuration.
         """
+        # Set pipeline name if not provided
         if self.name is None:
             self.name = self.pipeline_id.replace("-", " ").title()
+
+        # Validate schema
+        topic_names = [topic.name for topic in self.source.topics]
+        for field in self.pipeline_schema.fields:
+            if field.source_id not in topic_names:
+                raise ValueError(
+                    f"Source '{field.source_id}' does not exist in any topic"
+                )
+
+        # Validate deduplication ID fields
+        for topic in self.source.topics:
+            if topic.deduplication is None or not topic.deduplication.enabled:
+                continue
+
+            if not self.pipeline_schema.is_field_in_schema(
+                topic.deduplication.id_field, topic.name
+            ):
+                raise ValueError(
+                    f"Deduplication id_field '{topic.deduplication.id_field}' "
+                    f"not found in schema from source '{topic.name}'"
+                )
+
+        # Validate join configuration
+        if self.join and self.join.enabled:
+            # Validate each source in the join config
+            for join_source in self.join.sources:
+                if join_source.source_id not in topic_names:
+                    raise ValueError(
+                        f"Join source '{join_source.source_id}' does not exist in any "
+                        "topic"
+                    )
+
+                if not self.pipeline_schema.is_field_in_schema(
+                    join_source.join_key,
+                    join_source.source_id,
+                ):
+                    raise ValueError(
+                        f"Join key '{join_source.join_key}' does not exist in source "
+                        f"'{join_source.source_id}' schema"
+                    )
+
         return self
-
-    @field_validator("join")
-    @classmethod
-    def validate_join_config(
-        cls,
-        v: Optional[JoinConfig],
-        info: Any,
-    ) -> Optional[JoinConfig]:
-        if not v or not v.enabled:
-            return v
-
-        # Get the source topics from the parent model's data
-        source = info.data.get("source", {})
-        if isinstance(source, dict):
-            source_topics = source.get("topics", [])
-        else:
-            source_topics = source.topics
-        if not source_topics:
-            return v
-
-        # Validate each source in the join config
-        for source in v.sources:
-            # Check if source_id exists in any topic
-            source_exists = any(
-                topic.name == source.source_id for topic in source_topics
-            )
-            if not source_exists:
-                raise ValueError(
-                    f"Source ID '{source.source_id}' does not exist in any topic"
-                )
-
-            # Find the topic and check if join_key exists in its schema
-            topic = next((t for t in source_topics if t.name == source.source_id), None)
-            if not topic:
-                continue
-
-            field_exists = any(
-                field.name == source.join_key for field in topic.event_schema.fields
-            )
-            if not field_exists:
-                raise ValueError(
-                    f"Join key '{source.join_key}' does not exist in source "
-                    f"'{source.source_id}' schema"
-                )
-
-        return v
-
-    @field_validator("sink")
-    @classmethod
-    def validate_sink_config(cls, v: SinkConfig, info: Any) -> SinkConfig:
-        # Get the source topics from the parent model's data
-        source = info.data.get("source", {})
-        if isinstance(source, dict):
-            source_topics = source.get("topics", [])
-        else:
-            source_topics = source.topics
-        if not source_topics:
-            return v
-
-        # Validate each table mapping
-        for mapping in v.table_mapping:
-            # Check if source_id exists in any topic
-            source_exists = any(
-                topic.name == mapping.source_id for topic in source_topics
-            )
-            if not source_exists:
-                raise ValueError(
-                    f"Source ID '{mapping.source_id}' does not exist in any topic"
-                )
-
-            # Find the topic and check if field_name exists in its schema
-            topic = next(
-                (t for t in source_topics if t.name == mapping.source_id), None
-            )
-            if not topic:
-                continue
-
-            field_exists = any(
-                field.name == mapping.field_name for field in topic.event_schema.fields
-            )
-            if not field_exists:
-                raise ValueError(
-                    f"Field '{mapping.field_name}' does not exist in source "
-                    f"'{mapping.source_id}' event schema"
-                )
-
-        return v
-
-    @field_validator("sink")
-    @classmethod
-    def validate_data_type_compatibility(cls, v: SinkConfig, info: Any) -> SinkConfig:
-        # Get the source topics from the parent model's data
-        source = info.data.get("source", {})
-        if isinstance(source, dict):
-            source_topics = source.get("topics", [])
-        else:
-            source_topics = source.topics
-        if not source_topics:
-            return v
-
-        # Validate each table mapping
-        for mapping in v.table_mapping:
-            # Find the topic
-            topic = next(
-                (t for t in source_topics if t.name == mapping.source_id), None
-            )
-            if not topic:
-                continue
-
-            # Find the source field
-            source_field = next(
-                (f for f in topic.event_schema.fields if f.name == mapping.field_name),
-                None,
-            )
-            if not source_field:
-                continue
-
-            # Get the source and target data types
-            source_type = source_field.type
-            target_type = mapping.column_type
-
-            # Check if the target type is compatible with the source type
-            compatible_types = kafka_to_clickhouse_data_type_mappings.get(
-                source_type, []
-            )
-            if target_type not in compatible_types:
-                raise InvalidDataTypeMappingError(
-                    f"Data type '{target_type}' is not compatible with source type "
-                    f"'{source_type}' for field '{mapping.field_name}' in source "
-                    f"'{mapping.source_id}'"
-                )
-
-        return v
 
     def update(self, config_patch: "PipelineConfigPatch") -> "PipelineConfig":
         """
@@ -217,15 +130,31 @@ class PipelineConfig(BaseModel):
                 config_patch.join
             )
 
+        # Update filter if provided
+        if config_patch.filter is not None:
+            updated_config.filter = (updated_config.filter or FilterConfig()).update(
+                config_patch.filter
+            )
+
         # Update sink if provided
         if config_patch.sink is not None:
             updated_config.sink = updated_config.sink.update(config_patch.sink)
+
+        # Update schema if provided
+        if config_patch.pipeline_schema is not None:
+            updated_config.pipeline_schema = config_patch.pipeline_schema
+
+        if config_patch.metadata is not None:
+            updated_config.metadata = config_patch.metadata
 
         return updated_config
 
 
 class PipelineConfigPatch(BaseModel):
     name: Optional[str] = Field(default=None)
-    source: Optional[SourceConfigPatch] = Field(default=None)
     join: Optional[JoinConfigPatch] = Field(default=None)
+    filter: Optional[FilterConfigPatch] = Field(default=None)
+    metadata: Optional[MetadataConfig] = Field(default=None)
+    pipeline_schema: Optional[Schema] = Field(default=None, alias="schema")
     sink: Optional[SinkConfigPatch] = Field(default=None)
+    source: Optional[SourceConfigPatch] = Field(default=None)

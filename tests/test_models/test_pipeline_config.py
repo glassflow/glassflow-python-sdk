@@ -26,6 +26,7 @@ class TestPipelineConfig:
             source=valid_config["source"],
             join=valid_config["join"],
             sink=valid_config["sink"],
+            schema=valid_config["schema"],
         )
         assert config.pipeline_id == "test-pipeline-123a"
 
@@ -36,6 +37,7 @@ class TestPipelineConfig:
                 source=valid_config["source"],
                 join=valid_config["join"],
                 sink=valid_config["sink"],
+                schema=valid_config["schema"],
             )
         assert "pipeline_id cannot be empty" in str(exc_info.value)
 
@@ -45,6 +47,7 @@ class TestPipelineConfig:
                 source=valid_config["source"],
                 join=valid_config["join"],
                 sink=valid_config["sink"],
+                schema=valid_config["schema"],
             )
         assert (
             "pipeline_id can only contain lowercase letters, numbers, and hyphens"
@@ -57,6 +60,7 @@ class TestPipelineConfig:
                 source=valid_config["source"],
                 join=valid_config["join"],
                 sink=valid_config["sink"],
+                schema=valid_config["schema"],
             )
         assert "pipeline_id cannot be longer than 40 characters" in str(exc_info.value)
 
@@ -66,6 +70,7 @@ class TestPipelineConfig:
                 source=valid_config["source"],
                 join=valid_config["join"],
                 sink=valid_config["sink"],
+                schema=valid_config["schema"],
             )
         assert "pipeline_id must start with a lowercase alphanumeric" in str(
             exc_info.value
@@ -77,6 +82,7 @@ class TestPipelineConfig:
                 source=valid_config["source"],
                 join=valid_config["join"],
                 sink=valid_config["sink"],
+                schema=valid_config["schema"],
             )
         assert "pipeline_id must end with a lowercase alphanumeric" in str(
             exc_info.value
@@ -90,6 +96,7 @@ class TestPipelineConfig:
             source=valid_config["source"],
             join=valid_config["join"],
             sink=valid_config["sink"],
+            schema=valid_config["schema"],
         )
         assert config.pipeline_id == "test-pipeline"
         assert config.name == "My Custom Pipeline Name"
@@ -101,6 +108,7 @@ class TestPipelineConfig:
             source=valid_config["source"],
             join=valid_config["join"],
             sink=valid_config["sink"],
+            schema=valid_config["schema"],
         )
         assert config.pipeline_id == "test-pipeline"
         assert config.name == "Test Pipeline"
