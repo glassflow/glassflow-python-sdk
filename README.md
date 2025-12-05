@@ -49,6 +49,7 @@ client = Client(host="your-glassflow-etl-url")
 
 ```python
 pipeline_config = {
+    "version": "v2",
     "pipeline_id": "my-pipeline-id",
     "source": {
       "type": "kafka",
@@ -63,31 +64,6 @@ pipeline_config = {
         {
           "consumer_group_initial_offset": "latest",
           "name": "users",
-          "schema": {
-            "type": "json",
-            "fields": [
-              {
-                "name": "event_id",
-                "type": "string"
-              },
-              {
-                "name": "user_id",
-                "type": "string"
-              },
-              {
-                "name": "name",
-                "type": "string"
-              },
-              {
-                "name": "email",
-                "type": "string"
-              },
-              {
-                "name": "created_at",
-                "type": "string"
-              }
-            ]
-          },
           "deduplication": {
             "enabled": True,
             "id_field": "event_id",
@@ -110,11 +86,14 @@ pipeline_config = {
       "secure": False,
       "max_batch_size": 1000,
       "max_delay_time": "30s",
-      "table": "users_dedup",
-      "table_mapping": [
+      "table": "users_dedup"
+    },
+    "schema": {
+      "fields": [
         {
           "source_id": "users",
-          "field_name": "event_id",
+          "name": "event_id",
+          "type": "string",
           "column_name": "event_id",
           "column_type": "UUID"
         },
@@ -126,19 +105,22 @@ pipeline_config = {
         },
         {
           "source_id": "users",
-          "field_name": "created_at",
+          "name": "created_at",
+          "type": "string",
           "column_name": "created_at",
           "column_type": "DateTime"
         },
         {
           "source_id": "users",
-          "field_name": "name",
+          "name": "name",
+          "type": "string",
           "column_name": "name",
           "column_type": "String"
         },
         {
           "source_id": "users",
-          "field_name": "email",
+          "name": "email",
+          "type": "string",
           "column_name": "email",
           "column_type": "String"
         }

@@ -25,7 +25,7 @@ class PipelineStatus(CaseInsensitiveStrEnum):
 
 
 class PipelineConfig(BaseModel):
-    version: str = Field(default="2.0.0")
+    version: str = Field(default="v2")
     pipeline_id: str
     name: Optional[str] = Field(default=None)
     source: SourceConfig
