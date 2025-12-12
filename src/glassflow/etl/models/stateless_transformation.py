@@ -67,6 +67,9 @@ class StatelessTransformationConfig(BaseModel):
         if patch.config is not None:
             update_dict["config"] = patch.config
 
+        if update_dict:
+            return self.model_copy(update=update_dict)
+
         return self
 
 
