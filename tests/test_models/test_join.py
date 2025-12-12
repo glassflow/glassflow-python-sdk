@@ -58,5 +58,6 @@ class TestJoinConfig:
                 join=scenario["join"](valid_config),
                 sink=valid_config["sink"],
                 schema=valid_config["schema"],
+                stateless_transformation=valid_config["stateless_transformation"],
             )
         assert scenario["error_message"] in str(exc_info.value)

@@ -27,6 +27,7 @@ class TestPipelineConfig:
             join=valid_config["join"],
             sink=valid_config["sink"],
             schema=valid_config["schema"],
+            stateless_transformation=valid_config["stateless_transformation"],
         )
         assert config.pipeline_id == "test-pipeline-123a"
 
@@ -97,6 +98,7 @@ class TestPipelineConfig:
             join=valid_config["join"],
             sink=valid_config["sink"],
             schema=valid_config["schema"],
+            stateless_transformation=valid_config["stateless_transformation"],
         )
         assert config.pipeline_id == "test-pipeline"
         assert config.name == "My Custom Pipeline Name"
@@ -109,6 +111,7 @@ class TestPipelineConfig:
             join=valid_config["join"],
             sink=valid_config["sink"],
             schema=valid_config["schema"],
+            stateless_transformation=valid_config["stateless_transformation"],
         )
         assert config.pipeline_id == "test-pipeline"
         assert config.name == "Test Pipeline"

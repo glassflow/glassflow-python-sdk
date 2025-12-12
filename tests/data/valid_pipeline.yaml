@@ -15,6 +15,15 @@ pipeline_id: test-pipeline
 filter:
   enabled: true
   expression: user_id = '123'
+stateless_transformation:
+  enabled: true
+  id: my_transformation
+  type: expr_lang_transform
+  config:
+    transform:
+      - expression: upper(user_id)
+        output_name: upper_user_id
+        output_type: string
 sink:
   database: default
   host: <host>
@@ -73,9 +82,7 @@ schema:
     name: order_id
     source_id: orders
     type: string
-  - column_name: user_id
-    column_type: String
-    name: user_id
+  - name: user_id
     source_id: orders
     type: string
   - column_name: login_at
@@ -91,3 +98,8 @@ schema:
   - name: skip_sink_field
     source_id: orders
     type: string
+  - name: upper_user_id
+    source_id: my_transformation
+    type: string
+    column_name: upper_user_id
+    column_type: String

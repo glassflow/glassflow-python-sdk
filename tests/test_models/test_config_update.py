@@ -17,6 +17,11 @@ class TestPipelineConfigUpdate:
         assert updated.pipeline_id == config.pipeline_id
         assert updated.source == config.source
         assert updated.sink == config.sink
+        assert updated.stateless_transformation == config.stateless_transformation
+        assert updated.join == config.join
+        assert updated.filter == config.filter
+        assert updated.metadata == config.metadata
+        assert updated.pipeline_schema == config.pipeline_schema
         # Original config should be unchanged (immutable)
         assert config.name != "Updated Name"
 
@@ -111,6 +116,49 @@ class TestPipelineConfigUpdate:
         assert updated.name == "Multi Update"
         assert updated.source.provider == "updated-provider"
         assert updated.sink.host == "updated-host"
+
+    def test_update_filter(self, valid_config):
+        """Test updating filter configuration."""
+        config = models.PipelineConfig(**valid_config)
+        patch = models.PipelineConfigPatch(
+            filter=models.FilterConfigPatch(expression="user_id = '321'")
+        )
+
+        updated = config.update(patch)
+
+        assert updated.filter.expression == "user_id = '321'"
+        assert updated.filter.enabled is True
+
+    def test_update_stateless_transformation(self, valid_config):
+        """Test updating stateless transformation configuration."""
+        config = models.PipelineConfig(**valid_config)
+        patch = models.PipelineConfigPatch(
+            stateless_transformation=models.StatelessTransformationConfigPatch(
+                config={
+                    "transform": [
+                        {
+                            "expression": "lower(user_id)",
+                            "output_name": "lower_user_id",
+                            "output_type": "string",
+                        }
+                    ]
+                }
+            )
+        )
+
+        updated = config.update(patch)
+
+        assert (
+            updated.stateless_transformation.config.transform[0].expression
+            == "lower(user_id)"
+        )
+        assert (
+            updated.stateless_transformation.config.transform[0].output_name
+            == "lower_user_id"
+        )
+        assert (
+            updated.stateless_transformation.config.transform[0].output_type == "string"
+        )
 
     def test_update_empty_patch(self, valid_config):
         """Test updating with an empty patch (all None)."""
