@@ -10,6 +10,10 @@ from .metadata import MetadataConfig
 from .schema import Schema
 from .sink import SinkConfig, SinkConfigPatch
 from .source import SourceConfig, SourceConfigPatch
+from .stateless_transformation import (
+    StatelessTransformationConfig,
+    StatelessTransformationConfigPatch,
+)
 
 
 class PipelineStatus(CaseInsensitiveStrEnum):
@@ -34,6 +38,9 @@ class PipelineConfig(BaseModel):
     metadata: Optional[MetadataConfig] = Field(default=MetadataConfig())
     sink: SinkConfig
     pipeline_schema: Schema = Field(alias="schema")
+    stateless_transformation: Optional[StatelessTransformationConfig] = Field(
+        default=StatelessTransformationConfig()
+    )
 
     @field_validator("pipeline_id")
     @classmethod
@@ -63,10 +70,14 @@ class PipelineConfig(BaseModel):
 
         # Validate schema
         topic_names = [topic.name for topic in self.source.topics]
+        source_ids = topic_names.copy()
+        if self.stateless_transformation.enabled:
+            source_ids.append(self.stateless_transformation.id)
         for field in self.pipeline_schema.fields:
-            if field.source_id not in topic_names:
+            if field.source_id not in source_ids:
                 raise ValueError(
-                    f"Source '{field.source_id}' does not exist in any topic"
+                    f"Source '{field.source_id}' does not exist in any topic "
+                    "or is not a stateless transformation id"
                 )
 
         # Validate deduplication ID fields
@@ -147,6 +158,13 @@ class PipelineConfig(BaseModel):
         if config_patch.metadata is not None:
             updated_config.metadata = config_patch.metadata
 
+        # Update stateless transformation if provided
+        if config_patch.stateless_transformation is not None:
+            updated_config.stateless_transformation = (
+                updated_config.stateless_transformation
+                or StatelessTransformationConfig()
+            ).update(config_patch.stateless_transformation)
+
         return updated_config
 
 
@@ -158,3 +176,7 @@ class PipelineConfigPatch(BaseModel):
     pipeline_schema: Optional[Schema] = Field(default=None, alias="schema")
     sink: Optional[SinkConfigPatch] = Field(default=None)
     source: Optional[SourceConfigPatch] = Field(default=None)
+    stateless_transformation: Optional[StatelessTransformationConfigPatch] = Field(
+        default=None
+    )
+    version: Optional[str] = Field(default=None)

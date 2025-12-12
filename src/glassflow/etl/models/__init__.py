@@ -25,6 +25,13 @@ from .source import (
     SourceType,
     TopicConfig,
 )
+from .stateless_transformation import (
+    ExpressionConfig,
+    StatelessTransformationConfig,
+    StatelessTransformationConfigPatch,
+    StatelessTransformationType,
+    Transformation,
+)
 
 __all__ = [
     "ClickhouseDataType",
@@ -57,4 +64,9 @@ __all__ = [
     "KafkaConnectionParamsPatch",
     "DeduplicationConfigPatch",
     "JoinConfigPatch",
+    "StatelessTransformationConfig",
+    "StatelessTransformationConfigPatch",
+    "StatelessTransformationType",
+    "ExpressionConfig",
+    "Transformation",
 ]
