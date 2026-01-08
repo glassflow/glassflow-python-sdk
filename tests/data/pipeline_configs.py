@@ -68,6 +68,20 @@ def get_valid_pipeline_config() -> dict:
             "enabled": True,
             "expression": "user_id = '123'",
         },
+        "stateless_transformation": {
+            "enabled": True,
+            "id": "my_transformation",
+            "type": "expr_lang_transform",
+            "config": {
+                "transform": [
+                    {
+                        "expression": "upper(user_id)",
+                        "output_name": "upper_user_id",
+                        "output_type": "string",
+                    },
+                ],
+            },
+        },
         "sink": {
             "type": "clickhouse",
             "provider": "aiven",
@@ -104,13 +118,7 @@ def get_valid_pipeline_config() -> dict:
                     "column_name": "order_id",
                     "column_type": "String",
                 },
-                {
-                    "source_id": "orders",
-                    "name": "user_id",
-                    "type": "string",
-                    "column_name": "user_id",
-                    "column_type": "String",
-                },
+                {"source_id": "orders", "name": "user_id", "type": "string"},
                 {
                     "source_id": "user_logins",
                     "name": "timestamp",
@@ -129,6 +137,13 @@ def get_valid_pipeline_config() -> dict:
                     "source_id": "orders",
                     "name": "skip_sink_field",
                     "type": "string",
+                },
+                {
+                    "source_id": "my_transformation",
+                    "name": "upper_user_id",
+                    "type": "string",
+                    "column_name": "upper_user_id",
+                    "column_type": "String",
                 },
             ],
         },
