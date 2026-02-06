@@ -19,6 +19,7 @@ class KafkaDataType(CaseInsensitiveStrEnum):
     BOOL = "bool"
     BYTES = "bytes"
     ARRAY = "array"
+    MAP = "map"
 
 
 class ClickhouseDataType(CaseInsensitiveStrEnum):
@@ -78,6 +79,8 @@ class ClickhouseDataType(CaseInsensitiveStrEnum):
     ARRAY_LC_FLOAT64 = "Array(LowCardinality(Float64))"
     ARRAY_LC_DATETIME = "Array(LowCardinality(DateTime))"
     ARRAY_LC_FIXEDSTRING = "Array(LowCardinality(FixedString))"
+    ARRAY_MAP_STRING_STRING = "Array(Map(String, String))"
+    MAP_STRING_STRING = "Map(String, String)"
 
 
 kafka_to_clickhouse_data_type_mappings = {
@@ -92,6 +95,8 @@ kafka_to_clickhouse_data_type_mappings = {
         ClickhouseDataType.LC_STRING,
         ClickhouseDataType.LC_FIXEDSTRING,
         ClickhouseDataType.LC_DATETIME,
+        ClickhouseDataType.MAP_STRING_STRING,
+        ClickhouseDataType.ARRAY_MAP_STRING_STRING,
     ],
     KafkaDataType.INT: [
         ClickhouseDataType.INT8,
@@ -158,5 +163,10 @@ kafka_to_clickhouse_data_type_mappings = {
         ClickhouseDataType.ARRAY_LC_FLOAT64,
         ClickhouseDataType.ARRAY_LC_DATETIME,
         ClickhouseDataType.ARRAY_LC_FIXEDSTRING,
+        ClickhouseDataType.ARRAY_MAP_STRING_STRING,
+    ],
+    KafkaDataType.MAP: [
+        ClickhouseDataType.MAP_STRING_STRING,
+        ClickhouseDataType.ARRAY_MAP_STRING_STRING,
     ],
 }
