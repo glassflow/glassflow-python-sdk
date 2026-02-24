@@ -33,6 +33,45 @@ class TestDLQ:
                 {"id": "msg2", "content": "test message 2"},
             ]
 
+    def test_consume_returns_empty_list_when_no_messages(self, dlq, mock_success):
+        """Test DLQ consume returns empty list when there are no messages to consume."""
+        with mock_success(json_payloads=[[]]) as mock_get:
+            result = dlq.consume(batch_size=50)
+
+            mock_get.assert_called_once_with(
+                "GET", f"{dlq.endpoint}/consume", params={"batch_size": 50}
+            )
+            assert result == []
+
+    def test_consume_returns_empty_list_on_204_no_content(self, dlq):
+        """Test DLQ consume returns empty list when API responds with 204 No Content."""
+        mock_response = mock_responses.create_mock_response_factory()(
+            status_code=204,
+            json_data=None,
+        )
+        with patch("httpx.Client.request", return_value=mock_response) as mock_get:
+            result = dlq.consume(batch_size=50)
+
+            mock_get.assert_called_once_with(
+                "GET", f"{dlq.endpoint}/consume", params={"batch_size": 50}
+            )
+            assert result == []
+
+    def test_consume_returns_empty_list_on_200_empty_body(self, dlq):
+        """Test DLQ consume returns empty list when API returns 200 with empty body."""
+        mock_response = mock_responses.create_mock_response_factory()(
+            status_code=200,
+            json_data=None,
+        )
+        mock_response.content = b""
+        with patch("httpx.Client.request", return_value=mock_response) as mock_get:
+            result = dlq.consume(batch_size=50)
+
+            mock_get.assert_called_once_with(
+                "GET", f"{dlq.endpoint}/consume", params={"batch_size": 50}
+            )
+            assert result == []
+
     @pytest.mark.parametrize(
         "scenario",
         [

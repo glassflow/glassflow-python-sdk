@@ -16,7 +16,9 @@ class Transformation(BaseModel):
 
 
 class ExpressionConfig(BaseModel):
-    transform: List[Transformation] = Field(description="The transformation expression")
+    transform: Optional[List[Transformation]] = Field(
+        description="The transformation expression", default=None
+    )
 
 
 class StatelessTransformationConfig(BaseModel):
@@ -50,6 +52,11 @@ class StatelessTransformationConfig(BaseModel):
                 raise ValueError(
                     "config is required when stateless transformation is enabled"
                 )
+            else:
+                if not self.config.transform:
+                    raise ValueError(
+                        "transform is required when stateless transformation is enabled"
+                    )
         return self
 
     def update(
