@@ -7,6 +7,7 @@ from .base import CaseInsensitiveStrEnum
 from .filter import FilterConfig, FilterConfigPatch
 from .join import JoinConfig, JoinConfigPatch
 from .metadata import MetadataConfig
+from .resources import PipelineResourcesConfig
 from .schema import Schema
 from .sink import SinkConfig, SinkConfigPatch
 from .source import SourceConfig, SourceConfigPatch
@@ -41,6 +42,7 @@ class PipelineConfig(BaseModel):
     stateless_transformation: Optional[StatelessTransformationConfig] = Field(
         default=StatelessTransformationConfig()
     )
+    pipeline_resources: Optional[PipelineResourcesConfig] = Field(default=None)
 
     @field_validator("pipeline_id")
     @classmethod
