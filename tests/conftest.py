@@ -56,6 +56,12 @@ def valid_config_without_joins() -> dict:
 
 
 @pytest.fixture
+def valid_config_with_pipeline_resources() -> dict:
+    """Fixture for a valid pipeline configuration including pipeline_resources."""
+    return pipeline_configs.get_valid_config_with_pipeline_resources()
+
+
+@pytest.fixture
 def valid_config_with_dedup_disabled() -> dict:
     """Fixture for a valid pipeline configuration with deduplication disabled."""
     return pipeline_configs.get_valid_config_with_dedup_disabled()
