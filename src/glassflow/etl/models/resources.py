@@ -4,8 +4,8 @@ from pydantic import BaseModel, Field
 
 
 class JetStreamResources(BaseModel):
-    max_age: Optional[str] = Field(default=None, allow_mutation=False)
-    max_bytes: Optional[str] = Field(default=None, allow_mutation=False)
+    max_age: Optional[str] = Field(default=None, frozen=True)
+    max_bytes: Optional[str] = Field(default=None, frozen=True)
 
     def update(self, patch: "JetStreamResources") -> "JetStreamResources":
         """Apply a patch to this jetstream resources config."""
@@ -18,7 +18,7 @@ class JetStreamResources(BaseModel):
 
 
 class NATSResources(BaseModel):
-    stream: Optional[JetStreamResources] = Field(default=None, allow_mutation=False)
+    stream: Optional[JetStreamResources] = Field(default=None)
 
     def update(self, patch: "NATSResources") -> "NATSResources":
         """Apply a patch to this jetstream resources config."""
@@ -28,8 +28,8 @@ class NATSResources(BaseModel):
         return updated_config
 
 class Resources(BaseModel):
-    memory: Optional[str] = Field(default=None, allow_mutation=True)
-    cpu: Optional[str] = Field(default=None, allow_mutation=True)
+    memory: Optional[str] = Field(default=None)
+    cpu: Optional[str] = Field(default=None)
 
     def update(self, patch: "Resources") -> "Resources":
         """Apply a patch to this resources config."""
@@ -42,7 +42,7 @@ class Resources(BaseModel):
 
 
 class StorageResources(BaseModel):
-    size: Optional[str] = Field(default=None, allow_mutation=False)
+    size: Optional[str] = Field(default=None, frozen=True)
 
     def update(self, patch: "StorageResources") -> "StorageResources":
         """Apply a patch to this storage resources config."""
@@ -52,8 +52,8 @@ class StorageResources(BaseModel):
         return updated_config
 
 class TransformResources(BaseModel):
-    storage: Optional[StorageResources] = Field(default=None, allow_mutation=False)
-    replicas: Optional[int] = Field(default=None, allow_mutation=False)
+    storage: Optional[StorageResources] = Field(default=None)
+    replicas: Optional[int] = Field(default=None, frozen=True)
     requests: Optional[Resources] = Field(default=None)
     limits: Optional[Resources] = Field(default=None)
 
@@ -64,10 +64,14 @@ class TransformResources(BaseModel):
             updated_config.storage = updated_config.storage.update(patch.storage)
         if patch.replicas is not None:
             updated_config.replicas = patch.replicas
+        if patch.requests is not None:
+            updated_config.requests = updated_config.requests.update(patch.requests)
+        if patch.limits is not None:
+            updated_config.limits = updated_config.limits.update(patch.limits)
         return updated_config
 
 class SinkResources(BaseModel):
-    replicas: Optional[int] = Field(default=None, allow_mutation=False)
+    replicas: Optional[int] = Field(default=None)
     requests: Optional[Resources] = Field(default=None)
     limits: Optional[Resources] = Field(default=None)
 
@@ -85,7 +89,7 @@ class SinkResources(BaseModel):
 class JoinResources(BaseModel):
     limits: Optional[Resources] = Field(default=None)
     requests: Optional[Resources] = Field(default=None)
-    replicas: Optional[int] = Field(default=None, allow_mutation=False)
+    replicas: Optional[int] = Field(default=None, frozen=True)
 
     def update(self, patch: "JoinResources") -> "JoinResources":
         """Apply a patch to this join resources config."""
@@ -99,7 +103,7 @@ class JoinResources(BaseModel):
 
 
 class IngestorPodResources(BaseModel):
-    replicas: Optional[int] = Field(default=None, allow_mutation=True)
+    replicas: Optional[int] = Field(default=None)
     requests: Optional[Resources] = Field(default=None)
     limits: Optional[Resources] = Field(default=None)
 
@@ -133,7 +137,7 @@ class IngestorResources(BaseModel):
         return updated_config
 
 class PipelineResourcesConfig(BaseModel):
-    nats: Optional[NATSResources] = Field(default=None, allow_mutation=False)
+    nats: Optional[NATSResources] = Field(default=None)
     sink: Optional[SinkResources] = Field(default=None)
     ingestor: Optional[IngestorResources] = Field(default=None)
     transform: Optional[TransformResources] = Field(default=None)
