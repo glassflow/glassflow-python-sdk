@@ -1,67 +1,118 @@
-from typing import Annotated, Optional
+from typing import Optional
 
-from pydantic import BaseModel, Field, WithJsonSchema
+from pydantic import BaseModel, Field
 
 
 class JetStreamResources(BaseModel):
-    max_age: Annotated[Optional[str], WithJsonSchema({"immuttable": True})] = Field(
-        default=None
-    )
-    max_bytes: Annotated[Optional[str], WithJsonSchema({"immuttable": True})] = Field(
-        default=None
-    )
+    max_age: Optional[str] = Field(default=None, allow_mutation=False)
+    max_bytes: Optional[str] = Field(default=None, allow_mutation=False)
+
+    def update(self, patch: "JetStreamResources") -> "JetStreamResources":
+        """Apply a patch to this jetstream resources config."""
+        updated_config = self.model_copy(deep=True)
+        if patch.max_age is not None:
+            updated_config.max_age = patch.max_age
+        if patch.max_bytes is not None:
+            updated_config.max_bytes = patch.max_bytes
+        return updated_config
 
 
 class NATSResources(BaseModel):
-    stream: Optional[JetStreamResources] = Field(default=None)
+    stream: Optional[JetStreamResources] = Field(default=None, allow_mutation=False)
 
+    def update(self, patch: "NATSResources") -> "NATSResources":
+        """Apply a patch to this jetstream resources config."""
+        updated_config = self.model_copy(deep=True)
+        if patch.stream is not None:
+            updated_config.stream = updated_config.stream.update(patch.stream)
+        return updated_config
 
 class Resources(BaseModel):
-    memory: Annotated[Optional[str], WithJsonSchema({"immuttable": False})] = Field(
-        default=None
-    )
-    cpu: Annotated[Optional[str], WithJsonSchema({"immuttable": False})] = Field(
-        default=None
-    )
+    memory: Optional[str] = Field(default=None, allow_mutation=True)
+    cpu: Optional[str] = Field(default=None, allow_mutation=True)
+
+    def update(self, patch: "Resources") -> "Resources":
+        """Apply a patch to this resources config."""
+        updated_config = self.model_copy(deep=True)
+        if patch.memory is not None:
+            updated_config.memory = patch.memory
+        if patch.cpu is not None:
+            updated_config.cpu = patch.cpu
+        return updated_config
 
 
 class StorageResources(BaseModel):
-    size: Annotated[Optional[str], WithJsonSchema({"immuttable": True})] = Field(
-        default=None
-    )
+    size: Optional[str] = Field(default=None, allow_mutation=False)
 
+    def update(self, patch: "StorageResources") -> "StorageResources":
+        """Apply a patch to this storage resources config."""
+        updated_config = self.model_copy(deep=True)
+        if patch.size is not None:
+            updated_config.size = patch.size
+        return updated_config
 
 class TransformResources(BaseModel):
-    storage: Optional[StorageResources] = Field(default=None)
-    replicas: Annotated[Optional[int], WithJsonSchema({"immuttable": True})] = Field(
-        default=None
-    )
+    storage: Optional[StorageResources] = Field(default=None, allow_mutation=False)
+    replicas: Optional[int] = Field(default=None, allow_mutation=False)
     requests: Optional[Resources] = Field(default=None)
     limits: Optional[Resources] = Field(default=None)
 
+    def update(self, patch: "TransformResources") -> "TransformResources":
+        """Apply a patch to this transform resources config."""
+        updated_config = self.model_copy(deep=True)
+        if patch.storage is not None:
+            updated_config.storage = updated_config.storage.update(patch.storage)
+        if patch.replicas is not None:
+            updated_config.replicas = patch.replicas
+        return updated_config
 
 class SinkResources(BaseModel):
-    replicas: Annotated[Optional[int], WithJsonSchema({"immuttable": True})] = Field(
-        default=None
-    )
+    replicas: Optional[int] = Field(default=None, allow_mutation=False)
     requests: Optional[Resources] = Field(default=None)
     limits: Optional[Resources] = Field(default=None)
 
+    def update(self, patch: "SinkResources") -> "SinkResources":
+        """Apply a patch to this sink resources config."""
+        updated_config = self.model_copy(deep=True)
+        if patch.replicas is not None:
+            updated_config.replicas = patch.replicas
+        if patch.requests is not None:
+            updated_config.requests = updated_config.requests.update(patch.requests)
+        if patch.limits is not None:
+            updated_config.limits = updated_config.limits.update(patch.limits)
+        return updated_config
 
 class JoinResources(BaseModel):
     limits: Optional[Resources] = Field(default=None)
     requests: Optional[Resources] = Field(default=None)
-    replicas: Annotated[Optional[int], WithJsonSchema({"immuttable": True})] = Field(
-        default=None
-    )
+    replicas: Optional[int] = Field(default=None, allow_mutation=False)
+
+    def update(self, patch: "JoinResources") -> "JoinResources":
+        """Apply a patch to this join resources config."""
+        updated_config = self.model_copy(deep=True)
+        if patch.limits is not None:
+            updated_config.limits = updated_config.limits.update(patch.limits)
+        if patch.requests is not None:
+            updated_config.requests = updated_config.requests.update(patch.requests)
+        if patch.replicas is not None:
+            updated_config.replicas = patch.replicas
 
 
 class IngestorPodResources(BaseModel):
-    replicas: Annotated[Optional[int], WithJsonSchema({"immuttable": False})] = Field(
-        default=None
-    )
+    replicas: Optional[int] = Field(default=None, allow_mutation=True)
     requests: Optional[Resources] = Field(default=None)
     limits: Optional[Resources] = Field(default=None)
+
+    def update(self, patch: "IngestorPodResources") -> "IngestorPodResources":
+        """Apply a patch to this ingestor pod resources config."""
+        updated_config = self.model_copy(deep=True)
+        if patch.replicas is not None:
+            updated_config.replicas = patch.replicas
+        if patch.requests is not None:
+            updated_config.requests = updated_config.requests.update(patch.requests)
+        if patch.limits is not None:
+            updated_config.limits = updated_config.limits.update(patch.limits)
+        return updated_config
 
 
 class IngestorResources(BaseModel):
@@ -69,10 +120,37 @@ class IngestorResources(BaseModel):
     left: Optional[IngestorPodResources] = Field(default=None)
     right: Optional[IngestorPodResources] = Field(default=None)
 
+    def update(self, patch: "IngestorResources") -> "IngestorResources":
+        """Apply a patch to this ingestor resources config."""
+        updated_config = self.model_copy(deep=True)
+
+        if patch.base is not None:
+            updated_config.base = updated_config.base.update(patch.base)
+        if patch.left is not None:
+            updated_config.left = updated_config.left.update(patch.left)
+        if patch.right is not None:
+            updated_config.right = updated_config.right.update(patch.right)
+        return updated_config
 
 class PipelineResourcesConfig(BaseModel):
-    nats: Optional[NATSResources] = Field(default=None)
+    nats: Optional[NATSResources] = Field(default=None, allow_mutation=False)
     sink: Optional[SinkResources] = Field(default=None)
     ingestor: Optional[IngestorResources] = Field(default=None)
     transform: Optional[TransformResources] = Field(default=None)
     join: Optional[JoinResources] = Field(default=None)
+
+    def update(self, patch: "PipelineResourcesConfig") -> "PipelineResourcesConfig":
+        """Apply a patch to this pipeline resources config."""
+        updated_config = self.model_copy(deep=True)
+
+        if patch.nats is not None:
+            updated_config.nats = updated_config.nats.update(patch.nats)
+        if patch.sink is not None:
+            updated_config.sink = updated_config.sink.update(patch.sink)
+        if patch.ingestor is not None:
+            updated_config.ingestor = updated_config.ingestor.update(patch.ingestor)
+        if patch.transform is not None:
+            updated_config.transform = updated_config.transform.update(patch.transform)
+        if patch.join is not None:
+            updated_config.join = updated_config.join.update(patch.join)
+        return updated_config
