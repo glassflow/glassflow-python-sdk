@@ -27,6 +27,7 @@ class NATSResources(BaseModel):
             updated_config.stream = updated_config.stream.update(patch.stream)
         return updated_config
 
+
 class Resources(BaseModel):
     memory: Optional[str] = Field(default=None)
     cpu: Optional[str] = Field(default=None)
@@ -51,6 +52,7 @@ class StorageResources(BaseModel):
             updated_config.size = patch.size
         return updated_config
 
+
 class TransformResources(BaseModel):
     storage: Optional[StorageResources] = Field(default=None)
     replicas: Optional[int] = Field(default=None, frozen=True)
@@ -70,6 +72,7 @@ class TransformResources(BaseModel):
             updated_config.limits = updated_config.limits.update(patch.limits)
         return updated_config
 
+
 class SinkResources(BaseModel):
     replicas: Optional[int] = Field(default=None)
     requests: Optional[Resources] = Field(default=None)
@@ -85,6 +88,7 @@ class SinkResources(BaseModel):
         if patch.limits is not None:
             updated_config.limits = updated_config.limits.update(patch.limits)
         return updated_config
+
 
 class JoinResources(BaseModel):
     limits: Optional[Resources] = Field(default=None)
@@ -135,6 +139,7 @@ class IngestorResources(BaseModel):
         if patch.right is not None:
             updated_config.right = updated_config.right.update(patch.right)
         return updated_config
+
 
 class PipelineResourcesConfig(BaseModel):
     nats: Optional[NATSResources] = Field(default=None)
