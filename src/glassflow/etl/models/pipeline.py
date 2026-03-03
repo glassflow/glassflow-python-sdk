@@ -167,6 +167,12 @@ class PipelineConfig(BaseModel):
                 or StatelessTransformationConfig()
             ).update(config_patch.stateless_transformation)
 
+        # Update pipeline resources if provided
+        if config_patch.pipeline_resources is not None:
+            updated_config.pipeline_resources = (
+                updated_config.pipeline_resources or PipelineResourcesConfig()
+            ).update(config_patch.pipeline_resources)
+
         return updated_config
 
 
@@ -181,4 +187,5 @@ class PipelineConfigPatch(BaseModel):
     stateless_transformation: Optional[StatelessTransformationConfigPatch] = Field(
         default=None
     )
+    pipeline_resources: Optional[PipelineResourcesConfig] = Field(default=None)
     version: Optional[str] = Field(default=None)

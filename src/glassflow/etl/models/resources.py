@@ -2,6 +2,8 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
+from glassflow.etl.errors import ImmutableResourceError
+
 
 class JetStreamResources(BaseModel):
     max_age: Optional[str] = Field(default=None, frozen=True)
@@ -9,12 +11,13 @@ class JetStreamResources(BaseModel):
 
     def update(self, patch: "JetStreamResources") -> "JetStreamResources":
         """Apply a patch to this jetstream resources config."""
-        updated_config = self.model_copy(deep=True)
-        if patch.max_age is not None:
-            updated_config.max_age = patch.max_age
-        if patch.max_bytes is not None:
-            updated_config.max_bytes = patch.max_bytes
-        return updated_config
+        if patch.max_age is not None or patch.max_bytes is not None:
+            raise ImmutableResourceError(
+                "Cannot update pipeline resources: 'max_age' and 'max_bytes' in "
+                "nats.stream are immutable and cannot be changed after pipeline "
+                "creation."
+            )
+        return self.model_copy(deep=True)
 
 
 class NATSResources(BaseModel):
@@ -47,15 +50,17 @@ class StorageResources(BaseModel):
 
     def update(self, patch: "StorageResources") -> "StorageResources":
         """Apply a patch to this storage resources config."""
-        updated_config = self.model_copy(deep=True)
         if patch.size is not None:
-            updated_config.size = patch.size
-        return updated_config
+            raise ImmutableResourceError(
+                "Cannot update pipeline resources: 'size' in transform.storage is "
+                "immutable and cannot be changed after pipeline creation."
+            )
+        return self.model_copy(deep=True)
 
 
 class TransformResources(BaseModel):
     storage: Optional[StorageResources] = Field(default=None)
-    replicas: Optional[int] = Field(default=None, frozen=True)
+    replicas: Optional[int] = Field(default=None)
     requests: Optional[Resources] = Field(default=None)
     limits: Optional[Resources] = Field(default=None)
 
@@ -97,13 +102,17 @@ class JoinResources(BaseModel):
 
     def update(self, patch: "JoinResources") -> "JoinResources":
         """Apply a patch to this join resources config."""
+        if patch.replicas is not None:
+            raise ImmutableResourceError(
+                "Cannot update pipeline resources: 'replicas' in join is immutable "
+                "and cannot be changed after pipeline creation."
+            )
         updated_config = self.model_copy(deep=True)
         if patch.limits is not None:
             updated_config.limits = updated_config.limits.update(patch.limits)
         if patch.requests is not None:
             updated_config.requests = updated_config.requests.update(patch.requests)
-        if patch.replicas is not None:
-            updated_config.replicas = patch.replicas
+        return updated_config
 
 
 class IngestorPodResources(BaseModel):
