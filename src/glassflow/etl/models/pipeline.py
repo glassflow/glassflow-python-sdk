@@ -7,6 +7,7 @@ from .base import CaseInsensitiveStrEnum
 from .filter import FilterConfig, FilterConfigPatch
 from .join import JoinConfig, JoinConfigPatch
 from .metadata import MetadataConfig
+from .resources import PipelineResourcesConfig
 from .schema import Schema
 from .sink import SinkConfig, SinkConfigPatch
 from .source import SourceConfig, SourceConfigPatch
@@ -41,6 +42,7 @@ class PipelineConfig(BaseModel):
     stateless_transformation: Optional[StatelessTransformationConfig] = Field(
         default=StatelessTransformationConfig()
     )
+    pipeline_resources: Optional[PipelineResourcesConfig] = Field(default=None)
 
     @field_validator("pipeline_id")
     @classmethod
@@ -165,6 +167,12 @@ class PipelineConfig(BaseModel):
                 or StatelessTransformationConfig()
             ).update(config_patch.stateless_transformation)
 
+        # Update pipeline resources if provided
+        if config_patch.pipeline_resources is not None:
+            updated_config.pipeline_resources = (
+                updated_config.pipeline_resources or PipelineResourcesConfig()
+            ).update(config_patch.pipeline_resources)
+
         return updated_config
 
 
@@ -179,4 +187,5 @@ class PipelineConfigPatch(BaseModel):
     stateless_transformation: Optional[StatelessTransformationConfigPatch] = Field(
         default=None
     )
+    pipeline_resources: Optional[PipelineResourcesConfig] = Field(default=None)
     version: Optional[str] = Field(default=None)

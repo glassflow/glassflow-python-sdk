@@ -95,7 +95,10 @@ class TopicConfig(BaseModel):
     consumer_group_initial_offset: ConsumerGroupOffset = ConsumerGroupOffset.LATEST
     name: str
     deduplication: Optional[DeduplicationConfig] = Field(default=DeduplicationConfig())
-    replicas: Optional[int] = Field(default=1)
+    replicas: Optional[int] = Field(
+        default=1,
+        deprecated="Use pipeline_resources.ingestor.<base|left|right>.replicas instead",
+    )
 
     @field_validator("replicas")
     @classmethod
