@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -63,21 +63,18 @@ class StatelessTransformationConfig(BaseModel):
         self, patch: "StatelessTransformationConfigPatch"
     ) -> "StatelessTransformationConfig":
         """Apply a patch to this stateless transformation config."""
-        update_dict: dict[str, Any] = {}
+        update_dict = self.model_copy(deep=True)
 
         if patch.enabled is not None:
-            update_dict["enabled"] = patch.enabled
+            update_dict.enabled = patch.enabled
         if patch.id is not None:
-            update_dict["id"] = patch.id
+            update_dict.id = patch.id
         if patch.type is not None:
-            update_dict["type"] = patch.type
+            update_dict.type = patch.type
         if patch.config is not None:
-            update_dict["config"] = patch.config
+            update_dict.config = patch.config
 
-        if update_dict:
-            return self.model_copy(update=update_dict)
-
-        return self
+        return update_dict
 
 
 class StatelessTransformationConfigPatch(BaseModel):

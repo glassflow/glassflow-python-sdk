@@ -54,6 +54,13 @@ class PipelineInvalidConfigurationError(APIError):
     """Raised when a pipeline configuration is invalid."""
 
 
+class ImmutableResourceError(GlassFlowError):
+    """
+    Raised when attempting to update a pipeline resource field that is immutable
+    (frozen) and cannot be changed after pipeline creation.
+    """
+
+
 class InvalidDataTypeMappingError(GlassFlowError):
     """Exception raised when a data type mapping is invalid."""
 
