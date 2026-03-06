@@ -10,6 +10,16 @@ from .join import (
 )
 from .metadata import MetadataConfig
 from .pipeline import PipelineConfig, PipelineConfigPatch, PipelineStatus
+from .resources import (
+    IngestorResources,
+    JoinResources,
+    NATSResources,
+    PipelineResourcesConfig,
+    Resources,
+    SinkResources,
+    StorageResources,
+    TransformResources,
+)
 from .schema import Schema, SchemaField
 from .sink import SinkConfig, SinkConfigPatch, SinkType
 from .source import (
@@ -69,4 +79,12 @@ __all__ = [
     "StatelessTransformationType",
     "ExpressionConfig",
     "Transformation",
+    "PipelineResourcesConfig",
+    "TransformResources",
+    "JoinResources",
+    "NATSResources",
+    "SinkResources",
+    "IngestorResources",
+    "StorageResources",
+    "Resources",
 ]

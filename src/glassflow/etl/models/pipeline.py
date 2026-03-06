@@ -3,10 +3,12 @@ from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+from ..errors import ImmutableResourceError
 from .base import CaseInsensitiveStrEnum
 from .filter import FilterConfig, FilterConfigPatch
 from .join import JoinConfig, JoinConfigPatch
 from .metadata import MetadataConfig
+from .resources import PipelineResourcesConfig
 from .schema import Schema
 from .sink import SinkConfig, SinkConfigPatch
 from .source import SourceConfig, SourceConfigPatch
@@ -41,6 +43,7 @@ class PipelineConfig(BaseModel):
     stateless_transformation: Optional[StatelessTransformationConfig] = Field(
         default=StatelessTransformationConfig()
     )
+    pipeline_resources: Optional[PipelineResourcesConfig] = Field(default=None)
 
     @field_validator("pipeline_id")
     @classmethod
@@ -114,6 +117,16 @@ class PipelineConfig(BaseModel):
 
         return self
 
+    def _has_deduplication_enabled(self) -> bool:
+        """
+        Check if the pipeline has deduplication enabled.
+        """
+        return any(
+            topic.deduplication and topic.deduplication.enabled
+            for topic in self.source.topics
+            if topic.deduplication is not None
+        )
+
     def update(self, config_patch: "PipelineConfigPatch") -> "PipelineConfig":
         """
         Apply a patch configuration to this pipeline configuration.
@@ -130,6 +143,23 @@ class PipelineConfig(BaseModel):
         # Update name if provided
         if config_patch.name is not None:
             updated_config.name = config_patch.name
+
+        # Update pipeline resources if provided
+        if config_patch.pipeline_resources is not None:
+            if (
+                config_patch.pipeline_resources.transform is not None
+                and config_patch.pipeline_resources.transform.replicas is not None
+                and self._has_deduplication_enabled()
+                and not config_patch._has_deduplication_disabled()
+            ):
+                raise ImmutableResourceError(
+                    "Cannot update pipeline resources of a transform component if the "
+                    "pipeline has deduplication enabled"
+                )
+
+            updated_config.pipeline_resources = (
+                updated_config.pipeline_resources or PipelineResourcesConfig()
+            ).update(config_patch.pipeline_resources)
 
         # Update source if provided
         if config_patch.source is not None:
@@ -179,4 +209,17 @@ class PipelineConfigPatch(BaseModel):
     stateless_transformation: Optional[StatelessTransformationConfigPatch] = Field(
         default=None
     )
+    pipeline_resources: Optional[PipelineResourcesConfig] = Field(default=None)
     version: Optional[str] = Field(default=None)
+
+    def _has_deduplication_disabled(self) -> bool:
+        """
+        Check if the pipeline has deduplication disabled.
+        """
+        disabled = False
+        if self.source is not None and self.source.topics is not None:
+            for topic in self.source.topics:
+                if topic.deduplication and not topic.deduplication.enabled:
+                    disabled = True
+                    break
+        return disabled

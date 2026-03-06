@@ -222,6 +222,43 @@ def get_valid_config_without_joins() -> dict:
     }
 
 
+def get_valid_config_with_pipeline_resources() -> dict:
+    """Get a valid pipeline configuration including pipeline_resources."""
+    config = copy.deepcopy(get_valid_pipeline_config())
+    config["pipeline_resources"] = {
+        "nats": {
+            "stream": {
+                "max_age": "72h",
+                "max_bytes": "1GB",
+            },
+        },
+        "sink": {
+            "replicas": 2,
+            "requests": {"memory": "256Mi", "cpu": "100m"},
+            "limits": {"memory": "512Mi", "cpu": "500m"},
+        },
+        "transform": {
+            "storage": {"size": "10Gi"},
+            "replicas": 1,
+            "requests": {"memory": "128Mi", "cpu": "50m"},
+            "limits": {"memory": "256Mi", "cpu": "200m"},
+        },
+        "join": {
+            "replicas": 1,
+            "requests": {"memory": "64Mi", "cpu": "25m"},
+            "limits": {"memory": "128Mi", "cpu": "100m"},
+        },
+        "ingestor": {
+            "base": {
+                "replicas": 2,
+                "requests": {"memory": "128Mi", "cpu": "50m"},
+                "limits": {"memory": "256Mi", "cpu": "200m"},
+            },
+        },
+    }
+    return config
+
+
 def get_valid_config_with_dedup_disabled() -> dict:
     """Get a valid pipeline configuration with deduplication disabled."""
     config = copy.deepcopy(get_valid_pipeline_config())

@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -9,17 +9,15 @@ class FilterConfig(BaseModel):
 
     def update(self, patch: "FilterConfigPatch") -> "FilterConfig":
         """Apply a patch to this filter config."""
-        update_dict: dict[str, Any] = {}
+        update_dict = self.model_copy(deep=True)
 
         # Check each field explicitly to handle model instances properly
         if patch.enabled is not None:
-            update_dict["enabled"] = patch.enabled
+            update_dict.enabled = patch.enabled
         if patch.expression is not None:
-            update_dict["expression"] = patch.expression
+            update_dict.expression = patch.expression
 
-        if update_dict:
-            return self.model_copy(update=update_dict)
-        return self
+        return update_dict
 
 
 class FilterConfigPatch(BaseModel):

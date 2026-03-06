@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -26,39 +26,37 @@ class SinkConfig(BaseModel):
 
     def update(self, patch: "SinkConfigPatch") -> "SinkConfig":
         """Apply a patch to this sink config."""
-        update_dict: dict[str, Any] = {}
+        update_dict = self.model_copy(deep=True)
 
         # Check each field explicitly to handle model instances properly
         if patch.provider is not None:
-            update_dict["provider"] = patch.provider
+            update_dict.provider = patch.provider
         if patch.host is not None:
-            update_dict["host"] = patch.host
+            update_dict.host = patch.host
         if patch.port is not None:
-            update_dict["port"] = patch.port
+            update_dict.port = patch.port
         if patch.http_port is not None:
-            update_dict["http_port"] = patch.http_port
+            update_dict.http_port = patch.http_port
         if patch.database is not None:
-            update_dict["database"] = patch.database
+            update_dict.database = patch.database
         if patch.username is not None:
-            update_dict["username"] = patch.username
+            update_dict.username = patch.username
         if patch.password is not None:
-            update_dict["password"] = patch.password
+            update_dict.password = patch.password
         if patch.secure is not None:
-            update_dict["secure"] = patch.secure
+            update_dict.secure = patch.secure
         if patch.skip_certificate_verification is not None:
-            update_dict["skip_certificate_verification"] = (
+            update_dict.skip_certificate_verification = (
                 patch.skip_certificate_verification
             )
         if patch.max_batch_size is not None:
-            update_dict["max_batch_size"] = patch.max_batch_size
+            update_dict.max_batch_size = patch.max_batch_size
         if patch.max_delay_time is not None:
-            update_dict["max_delay_time"] = patch.max_delay_time
+            update_dict.max_delay_time = patch.max_delay_time
         if patch.table is not None:
-            update_dict["table"] = patch.table
+            update_dict.table = patch.table
 
-        if update_dict:
-            return self.model_copy(update=update_dict)
-        return self
+        return update_dict
 
 
 class SinkConfigPatch(BaseModel):
