@@ -147,26 +147,24 @@ class SourceConfig(BaseModel):
 
     def update(self, patch: "SourceConfigPatch") -> "SourceConfig":
         """Apply a patch to this source config."""
-        update_dict: dict[str, Any] = {}
+        update_dict = self.model_copy(deep=True)
 
         if patch.type is not None:
-            update_dict["type"] = patch.type
+            update_dict.type = patch.type
         if patch.provider is not None:
-            update_dict["provider"] = patch.provider
+            update_dict.provider = patch.provider
 
         # Handle connection_params patch
         if patch.connection_params is not None:
-            update_dict["connection_params"] = self.connection_params.update(
+            update_dict.connection_params = self.connection_params.update(
                 patch.connection_params
             )
 
         # Handle topics patch - full replacement only if provided
         if patch.topics is not None:
-            update_dict["topics"] = patch.topics
+            update_dict.topics = patch.topics
 
-        if update_dict:
-            return self.model_copy(update=update_dict)
-        return self
+        return update_dict
 
 
 class DeduplicationConfigPatch(BaseModel):

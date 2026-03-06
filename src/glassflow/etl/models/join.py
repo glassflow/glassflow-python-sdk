@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
@@ -66,18 +66,16 @@ class JoinConfig(BaseModel):
 
     def update(self, patch: "JoinConfigPatch") -> "JoinConfig":
         """Apply a patch to this join config."""
-        update_dict: dict[str, Any] = {}
+        update_dict = self.model_copy(deep=True)
 
         if patch.enabled is not None:
-            update_dict["enabled"] = patch.enabled
+            update_dict.enabled = patch.enabled
         if patch.type is not None:
-            update_dict["type"] = patch.type
+            update_dict.type = patch.type
         if patch.sources is not None:
-            update_dict["sources"] = patch.sources
+            update_dict.sources = patch.sources
 
-        if update_dict:
-            return self.model_copy(update=update_dict)
-        return self
+        return update_dict
 
 
 class JoinConfigPatch(BaseModel):
