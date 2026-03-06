@@ -1,6 +1,7 @@
 import pytest
 
 from glassflow.etl import models
+from glassflow.etl.errors import ImmutableResourceError
 
 
 class TestPipelineConfig:
@@ -176,3 +177,16 @@ class TestPipelineConfig:
         assert config.pipeline_resources.sink.replicas == 3
         assert config.pipeline_resources.nats is None
         assert config.pipeline_resources.transform is None
+
+    def test_pipeline_config_resources_update_transform_replicas_immutable_raises(
+        self, valid_config
+    ):
+        """Updating pipeline_resources with transform.replicas raises."""
+        config = models.PipelineConfig(**valid_config)
+        patch = models.PipelineConfigPatch(
+            pipeline_resources=models.PipelineResourcesConfig(
+                transform=models.TransformResources(replicas=2)
+            )
+        )
+        with pytest.raises(ImmutableResourceError) as _:
+            config.update(patch)
