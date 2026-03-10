@@ -228,8 +228,8 @@ def get_valid_config_with_pipeline_resources() -> dict:
     config["pipeline_resources"] = {
         "nats": {
             "stream": {
-                "max_age": "72h",
-                "max_bytes": "1GB",
+                "maxAge": "72h",
+                "maxBytes": "1Gi",
             },
         },
         "sink": {

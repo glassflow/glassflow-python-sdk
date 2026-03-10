@@ -130,7 +130,7 @@ class TestPipelineConfig:
         assert resources.nats is not None
         assert resources.nats.stream is not None
         assert resources.nats.stream.max_age == "72h"
-        assert resources.nats.stream.max_bytes == "1GB"
+        assert resources.nats.stream.max_bytes == "1Gi"
 
         # Sink
         assert resources.sink is not None

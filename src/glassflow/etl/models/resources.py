@@ -6,14 +6,14 @@ from glassflow.etl.errors import ImmutableResourceError
 
 
 class JetStreamResources(BaseModel):
-    max_age: Optional[str] = Field(default=None, frozen=True)
-    max_bytes: Optional[str] = Field(default=None, frozen=True)
+    max_age: Optional[str] = Field(default=None, frozen=True, alias="maxAge")
+    max_bytes: Optional[str] = Field(default=None, frozen=True, alias="maxBytes")
 
     def update(self, patch: "JetStreamResources") -> "JetStreamResources":
         """Apply a patch to this jetstream resources config."""
         if patch.max_age is not None or patch.max_bytes is not None:
             raise ImmutableResourceError(
-                "Cannot update pipeline resources: 'max_age' and 'max_bytes' in "
+                "Cannot update pipeline resources: 'maxAge' and 'maxBytes' in "
                 "nats.stream are immutable and cannot be changed after pipeline "
                 "creation."
             )

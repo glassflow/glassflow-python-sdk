@@ -21,26 +21,26 @@ class TestImmutableResourceErrors:
         """
         Updating nats.stream max_age raises ImmutableResourceError with clear message.
         """
-        current = JetStreamResources(max_age="24h", max_bytes="512Mi")
-        patch = JetStreamResources(max_age="72h", max_bytes=None)
+        current = JetStreamResources(maxAge="24h", maxBytes="512Mi")
+        patch = JetStreamResources(maxAge="72h", maxBytes=None)
         with pytest.raises(ImmutableResourceError) as exc_info:
             current.update(patch)
-        assert "max_age" in str(exc_info.value)
-        assert "max_bytes" in str(exc_info.value)
+        assert "maxAge" in str(exc_info.value)
+        assert "maxBytes" in str(exc_info.value)
         assert "nats.stream" in str(exc_info.value)
         assert "immutable" in str(exc_info.value).lower()
 
     def test_jetstream_resources_update_immutable_max_bytes_raises(self):
         """Updating nats.stream max_bytes raises ImmutableResourceError."""
-        current = JetStreamResources(max_age="24h", max_bytes="512Mi")
-        patch = JetStreamResources(max_age=None, max_bytes="1GB")
+        current = JetStreamResources(maxAge="24h", maxBytes="512Mi")
+        patch = JetStreamResources(maxAge=None, maxBytes="1GB")
         with pytest.raises(ImmutableResourceError) as exc_info:
             current.update(patch)
         assert "immutable" in str(exc_info.value).lower()
 
     def test_jetstream_resources_update_empty_patch_succeeds(self):
         """Updating with no frozen fields changed does not raise."""
-        current = JetStreamResources(max_age="24h", max_bytes="512Mi")
+        current = JetStreamResources(maxAge="24h", maxBytes="512Mi")
         patch = JetStreamResources()
         result = current.update(patch)
         assert result.max_age == "24h"
@@ -99,11 +99,11 @@ class TestImmutableResourceErrors:
         """Updating pipeline_resources with nats.stream immutable fields raises."""
         current = PipelineResourcesConfig(
             nats=NATSResources(
-                stream=JetStreamResources(max_age="24h", max_bytes="512Mi")
+                stream=JetStreamResources(maxAge="24h", maxBytes="512Mi")
             )
         )
         patch = PipelineResourcesConfig(
-            nats=NATSResources(stream=JetStreamResources(max_age="72h", max_bytes=None))
+            nats=NATSResources(stream=JetStreamResources(maxAge="72h", maxBytes=None))
         )
         with pytest.raises(ImmutableResourceError) as exc_info:
             current.update(patch)
