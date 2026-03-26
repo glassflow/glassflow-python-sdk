@@ -54,8 +54,18 @@ class Pipeline(APIClient):
         self._dlq = DLQ(pipeline_id=self.pipeline_id, host=host)
         self.status: models.PipelineStatus | None = None
 
-    def get(self) -> Pipeline:
+    def get(
+        self,
+        schema_versions: dict[str, str] | None = None,
+    ) -> Pipeline:
         """Fetch a pipeline by its ID.
+
+        Args:
+            schema_versions: Optional mapping of source ID to schema version ID.
+                When provided, the returned config will use the specified schema
+                versions instead of the latest ones.
+                Format: ``{"sourceId": "versionId"}``.
+                Only applies to sources that use a schema registry.
 
         Returns:
             Pipeline: A Pipeline instance for the given ID
@@ -64,8 +74,17 @@ class Pipeline(APIClient):
             PipelineNotFoundError: If pipeline is not found
             APIError: If the API request fails
         """
+        kwargs: dict = {}
+        if schema_versions:
+            kwargs["params"] = [
+                ("schema", f"{sid}:{vid}") for sid, vid in schema_versions.items()
+            ]
+
         response = self._request(
-            "GET", f"{self.ENDPOINT}/{self.pipeline_id}", event_name="PipelineGet"
+            "GET",
+            f"{self.ENDPOINT}/{self.pipeline_id}",
+            event_name="PipelineGet",
+            **kwargs,
         )
         self.config = models.PipelineConfig.model_validate(response.json())
         self.health()

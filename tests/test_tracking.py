@@ -9,7 +9,7 @@ class TestTracking:
 
     def test_tracking_disabled(self, mock_track):
         """Test that tracking is not called when disabled."""
-        with patch.dict(os.environ, {"GF_TRACKING_ENABLED": "false"}):
+        with patch.dict(os.environ, {"GF_USAGESTATS_ENABLED": "false"}):
             tracking = Tracking(distinct_id="distinct-id")
             assert not tracking.enabled
 
@@ -18,7 +18,7 @@ class TestTracking:
 
     def test_tracking_enabled(self, mock_track):
         """Test that tracking is called with correct data when enabled."""
-        with patch.dict(os.environ, {"GF_TRACKING_ENABLED": "true"}):
+        with patch.dict(os.environ, {"GF_USAGESTATS_ENABLED": "true"}):
             tracking = Tracking(distinct_id="distinct-id")
             assert tracking.enabled
 
@@ -39,7 +39,7 @@ class TestTracking:
         Test that tracking is called with only base properties when no
         additional properties are provided.
         """
-        with patch.dict(os.environ, {"GF_TRACKING_ENABLED": "true"}):
+        with patch.dict(os.environ, {"GF_USAGESTATS_ENABLED": "true"}):
             tracking = Tracking(distinct_id="distinct-id")
             assert tracking.enabled
 
@@ -56,7 +56,7 @@ class TestTracking:
 
     def test_tracking_error_handling(self, mock_track):
         """Test that tracking errors are handled gracefully."""
-        with patch.dict(os.environ, {"GF_TRACKING_ENABLED": "true"}):
+        with patch.dict(os.environ, {"GF_USAGESTATS_ENABLED": "true"}):
             tracking = Tracking(distinct_id="distinct-id")
             assert tracking.enabled
 

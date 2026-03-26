@@ -24,9 +24,12 @@ A Python SDK for creating and managing data pipelines between Kafka and ClickHou
 ## Features
 
 - Create and manage data pipelines between Kafka and ClickHouse
+- Ingest from Kafka topics or OTLP signals (logs, metrics, traces)
 - Deduplication of events during a time window based on a key
 - Temporal joins between topics based on a common key with a given time window
+- Per-topic Schema Registry integration
 - Schema validation and configuration management
+- Fine-grained resource control per pipeline component
 
 ## Installation
 
@@ -41,102 +44,74 @@ pip install glassflow
 ```python
 from glassflow.etl import Client
 
-# Initialize GlassFlow client
 client = Client(host="your-glassflow-etl-url")
 ```
 
 ### Create a pipeline
 
+The example below uses pipeline version `v3`. See [Migrating from V2 to V3](#migrating-from-v2-to-v3) if you have existing `v2` configurations.
+
 ```python
 pipeline_config = {
-    "version": "v2",
+    "version": "v3",
     "pipeline_id": "my-pipeline-id",
     "source": {
-      "type": "kafka",
-      "connection_params": {
-        "brokers": [
-          "http://my.kafka.broker:9093"
-        ],
-        "protocol": "PLAINTEXT",
-        "mechanism": "NO_AUTH"
-      },
-      "topics": [
-        {
-          "consumer_group_initial_offset": "latest",
-          "name": "users",
-          "deduplication": {
-            "enabled": True,
-            "id_field": "event_id",
-            "id_field_type": "string",
-            "time_window": "1h"
-          }
-        }
-      ]
+        "type": "kafka",
+        "connection_params": {
+            "brokers": ["http://my.kafka.broker:9093"],
+            "protocol": "PLAINTEXT",
+            "mechanism": "NO_AUTH"
+        },
+        "topics": [
+            {
+                "id": "users",
+                "name": "users",
+                "consumer_group_initial_offset": "latest",
+                "deduplication": {
+                    "enabled": True,
+                    "key": "event_id",
+                    "time_window": "1h"
+                },
+                "schema_fields": [
+                    {"name": "event_id",   "type": "string"},
+                    {"name": "user_id",    "type": "string"},
+                    {"name": "created_at", "type": "string"},
+                    {"name": "name",       "type": "string"},
+                    {"name": "email",      "type": "string"}
+                ]
+            }
+        ]
     },
-    "join": {
-      "enabled": False
-    },
+    "join": {"enabled": False},
     "sink": {
-      "type": "clickhouse",
-      "host": "http://my.clickhouse.server",
-      "port": "9000",
-      "database": "default",
-      "username": "default",
-      "password": "c2VjcmV0",
-      "secure": False,
-      "max_batch_size": 1000,
-      "max_delay_time": "30s",
-      "table": "users_dedup"
-    },
-    "schema": {
-      "fields": [
-        {
-          "source_id": "users",
-          "name": "event_id",
-          "type": "string",
-          "column_name": "event_id",
-          "column_type": "UUID"
+        "type": "clickhouse",
+        "source_id": "users",
+        "connection_params": {
+            "host": "http://my.clickhouse.server",
+            "port": "9000",
+            "database": "default",
+            "username": "default",
+            "password": "mysecret",
+            "secure": False
         },
-        {
-          "source_id": "users",
-          "field_name": "user_id",
-          "column_name": "user_id",
-          "column_type": "UUID"
-        },
-        {
-          "source_id": "users",
-          "name": "created_at",
-          "type": "string",
-          "column_name": "created_at",
-          "column_type": "DateTime"
-        },
-        {
-          "source_id": "users",
-          "name": "name",
-          "type": "string",
-          "column_name": "name",
-          "column_type": "String"
-        },
-        {
-          "source_id": "users",
-          "name": "email",
-          "type": "string",
-          "column_name": "email",
-          "column_type": "String"
-        }
-      ]
+        "mapping": [
+            {"name": "event_id",   "column_name": "event_id",   "column_type": "UUID"},
+            {"name": "user_id",    "column_name": "user_id",    "column_type": "UUID"},
+            {"name": "created_at", "column_name": "created_at", "column_type": "DateTime"},
+            {"name": "name",       "column_name": "name",       "column_type": "String"},
+            {"name": "email",      "column_name": "email",      "column_type": "String"}
+        ]
     }
 }
 
-# Create a pipeline
 pipeline = client.create_pipeline(pipeline_config)
 ```
 
+For full configuration reference — including Schema Registry, joins, OTLP sources, and resource controls — see the [GlassFlow docs](https://docs.glassflow.dev/configuration/pipeline-json-reference).
 
-## Get pipeline
+### Get pipeline
 
 ```python
-# Get a pipeline by ID
 pipeline = client.get_pipeline("my-pipeline-id")
 ```
 
@@ -145,43 +120,17 @@ pipeline = client.get_pipeline("my-pipeline-id")
 ```python
 pipelines = client.list_pipelines()
 for pipeline in pipelines:
-    print(f"Pipeline ID: {pipeline['pipeline_id']}")
-    print(f"Name: {pipeline['name']}")
-    print(f"Transformation Type: {pipeline['transformation_type']}")
-    print(f"Created At: {pipeline['created_at']}")
-    print(f"State: {pipeline['state']}")
+    print(f"Pipeline ID: {pipeline['pipeline_id']}, State: {pipeline['state']}")
 ```
 
-### Stop / Terminate / Resume Pipeline
+### Stop / Terminate / Resume pipeline
 
 ```python
 pipeline = client.get_pipeline("my-pipeline-id")
-pipeline.stop()
-print(pipeline.status)
-```
 
-```
-STOPPING
-```
-
-```python
-# Stop a pipeline ungracefully (terminate)
-client.stop_pipeline("my-pipeline-id", terminate=True)
-print(pipeline.status)
-```
-
-```
-TERMINATING
-```
-
-```python
-pipeline = client.get_pipeline("my-pipeline-id")
-pipeline.resume()
-print(pipeline.status)
-```
-
-```
-RESUMING
+pipeline.stop()                                          # graceful stop → STOPPING
+client.stop_pipeline("my-pipeline-id", terminate=True)  # ungraceful    → TERMINATING
+pipeline.resume()                                        # restart       → RESUMING
 ```
 
 ### Delete pipeline
@@ -189,42 +138,48 @@ RESUMING
 Only stopped or terminated pipelines can be deleted.
 
 ```python
-# Delete a pipeline
 client.delete_pipeline("my-pipeline-id")
-
-# Or delete via pipeline instance
+# or
 pipeline.delete()
 ```
 
-## Pipeline Configuration
+## Migrating from V2 to V3
 
-For detailed information about the pipeline configuration, see [GlassFlow docs](https://docs.glassflow.dev/configuration/pipeline-json-reference).
+Pipeline version `v2` has been removed. Use `migrate_pipeline_v2_to_v3()` to convert an existing configuration automatically:
+
+```python
+from glassflow.etl import migrate_pipeline_v2_to_v3
+
+v3_config = migrate_pipeline_v2_to_v3(v2_config)
+pipeline = client.create_pipeline(v3_config)
+```
+
+If you prefer to migrate manually, the key changes are:
+
+| Area | V2 | V3 |
+|------|----|----|
+| `version` | `"v2"` | `"v3"` |
+| Topics | no `id` field | `id: "<topic-name>"` required |
+| Schema | top-level `schema.fields` block | `source.topics[].schema_fields` per topic |
+| Sink connection | flat fields (`host`, `port`, …) at top level | nested `sink.connection_params` object |
+| Sink field mapping | top-level `schema.fields` with `source_id` | `sink.mapping` list of `{name, column_name, column_type}` |
+| Deduplication key | `id_field` | `key` |
+| Join key | `join_key` | `key` |
+| Sink password | base64-encoded | plain text |
 
 ## Tracking
 
-The SDK includes anonymous usage tracking to help improve the product. Tracking is enabled by default but can be disabled in two ways:
+The SDK includes anonymous usage stats collection to help improve the product. It collects non-identifying information such as SDK version, Python version, and feature flags (e.g., whether joins or deduplication are enabled). No personally identifiable information is collected.
 
-1. Using an environment variable:
+Usage states collection is enabled by default. To disable it:
+
 ```bash
-export GF_TRACKING_ENABLED=false
+export GF_USAGESTATS_ENABLED=false
 ```
 
-2. Programmatically using the `disable_tracking` method:
 ```python
-from glassflow.etl import Client
-
-client = Client(host="my-glassflow-host")
-client.disable_tracking()
+client.disable_usagestats()
 ```
-
-The tracking collects anonymous information about:
-- SDK version
-- Platform (operating system)
-- Python version
-- Pipeline ID
-- Whether joins or deduplication are enabled
-- Kafka security protocol, auth mechanism used and whether authentication is disabled
-- Errors during pipeline creation and deletion
 
 ## Development
 
