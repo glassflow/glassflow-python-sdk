@@ -6,6 +6,12 @@ on:
     branches:
       - main
 
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   determine-bump:
     runs-on: ubuntu-latest
@@ -18,45 +24,44 @@ jobs:
     steps:
       - name: Determine highest bump type
         id: bump_type
+        env:
+          LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
         run: |
-          LABEL="${{ github.event.label.name }}"
-          BUMP_TYPE="patch"  # Default to lowest impact
-          
-          if [[ "$LABEL" == "bump:major" ]]; then
+          # Evaluate all current PR labels and pick the highest impact
+          BUMP_TYPE="patch"
+
+          if echo "$LABELS" | grep -q '"bump:major"'; then
             BUMP_TYPE="major"
-          elif [[ "$LABEL" == "bump:minor" ]]; then
+          elif echo "$LABELS" | grep -q '"bump:minor"'; then
             BUMP_TYPE="minor"
           fi
-          
+
           echo "bump_type=$BUMP_TYPE" >> $GITHUB_OUTPUT
           echo "Using $BUMP_TYPE version bump (highest impact label found)"
 
   bump-version:
     needs: determine-bump
     runs-on: ubuntu-latest
-    if: |
-      contains(github.event.pull_request.labels.*.name, 'bump:major') ||
-      contains(github.event.pull_request.labels.*.name, 'bump:minor') ||
-      contains(github.event.pull_request.labels.*.name, 'bump:patch')
-    
+    permissions:
+      contents: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 0
-    
+
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         id: setup-python
         with:
           python-version-file: "pyproject.toml"
-      
+
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@e58605a9b6da7c637471fab8847a5e5a6b8df081 # v5
         with:
-            enable-cache: true
-            cache-dependency-glob: "uv.lock"
-      
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
       - name: Set up venv
         run: |
           uv venv --python ${{ steps.setup-python.outputs.python-path }}
@@ -68,18 +73,26 @@ jobs:
       - name: Get current version
         id: current_version
         run: |
-          CURRENT_VERSION=$(cat VERSION)
+          # Always read from main to avoid double-bumping when labels change mid-PR
+          CURRENT_VERSION=$(git show origin/main:VERSION)
           echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
 
       - name: Calculate new version
         id: new_version
+        env:
+          CURRENT: ${{ steps.current_version.outputs.current_version }}
+          BUMP_TYPE: ${{ needs.determine-bump.outputs.bump_type }}
         run: |
-          CURRENT=${{ steps.current_version.outputs.current_version }}
-          BUMP_TYPE=${{ needs.determine-bump.outputs.bump_type }}
-          
+          # Validate VERSION format (must be MAJOR.MINOR.PATCH with numeric parts only)
+          if ! echo "$CURRENT" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "ERROR: VERSION file contains invalid format: '$CURRENT'"
+            echo "Expected format: MAJOR.MINOR.PATCH (e.g. 1.2.3)"
+            exit 1
+          fi
+
           # Split version into parts
           IFS='.' read -r major minor patch <<< "$CURRENT"
-          
+
           # Bump version based on type
           case "$BUMP_TYPE" in
             "major")
@@ -95,17 +108,19 @@ jobs:
               patch=$((patch + 1))
               ;;
           esac
-          
+
           NEW_VERSION="${major}.${minor}.${patch}"
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
       - name: Update VERSION file
+        env:
+          NEW_VERSION: ${{ steps.new_version.outputs.new_version }}
         run: |
-          echo "${{ steps.new_version.outputs.new_version }}" > VERSION
+          echo "$NEW_VERSION" > VERSION
 
       - name: Commit and push version changes
-        uses: actions-js/push@master
+        uses: actions-js/push@5a7cbd780d82c0c937b5977586e641b2fd94acc5 # v1.5
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ github.head_ref }}
-          message: "chore: bump version to ${{ steps.new_version.outputs.new_version }}" 
+          message: "chore: bump version to ${{ steps.new_version.outputs.new_version }}"

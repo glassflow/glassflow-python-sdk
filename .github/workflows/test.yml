@@ -5,25 +5,31 @@ on:
     branches:
       - main
 
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         id: setup-python
         with:
           python-version-file: "pyproject.toml"
-      
+
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@e58605a9b6da7c637471fab8847a5e5a6b8df081 # v5
         with:
-            enable-cache: true
-            cache-dependency-glob: "uv.lock"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
       - name: Set up venv
         run: |
@@ -45,22 +51,20 @@ jobs:
         python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
     runs-on: ubuntu-latest
     permissions:
-      pull-requests: write
-      checks: write
-      contents: write
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 0
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         id: setup-python
         with:
           python-version: ${{ matrix.python-version }}
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@e58605a9b6da7c637471fab8847a5e5a6b8df081 # v5
         with:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
@@ -75,17 +79,39 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          uv run pytest --cov=src --cov-report=term-missing
+          if [[ "${{ matrix.python-version }}" == "3.13" ]]; then
+            uv run pytest --cov=src --cov-report=term-missing --cov-report=xml:coverage.xml
+          else
+            uv run pytest --cov=src --cov-report=term-missing
+          fi
 
-      - name: Generate coverage report
+      - name: Upload coverage report
         if: matrix.python-version == '3.13'
-        run: |
-          uv run pytest --cov=src --cov-report=xml:coverage.xml
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: coverage-report
+          path: coverage.xml
+          retention-days: 1
+
+  badge:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: write
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Download coverage report
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: coverage-report
 
       - name: Pytest coverage comment
-        if: matrix.python-version == '3.13'
         id: coverageComment
-        uses: MishaKav/pytest-coverage-comment@main
+        uses: MishaKav/pytest-coverage-comment@45d7be6c0a6b6d3c3a5fc40345e8fb4a1c4aa800 # main
         with:
           pytest-xml-coverage-path: ./coverage.xml
           title: "Test Coverage Report"
@@ -99,29 +125,20 @@ jobs:
           unique-id-for-comment: "python-coverage"
 
       - name: Update README with coverage badge
-        if: matrix.python-version == '3.13'
+        env:
+          COVERAGE: ${{ steps.coverageComment.outputs.coverage }}
+          COLOR: ${{ steps.coverageComment.outputs.color }}
         run: |
-          # Extract coverage percentage and color from the coverageComment step
-          COVERAGE_PERCENTAGE=$(echo "${{ steps.coverageComment.outputs.coverage }}" | grep -o '[0-9]*%' | tr -d '%')
-          BADGE_COLOR=$(echo "${{ steps.coverageComment.outputs.color }}" | tr -d '#')
-          
-          # Create the badge URL
+          COVERAGE_PERCENTAGE=$(echo "$COVERAGE" | grep -o '[0-9]*%' | tr -d '%')
+          BADGE_COLOR=$(echo "$COLOR" | tr -d '#')
           BADGE_URL="https://img.shields.io/badge/coverage-${COVERAGE_PERCENTAGE}%25-${BADGE_COLOR}"
-          
-          # Update README with the badge
           sed -i "/<!-- Pytest Coverage Comment:Begin -->/,/<!-- Pytest Coverage Comment:End -->/c\\
           <!-- Pytest Coverage Comment:Begin -->\\
-            <img src="${BADGE_URL}">\\
+            <img src=\"${BADGE_URL}\">\\
           <!-- Pytest Coverage Comment:End -->" README.md
 
-      - name: Clean up coverage file
-        if: matrix.python-version == '3.13'
-        run: |
-          rm -f coverage.xml
-
       - name: Commit and push README changes
-        if: matrix.python-version == '3.13'
-        uses: actions-js/push@master
+        uses: actions-js/push@5a7cbd780d82c0c937b5977586e641b2fd94acc5 # v1.5
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ github.head_ref }}
