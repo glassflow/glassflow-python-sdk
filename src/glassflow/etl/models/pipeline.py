@@ -58,7 +58,7 @@ class PipelineConfig(BaseModel):
             raise ValueError(
                 f"Pipeline version {v} is no longer supported by this SDK. "
                 "Please use glassflow-python-sdk<2.0.0 for v1 pipelines, "
-                "glassflow-python-sdk<3.0.0 for v2 pipelines, "
+                "glassflow-python-sdk<4.0.0 for v2 pipelines, "
                 "or migrate your pipeline configuration to v3."
             )
         return v
