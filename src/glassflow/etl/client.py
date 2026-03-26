@@ -136,6 +136,6 @@ class Client(APIClient):
         """
         Pipeline(host=self.host, pipeline_id=pipeline_id).delete()
 
-    def disable_tracking(self) -> None:
+    def disable_usagestats(self) -> None:
         """Disable tracking of pipeline events."""
         self._tracking.enabled = False

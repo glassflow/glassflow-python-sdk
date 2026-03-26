@@ -234,7 +234,7 @@ def get_join_validation_error_scenarios():
 
     def get_join_with_join_key_not_found(valid_config):
         join = valid_config["join"].copy()
-        join["sources"][0]["join_key"] = "non-existent-field"
+        join["sources"][0]["key"] = "non-existent-field"
         return join
 
     def get_join_with_same_orientation(valid_config):
@@ -288,64 +288,26 @@ def get_join_validation_error_scenarios():
 
 
 def get_schema_validation_error_scenarios():
-    """Get schema validation error test scenarios."""
+    """Get sink table_mapping validation error test scenarios."""
 
-    def get_schema_with_source_id_not_found(valid_config):
-        schema = valid_config["schema"]
-        schema["fields"] = schema["fields"] + [
+    def get_sink_with_invalid_source_id(valid_config):
+        sink = dict(valid_config["sink"])
+        existing = list(sink.get("table_mapping", []))
+        sink["table_mapping"] = existing + [
             {
                 "source_id": "non-existent-topic",
-                "name": "id",
-                "type": "string",
+                "field_name": "id",
                 "column_name": "id",
                 "column_type": "String",
             }
         ]
-        return schema
-
-    def get_schema_with_missing_column_name(valid_config):
-        schema = valid_config["schema"]
-        schema["fields"] = schema["fields"] + [
-            {
-                "source_id": valid_config["source"]["topics"][0]["name"],
-                "name": "id",
-                "type": "string",
-                "column_type": "String",
-            }
-        ]
-        return schema
-
-    def get_schema_with_missing_column_type(valid_config):
-        schema = valid_config["schema"]
-        schema["fields"] = schema["fields"] + [
-            {
-                "source_id": valid_config["source"]["topics"][0]["name"],
-                "name": "id",
-                "type": "string",
-                "column_name": "id",
-            }
-        ]
-        return schema
+        return sink
 
     return [
         {
             "name": "source_id_not_found",
-            "schema": get_schema_with_source_id_not_found,
+            "schema": get_sink_with_invalid_source_id,
             "expected_error": ValueError,
-            "error_message": "does not exist in any topic",
-        },
-        {
-            "name": "missing_column_name",
-            "schema": get_schema_with_missing_column_name,
-            "expected_error": ValueError,
-            "error_message": "column_name and column_type must both be provided or both"
-            " be None",
-        },
-        {
-            "name": "missing_column_type",
-            "schema": get_schema_with_missing_column_type,
-            "expected_error": ValueError,
-            "error_message": "column_name and column_type must both be provided or both"
-            " be None",
+            "error_message": "does not match any known source",
         },
     ]
