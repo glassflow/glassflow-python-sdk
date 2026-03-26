@@ -76,15 +76,12 @@ def migrate_pipeline_v2_to_v3(pipeline: dict[str, Any]) -> models.PipelineConfig
             src.pop("join_key_type", None)
 
         # Build join.fields from schema fields belonging to join sources
-        join_source_ids = {
-            src["source_id"] for src in (join.get("sources") or [])
-        }
+        join_source_ids = {src["source_id"] for src in (join.get("sources") or [])}
         join["fields"] = [
             {"source_id": f["source_id"], "name": f["name"]}
             for f in schema_fields
             if f.get("source_id") in join_source_ids
         ]
-
 
     # --- sink: flat connection fields → connection_params ----------------
     sink = config.get("sink", {})
