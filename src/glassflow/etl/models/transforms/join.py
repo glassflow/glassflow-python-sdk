@@ -2,7 +2,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
-from .base import CaseInsensitiveStrEnum
+from ..base import CaseInsensitiveStrEnum
 
 
 class JoinOrientation(CaseInsensitiveStrEnum):
@@ -10,9 +10,17 @@ class JoinOrientation(CaseInsensitiveStrEnum):
     RIGHT = "right"
 
 
+class JoinField(BaseModel):
+    """Selects a single field from a join source to include in the output (V3)."""
+
+    source_id: str
+    name: str
+    output_name: Optional[str] = Field(default=None)
+
+
 class JoinSourceConfig(BaseModel):
     source_id: str
-    join_key: str
+    key: str
     time_window: str
     orientation: JoinOrientation
 
@@ -25,8 +33,11 @@ class JoinConfig(BaseModel):
     """Configuration for joining multiple sources."""
 
     enabled: bool = False
+    id: Optional[str] = None
     type: Optional[JoinType] = None
     sources: Optional[List[JoinSourceConfig]] = None
+    # V3: optional field selection for join output
+    fields: Optional[List[JoinField]] = Field(default=None)
 
     @field_validator("sources")
     @classmethod
@@ -64,21 +75,37 @@ class JoinConfig(BaseModel):
             raise ValueError("type is required when join is enabled")
         return v
 
+    @field_validator("fields")
+    @classmethod
+    def validate_fields(
+        cls, v: Optional[List[JoinField]], info: ValidationInfo
+    ) -> Optional[List[JoinField]]:
+        """Validate that type is required when join is enabled."""
+        if info.data.get("enabled", False) and not v:
+            raise ValueError("fields is required when join is enabled")
+        return v
+
     def update(self, patch: "JoinConfigPatch") -> "JoinConfig":
         """Apply a patch to this join config."""
         update_dict = self.model_copy(deep=True)
 
         if patch.enabled is not None:
             update_dict.enabled = patch.enabled
+        if patch.id is not None:
+            update_dict.id = patch.id
         if patch.type is not None:
             update_dict.type = patch.type
         if patch.sources is not None:
             update_dict.sources = patch.sources
+        if patch.fields is not None:
+            update_dict.fields = patch.fields
 
         return update_dict
 
 
 class JoinConfigPatch(BaseModel):
     enabled: Optional[bool] = Field(default=None)
+    id: Optional[str] = Field(default=None)
     type: Optional[JoinType] = Field(default=None)
     sources: Optional[List[JoinSourceConfig]] = Field(default=None)
+    fields: Optional[List[JoinField]] = Field(default=None)

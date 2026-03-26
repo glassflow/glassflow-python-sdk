@@ -80,6 +80,36 @@ def invalid_config() -> dict:
 
 
 @pytest.fixture
+def valid_v3_config() -> dict:
+    """Fixture for a valid V3 Kafka pipeline configuration."""
+    return pipeline_configs.get_valid_v3_pipeline_config()
+
+
+@pytest.fixture
+def valid_otlp_logs_config() -> dict:
+    """Fixture for a valid V3 OTLP logs pipeline configuration."""
+    return pipeline_configs.get_valid_otlp_logs_pipeline_config()
+
+
+@pytest.fixture
+def valid_otlp_metrics_config() -> dict:
+    """Fixture for a valid V3 OTLP metrics pipeline configuration."""
+    return pipeline_configs.get_valid_otlp_metrics_pipeline_config()
+
+
+@pytest.fixture
+def valid_otlp_traces_config() -> dict:
+    """Fixture for a valid V3 OTLP traces pipeline configuration."""
+    return pipeline_configs.get_valid_otlp_traces_pipeline_config()
+
+
+@pytest.fixture
+def valid_otlp_with_transformation_config() -> dict:
+    """Fixture for a valid V3 OTLP pipeline with a stateless transformation."""
+    return pipeline_configs.get_valid_otlp_with_transformation_config()
+
+
+@pytest.fixture
 def mock_success_response():
     """Fixture for a successful HTTP response."""
     return mock_responses.create_mock_response_factory()(

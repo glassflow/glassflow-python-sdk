@@ -11,7 +11,6 @@ class FilterConfig(BaseModel):
         """Apply a patch to this filter config."""
         update_dict = self.model_copy(deep=True)
 
-        # Check each field explicitly to handle model instances properly
         if patch.enabled is not None:
             update_dict.enabled = patch.enabled
         if patch.expression is not None:

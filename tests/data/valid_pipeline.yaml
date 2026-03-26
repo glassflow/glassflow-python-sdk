@@ -1,11 +1,11 @@
 join:
   enabled: true
   sources:
-  - join_key: user_id
+  - key: user_id
     orientation: left
     source_id: user_logins
     time_window: 1h
-  - join_key: user_id
+  - key: user_id
     orientation: right
     source_id: orders
     time_window: 1h
@@ -25,18 +25,38 @@ stateless_transformation:
         output_name: upper_user_id
         output_type: string
 sink:
-  database: default
-  host: <host>
+  type: clickhouse
+  connection_params:
+    host: <host>
+    port: "12753"
+    http_port: "12754"
+    database: default
+    username: <user>
+    password: <password>
+    secure: true
+  table: user_orders
   max_batch_size: 1
   max_delay_time: 10m
-  password: <password>
-  port: "12753"
-  http_port: "12754"
-  provider: aiven
-  secure: true
-  table: user_orders
-  type: clickhouse
-  username: <user>
+  source_id: my_transformation
+  mapping:
+  - name: session_id
+    column_name: session_id
+    column_type: String
+  - name: user_id
+    column_name: user_id
+    column_type: String
+  - name: order_id
+    column_name: order_id
+    column_type: String
+  - name: timestamp
+    column_name: order_placed_at
+    column_type: DateTime
+  - name: timestamp
+    column_name: login_at
+    column_type: DateTime
+  - name: upper_user_id
+    column_name: upper_user_id
+    column_type: String
 source:
   connection_params:
     brokers:
@@ -53,53 +73,29 @@ source:
   - consumer_group_initial_offset: earliest
     deduplication:
       enabled: true
-      id_field: session_id
-      id_field_type: string
+      key: session_id
       time_window: 12h
     name: user_logins
+    schema_fields:
+    - name: session_id
+      type: string
+    - name: user_id
+      type: string
+    - name: timestamp
+      type: string
   - consumer_group_initial_offset: earliest
     deduplication:
       enabled: true
-      id_field: order_id
-      id_field_type: string
+      key: order_id
       time_window: 12h
     name: orders
+    schema_fields:
+    - name: order_id
+      type: string
+    - name: user_id
+      type: string
+    - name: timestamp
+      type: string
+    - name: skip_sink_field
+      type: string
   type: kafka
-schema:
-  fields:
-  - column_name: session_id
-    column_type: String
-    name: session_id
-    source_id: user_logins
-    type: string
-  - column_name: user_id
-    column_type: String
-    name: user_id
-    source_id: user_logins
-    type: string
-  - column_name: order_id
-    column_type: String
-    name: order_id
-    source_id: orders
-    type: string
-  - name: user_id
-    source_id: orders
-    type: string
-  - column_name: login_at
-    column_type: DateTime
-    name: timestamp
-    source_id: user_logins
-    type: string
-  - column_name: order_placed_at
-    column_type: DateTime
-    name: timestamp
-    source_id: orders
-    type: string
-  - name: skip_sink_field
-    source_id: orders
-    type: string
-  - name: upper_user_id
-    source_id: my_transformation
-    type: string
-    column_name: upper_user_id
-    column_type: String
