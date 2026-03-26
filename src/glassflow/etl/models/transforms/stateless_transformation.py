@@ -2,7 +2,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel, Field, model_validator
 
-from .base import CaseInsensitiveStrEnum
+from ..base import CaseInsensitiveStrEnum
 
 
 class StatelessTransformationType(CaseInsensitiveStrEnum):
@@ -32,6 +32,10 @@ class StatelessTransformationConfig(BaseModel):
     type: Optional[StatelessTransformationType] = Field(
         description="The type of the stateless transformation",
         default=StatelessTransformationType.EXPRESSION,
+    )
+    # V3: the upstream source_id this transformation reads from
+    source_id: Optional[str] = Field(
+        description="The source_id this transformation reads from (V3)", default=None
     )
     config: Optional[ExpressionConfig] = Field(
         description="The configuration of the stateless transformation", default=None
@@ -71,6 +75,8 @@ class StatelessTransformationConfig(BaseModel):
             update_dict.id = patch.id
         if patch.type is not None:
             update_dict.type = patch.type
+        if patch.source_id is not None:
+            update_dict.source_id = patch.source_id
         if patch.config is not None:
             update_dict.config = patch.config
 
@@ -81,4 +87,5 @@ class StatelessTransformationConfigPatch(BaseModel):
     enabled: Optional[bool] = Field(default=None)
     id: Optional[str] = Field(default=None)
     type: Optional[StatelessTransformationType] = Field(default=None)
+    source_id: Optional[str] = Field(default=None)
     config: Optional[ExpressionConfig] = Field(default=None)

@@ -74,6 +74,70 @@ class TestPipelineCreation:
             assert scenario["error_message"] in str(exc_info.value)
 
 
+class TestPipelineGet:
+    """Tests for Pipeline.get() including schema version selection."""
+
+    def test_get_without_schema_versions(
+        self, pipeline, mock_success, get_pipeline_response, get_health_payload
+    ):
+        """get() with no args sends a plain GET with no query params."""
+        with mock_success(
+            [get_pipeline_response, get_health_payload(pipeline.pipeline_id)]
+        ) as mock_request:
+            result = pipeline.get()
+            assert result == pipeline
+            get_call = mock_request.call_args_list[0]
+            assert get_call == call(
+                "GET", f"{pipeline.ENDPOINT}/{pipeline.pipeline_id}"
+            )
+
+    def test_get_with_schema_versions(
+        self, pipeline, mock_success, get_pipeline_response, get_health_payload
+    ):
+        """get(schema_versions=...) appends ?schema=sourceId:versionId params."""
+        with mock_success(
+            [get_pipeline_response, get_health_payload(pipeline.pipeline_id)]
+        ) as mock_request:
+            result = pipeline.get(schema_versions={"src-logins": "1001"})
+            assert result == pipeline
+            get_call = mock_request.call_args_list[0]
+            assert get_call == call(
+                "GET",
+                f"{pipeline.ENDPOINT}/{pipeline.pipeline_id}",
+                params=[("schema", "src-logins:1001")],
+            )
+
+    def test_get_with_multiple_schema_versions(
+        self, pipeline, mock_success, get_pipeline_response, get_health_payload
+    ):
+        """Multiple schema_versions entries produce multiple ?schema= params."""
+        with mock_success(
+            [get_pipeline_response, get_health_payload(pipeline.pipeline_id)]
+        ) as mock_request:
+            pipeline.get(schema_versions={"src-logins": "1001", "src-orders": "2002"})
+            get_call = mock_request.call_args_list[0]
+            params = (
+                get_call.kwargs.get("params") or get_call.args[2]
+                if len(get_call.args) > 2
+                else get_call.kwargs["params"]
+            )
+            assert ("schema", "src-logins:1001") in params
+            assert ("schema", "src-orders:2002") in params
+
+    def test_get_with_empty_schema_versions(
+        self, pipeline, mock_success, get_pipeline_response, get_health_payload
+    ):
+        """get(schema_versions={}) is treated the same as no schema_versions."""
+        with mock_success(
+            [get_pipeline_response, get_health_payload(pipeline.pipeline_id)]
+        ) as mock_request:
+            pipeline.get(schema_versions={})
+            get_call = mock_request.call_args_list[0]
+            assert get_call == call(
+                "GET", f"{pipeline.ENDPOINT}/{pipeline.pipeline_id}"
+            )
+
+
 class TestPipelineLifecycle:
     """Tests for resume, stop, terminate, delete operations."""
 
@@ -236,7 +300,7 @@ class TestPipelineModification:
     ):
         """Test pipeline update with nested configuration."""
         config_patch = models.PipelineConfigPatch(
-            source=models.SourceConfigPatch(
+            source=models.KafkaSourcePatch(
                 connection_params=models.KafkaConnectionParamsPatch(
                     brokers=["new-broker:9092"]
                 )

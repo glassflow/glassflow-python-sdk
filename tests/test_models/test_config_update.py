@@ -21,7 +21,6 @@ class TestPipelineConfigUpdate:
         assert updated.join == config.join
         assert updated.filter == config.filter
         assert updated.metadata == config.metadata
-        assert updated.pipeline_schema == config.pipeline_schema
         # Original config should be unchanged (immutable)
         assert config.name != "Updated Name"
 
@@ -29,7 +28,7 @@ class TestPipelineConfigUpdate:
         """Test updating source configuration."""
         config = models.PipelineConfig(**valid_config)
         patch = models.PipelineConfigPatch(
-            source=models.SourceConfigPatch(
+            source=models.KafkaSourcePatch(
                 provider="new-provider",
                 connection_params=models.KafkaConnectionParamsPatch(
                     brokers=["new-broker:9092"]
@@ -49,16 +48,26 @@ class TestPipelineConfigUpdate:
         """Test updating sink configuration."""
         config = models.PipelineConfig(**valid_config)
         patch = models.PipelineConfigPatch(
-            sink=models.SinkConfigPatch(host="new-host", port="9000")
+            sink=models.SinkConfigPatch(
+                connection_params=models.ClickhouseConnectionParamsPatch(
+                    host="new-host", port="9000"
+                )
+            )
         )
 
         updated = config.update(patch)
 
-        assert updated.sink.host == "new-host"
-        assert updated.sink.port == "9000"
+        assert updated.sink.connection_params.host == "new-host"
+        assert updated.sink.connection_params.port == "9000"
         # Other sink fields should remain unchanged
-        assert updated.sink.database == config.sink.database
-        assert updated.sink.username == config.sink.username
+        assert (
+            updated.sink.connection_params.database
+            == config.sink.connection_params.database
+        )
+        assert (
+            updated.sink.connection_params.username
+            == config.sink.connection_params.username
+        )
 
     def test_update_join(self, valid_config):
         """Test updating join configuration."""
@@ -83,13 +92,13 @@ class TestPipelineConfigUpdate:
                 sources=[
                     models.JoinSourceConfig(
                         source_id="user_logins",
-                        join_key="user_id",
+                        key="user_id",
                         time_window="1h",
                         orientation=models.JoinOrientation.LEFT,
                     ),
                     models.JoinSourceConfig(
                         source_id="orders",
-                        join_key="user_id",
+                        key="user_id",
                         time_window="1h",
                         orientation=models.JoinOrientation.RIGHT,
                     ),
@@ -107,15 +116,19 @@ class TestPipelineConfigUpdate:
         config = models.PipelineConfig(**valid_config)
         patch = models.PipelineConfigPatch(
             name="Multi Update",
-            source=models.SourceConfigPatch(provider="updated-provider"),
-            sink=models.SinkConfigPatch(host="updated-host"),
+            source=models.KafkaSourcePatch(provider="updated-provider"),
+            sink=models.SinkConfigPatch(
+                connection_params=models.ClickhouseConnectionParamsPatch(
+                    host="updated-host"
+                )
+            ),
         )
 
         updated = config.update(patch)
 
         assert updated.name == "Multi Update"
         assert updated.source.provider == "updated-provider"
-        assert updated.sink.host == "updated-host"
+        assert updated.sink.connection_params.host == "updated-host"
 
     def test_update_filter(self, valid_config):
         """Test updating filter configuration."""
@@ -179,7 +192,7 @@ class TestPipelineConfigUpdate:
         original_protocol = config.source.connection_params.protocol
 
         patch = models.PipelineConfigPatch(
-            source=models.SourceConfigPatch(
+            source=models.KafkaSourcePatch(
                 connection_params=models.KafkaConnectionParamsPatch(
                     username="new-username"
                 )
@@ -200,10 +213,10 @@ class TestSourceConfigUpdate:
 
     def test_update_connection_params(self, valid_config):
         """Test updating Kafka connection parameters."""
-        from glassflow.etl.models.source import KafkaProtocol
+        from glassflow.etl.models.sources import KafkaProtocol
 
-        source = models.SourceConfig(**valid_config["source"])
-        patch = models.SourceConfigPatch(
+        source = models.KafkaSource(**valid_config["source"])
+        patch = models.KafkaSourcePatch(
             connection_params=models.KafkaConnectionParamsPatch(
                 brokers=["updated-broker:9092"],
                 protocol=KafkaProtocol.PLAINTEXT,
@@ -213,7 +226,7 @@ class TestSourceConfigUpdate:
         updated = source.update(patch)
 
         assert updated.connection_params.brokers == ["updated-broker:9092"]
-        from glassflow.etl.models.source import KafkaProtocol
+        from glassflow.etl.models.sources import KafkaProtocol
 
         assert updated.connection_params.protocol == KafkaProtocol.PLAINTEXT
         # Other fields should remain unchanged
@@ -222,11 +235,11 @@ class TestSourceConfigUpdate:
 
     def test_update_topics(self, valid_config):
         """Test updating topics with full TopicConfig objects (no partial patch)."""
-        source = models.SourceConfig(**valid_config["source"])
+        source = models.KafkaSource(**valid_config["source"])
         new_topic = models.TopicConfig(
             name="new-topic",
         )
-        patch = models.SourceConfigPatch(topics=[new_topic])
+        patch = models.KafkaSourcePatch(topics=[new_topic])
 
         updated = source.update(patch)
 
@@ -237,8 +250,8 @@ class TestSourceConfigUpdate:
 
     def test_update_provider(self, valid_config):
         """Test updating provider."""
-        source = models.SourceConfig(**valid_config["source"])
-        patch = models.SourceConfigPatch(provider="updated-provider")
+        source = models.KafkaSource(**valid_config["source"])
+        patch = models.KafkaSourcePatch(provider="updated-provider")
 
         updated = source.update(patch)
 
@@ -252,42 +265,52 @@ class TestSinkConfigUpdate:
     def test_update_host_port(self, valid_config):
         """Test updating sink host and port."""
         sink = models.SinkConfig(**valid_config["sink"])
-        patch = models.SinkConfigPatch(host="new-host", port="8080")
+        patch = models.SinkConfigPatch(
+            connection_params=models.ClickhouseConnectionParamsPatch(
+                host="new-host", port="8080"
+            )
+        )
 
         updated = sink.update(patch)
 
-        assert updated.host == "new-host"
-        assert updated.port == "8080"
+        assert updated.connection_params.host == "new-host"
+        assert updated.connection_params.port == "8080"
         # Other fields should remain unchanged
-        assert updated.database == sink.database
-        assert updated.username == sink.username
+        assert updated.connection_params.database == sink.connection_params.database
+        assert updated.connection_params.username == sink.connection_params.username
 
     def test_update_credentials(self, valid_config):
         """Test updating sink credentials."""
         sink = models.SinkConfig(**valid_config["sink"])
-        patch = models.SinkConfigPatch(username="new-user", password="new-password")
+        patch = models.SinkConfigPatch(
+            connection_params=models.ClickhouseConnectionParamsPatch(
+                username="new-user", password="new-password"
+            )
+        )
 
         updated = sink.update(patch)
 
-        assert updated.username == "new-user"
-        assert updated.password == "new-password"
-        assert updated.host == sink.host
+        assert updated.connection_params.username == "new-user"
+        assert updated.connection_params.password == "new-password"
+        assert updated.connection_params.host == sink.connection_params.host
 
     def test_update_multiple_sink_fields(self, valid_config):
         """Test updating multiple sink fields at once."""
         sink = models.SinkConfig(**valid_config["sink"])
         patch = models.SinkConfigPatch(
-            host="new-host",
-            port="8080",
-            database="new-db",
+            connection_params=models.ClickhouseConnectionParamsPatch(
+                host="new-host",
+                port="8080",
+                database="new-db",
+            ),
             table="new-table",
         )
 
         updated = sink.update(patch)
 
-        assert updated.host == "new-host"
-        assert updated.port == "8080"
-        assert updated.database == "new-db"
+        assert updated.connection_params.host == "new-host"
+        assert updated.connection_params.port == "8080"
+        assert updated.connection_params.database == "new-db"
         assert updated.table == "new-table"
 
 
@@ -321,13 +344,13 @@ class TestJoinConfigUpdate:
         new_sources = [
             models.JoinSourceConfig(
                 source_id="source1",
-                join_key="key1",
+                key="key1",
                 time_window="2h",
                 orientation=models.JoinOrientation.LEFT,
             ),
             models.JoinSourceConfig(
                 source_id="source2",
-                join_key="key2",
+                key="key2",
                 time_window="2h",
                 orientation=models.JoinOrientation.RIGHT,
             ),
@@ -389,7 +412,7 @@ class TestDeduplicationConfigUpdate:
 
         assert updated.enabled is False
         # Other fields should remain unchanged
-        assert updated.id_field == dedup.id_field
+        assert updated.key == dedup.key
         assert updated.time_window == dedup.time_window
 
     def test_update_id_field(self, valid_config):
@@ -397,11 +420,8 @@ class TestDeduplicationConfigUpdate:
         dedup = models.DeduplicationConfig(
             **valid_config["source"]["topics"][0]["deduplication"]
         )
-        patch = models.DeduplicationConfigPatch(
-            id_field="new_id_field", id_field_type=models.KafkaDataType.INT
-        )
+        patch = models.DeduplicationConfigPatch(key="new_id_field")
 
         updated = dedup.update(patch)
 
-        assert updated.id_field == "new_id_field"
-        assert updated.id_field_type == models.KafkaDataType.INT
+        assert updated.key == "new_id_field"

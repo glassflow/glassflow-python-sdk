@@ -13,7 +13,7 @@ class Tracking:
 
     def __init__(self, distinct_id: str) -> None:
         """Initialize the tracking client"""
-        self.enabled = os.getenv("GF_TRACKING_ENABLED", "true").lower() == "true"
+        self.enabled = os.getenv("GF_USAGESTATS_ENABLED", "true").lower() == "true"
         self._project_token = "209670ec9b352915013a5dfdb169dd25"
         self._distinct_id = distinct_id
         self.client = mixpanel.Mixpanel(self._project_token)
