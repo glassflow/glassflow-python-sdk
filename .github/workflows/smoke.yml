@@ -1,21 +1,21 @@
-name: "Copilot Setup Steps"
+name: Smoke Test
+
 on:
-  workflow_dispatch:
   push:
-    paths:
-      - .github/workflows/copilot-setup-steps.yml
-  pull_request:
-    paths:
-      - .github/workflows/copilot-setup-steps.yml
+    branches:
+      - main
 
 permissions: {}
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  copilot-setup-steps:
+  smoke:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
@@ -38,3 +38,7 @@ jobs:
       - name: Install dependencies
         run: |
           uv pip install -e .[test]
+
+      - name: Run tests
+        run: |
+          uv run pytest
