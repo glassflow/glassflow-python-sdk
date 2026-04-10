@@ -243,6 +243,64 @@ def _v2_transform_pipeline() -> dict:
     }
 
 
+def _v2_filter_pipeline() -> dict:
+    return {
+        "version": "v2",
+        "pipeline_id": "filter-pipeline",
+        "source": {
+            "type": "kafka",
+            "provider": "confluent",
+            "connection_params": {
+                "brokers": ["kafka:9092"],
+                "protocol": "SASL_SSL",
+                "mechanism": "SCRAM-SHA-256",
+                "username": "user",
+                "password": "pass",
+            },
+            "topics": [
+                {
+                    "name": "events",
+                    "consumer_group_initial_offset": "earliest",
+                    "deduplication": {"enabled": False},
+                }
+            ],
+        },
+        "schema": {
+            "fields": [
+                {
+                    "source_id": "events",
+                    "name": "event_id",
+                    "type": "string",
+                    "column_name": "event_id",
+                    "column_type": "String",
+                },
+                {
+                    "source_id": "events",
+                    "name": "status",
+                    "type": "string",
+                    "column_name": "status",
+                    "column_type": "String",
+                },
+            ]
+        },
+        "filter": {
+            "enabled": True,
+            "expression": "status == 'active'",
+        },
+        "join": {"enabled": False},
+        "sink": {
+            "type": "clickhouse",
+            "host": "clickhouse",
+            "port": "9000",
+            "database": "default",
+            "username": "default",
+            "password": "secret",
+            "secure": False,
+            "table": "events_filtered",
+        },
+    }
+
+
 class TestMigratePipelineV2ToV3:
     def test_returns_pipeline_config(self):
         result = migrate_pipeline_v2_to_v3(_v2_dedup_pipeline())
@@ -256,36 +314,41 @@ class TestMigratePipelineV2ToV3:
         result = migrate_pipeline_v2_to_v3(_v2_dedup_pipeline())
         assert result.pipeline_id == "dedup-pipeline"
 
-    # --- deduplication ---------------------------------------------------
+    # --- sources -----------------------------------------------------------
 
-    def test_dedup_id_field_migrated_to_key(self):
+    def test_sources_flattened(self):
         result = migrate_pipeline_v2_to_v3(_v2_dedup_pipeline())
-        assert result.source.topics[0].deduplication.key == "event_id"
+        assert len(result.sources) == 1
+        assert result.sources[0].source_id == "users"
+        assert result.sources[0].topic == "users"
+        assert result.sources[0].type == "kafka"
 
-    def test_dedup_id_field_type_removed(self):
+    def test_sources_have_connection_params(self):
         result = migrate_pipeline_v2_to_v3(_v2_dedup_pipeline())
-        dedup = result.source.topics[0].deduplication
-        assert not hasattr(dedup, "id_field_type")
+        assert result.sources[0].connection_params.brokers == ["kafka:9092"]
 
-    def test_dedup_time_window_preserved(self):
+    # --- dedup as transforms ------------------------------------------------
+
+    def test_dedup_migrated_to_transform(self):
         result = migrate_pipeline_v2_to_v3(_v2_dedup_pipeline())
-        assert result.source.topics[0].deduplication.time_window == "1h"
+        dedup_transforms = [
+            t for t in (result.transforms or []) if t.type == models.TransformType.DEDUP
+        ]
+        assert len(dedup_transforms) == 1
+        assert dedup_transforms[0].config.key == "event_id"
+        assert dedup_transforms[0].config.time_window == "1h"
 
-    # --- topic schema_fields from top-level schema -----------------------
+    # --- source schema_fields from top-level schema -------------------------
 
-    def test_topic_schema_fields_migrated(self):
+    def test_source_schema_fields_migrated(self):
         result = migrate_pipeline_v2_to_v3(_v2_dedup_pipeline())
-        topic = result.source.topics[0]
-        assert topic.schema_fields is not None
-        names = [f.name for f in topic.schema_fields]
+        src = result.sources[0]
+        assert src.schema_fields is not None
+        names = [f.name for f in src.schema_fields]
         assert "event_id" in names
         assert "user_id" in names
 
-    def test_top_level_schema_removed(self):
-        result = migrate_pipeline_v2_to_v3(_v2_dedup_pipeline())
-        assert "schema" not in result.model_fields_set
-
-    # --- sink connection_params ------------------------------------------
+    # --- sink connection_params ---------------------------------------------
 
     def test_sink_connection_params_nested(self):
         result = migrate_pipeline_v2_to_v3(_v2_dedup_pipeline())
@@ -300,7 +363,7 @@ class TestMigratePipelineV2ToV3:
         assert "host" not in sink_dict
         assert "port" not in sink_dict
 
-    # --- sink mapping from top-level schema ------------------------------
+    # --- sink mapping from top-level schema ---------------------------------
 
     def test_sink_mapping_created(self):
         result = migrate_pipeline_v2_to_v3(_v2_dedup_pipeline())
@@ -317,42 +380,54 @@ class TestMigratePipelineV2ToV3:
         result = migrate_pipeline_v2_to_v3(_v2_dedup_pipeline())
         assert result.sink.source_id == "users"
 
-    # --- join ------------------------------------------------------------
+    # --- join ---------------------------------------------------------------
 
-    def test_join_key_migrated_from_join_key(self):
+    def test_join_migrated_to_left_right(self):
         result = migrate_pipeline_v2_to_v3(_v2_join_pipeline())
-        for src in result.join.sources:
-            assert src.key == "user_id"
+        assert result.join.enabled is True
+        assert result.join.left_source is not None
+        assert result.join.right_source is not None
+        assert result.join.left_source.source_id == "user-logins"
+        assert result.join.left_source.key == "user_id"
+        assert result.join.right_source.source_id == "orders"
+        assert result.join.right_source.key == "user_id"
 
-    def test_join_key_type_removed(self):
+    def test_join_output_fields_populated_from_schema(self):
         result = migrate_pipeline_v2_to_v3(_v2_join_pipeline())
-        for src in result.join.sources:
-            assert not hasattr(src, "join_key_type")
-
-    def test_join_fields_populated_from_schema(self):
-        result = migrate_pipeline_v2_to_v3(_v2_join_pipeline())
-        assert result.join.fields is not None
-        field_pairs = {(f.source_id, f.name) for f in result.join.fields}
+        assert result.join.output_fields is not None
+        field_pairs = {(f.source_id, f.name) for f in result.join.output_fields}
         assert ("user-logins", "session_id") in field_pairs
         assert ("user-logins", "user_id") in field_pairs
         assert ("orders", "order_id") in field_pairs
         assert ("orders", "user_id") in field_pairs
 
-    def test_join_orientations_preserved(self):
+    def test_multiple_sources_flattened(self):
         result = migrate_pipeline_v2_to_v3(_v2_join_pipeline())
-        orientations = {s.source_id: s.orientation for s in result.join.sources}
-        assert orientations["user-logins"] == models.JoinOrientation.LEFT
-        assert orientations["orders"] == models.JoinOrientation.RIGHT
+        source_ids = [s.source_id for s in result.sources]
+        assert "user-logins" in source_ids
+        assert "orders" in source_ids
+        for src in result.sources:
+            assert src.schema_fields is not None
 
-    def test_multiple_topic_schema_fields(self):
-        result = migrate_pipeline_v2_to_v3(_v2_join_pipeline())
-        topic_names = [t.name for t in result.source.topics]
-        assert "user-logins" in topic_names
-        assert "orders" in topic_names
-        for topic in result.source.topics:
-            assert topic.schema_fields is not None
+    # --- filter migration -----------------------------------------------------
 
-    # --- input is not mutated --------------------------------------------
+    def test_filter_migrated_to_transform(self):
+        result = migrate_pipeline_v2_to_v3(_v2_filter_pipeline())
+        filter_transforms = [
+            t
+            for t in (result.transforms or [])
+            if t.type == models.TransformType.FILTER
+        ]
+        assert len(filter_transforms) == 1
+        assert filter_transforms[0].config.expression == "status == 'active'"
+        assert filter_transforms[0].source_id == "events"
+
+    def test_filter_pipeline_returns_valid_config(self):
+        result = migrate_pipeline_v2_to_v3(_v2_filter_pipeline())
+        assert isinstance(result, models.PipelineConfig)
+        assert result.pipeline_id == "filter-pipeline"
+
+    # --- input is not mutated -----------------------------------------------
 
     def test_original_dict_not_mutated(self):
         original = _v2_dedup_pipeline()
@@ -368,16 +443,24 @@ class TestMigratePipelineV2ToV3WithTransformation:
         result = migrate_pipeline_v2_to_v3(_v2_transform_pipeline())
         assert isinstance(result, models.PipelineConfig)
 
-    def test_transformation_preserved(self):
+    def test_transformation_migrated_to_stateless_transform(self):
         result = migrate_pipeline_v2_to_v3(_v2_transform_pipeline())
-        st = result.stateless_transformation
-        assert st.enabled is True
-        assert st.id == "upper_transform"
-        assert st.source_id == "users"
+        stateless = [
+            t
+            for t in (result.transforms or [])
+            if t.type == models.TransformType.STATELESS
+        ]
+        assert len(stateless) == 1
+        assert stateless[0].source_id == "users"
 
     def test_transformation_config_preserved(self):
         result = migrate_pipeline_v2_to_v3(_v2_transform_pipeline())
-        transform = result.stateless_transformation.config.transform[0]
+        stateless = [
+            t
+            for t in (result.transforms or [])
+            if t.type == models.TransformType.STATELESS
+        ]
+        transform = stateless[0].config.transforms[0]
         assert transform.expression == "upper(name)"
         assert transform.output_name == "upper_name"
 

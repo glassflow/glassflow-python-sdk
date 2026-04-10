@@ -81,6 +81,7 @@ class ClickhouseDataType(CaseInsensitiveStrEnum):
     ARRAY_LC_FIXEDSTRING = "Array(LowCardinality(FixedString))"
     ARRAY_MAP_STRING_STRING = "Array(Map(String, String))"
     MAP_STRING_STRING = "Map(String, String)"
+    MAP_LC_STRING_STRING = "Map(LowCardinality(String), String)"
 
 
 kafka_to_clickhouse_data_type_mappings = {
@@ -124,7 +125,6 @@ kafka_to_clickhouse_data_type_mappings = {
     KafkaDataType.UINT16: [ClickhouseDataType.UINT16],
     KafkaDataType.UINT32: [ClickhouseDataType.UINT32],
     KafkaDataType.UINT64: [ClickhouseDataType.UINT64],
-    KafkaDataType.UINT8: [ClickhouseDataType.UINT8],
     KafkaDataType.FLOAT: [ClickhouseDataType.FLOAT32, ClickhouseDataType.FLOAT64],
     KafkaDataType.FLOAT32: [ClickhouseDataType.FLOAT32, ClickhouseDataType.LC_FLOAT32],
     KafkaDataType.FLOAT64: [

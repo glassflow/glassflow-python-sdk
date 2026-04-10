@@ -1,8 +1,6 @@
 """Error scenario test data."""
 
-from pydantic import ValidationError
-
-from glassflow.etl import errors, models
+from glassflow.etl import errors
 
 
 def get_validation_error_scenarios():
@@ -227,38 +225,47 @@ def get_dlq_error_scenarios():
 def get_join_validation_error_scenarios():
     """Get join validation error test scenarios."""
 
-    def get_join_with_source_id_not_found(valid_config):
-        join = valid_config["join"].copy()
-        join["sources"][0]["source_id"] = "non-existent-topic"
+    def get_join_with_left_source_not_found(valid_config):
+        import copy
+
+        join = copy.deepcopy(valid_config["join"])
+        join["left_source"]["source_id"] = "non-existent-topic"
         return join
 
     def get_join_with_join_key_not_found(valid_config):
-        join = valid_config["join"].copy()
-        join["sources"][0]["key"] = "non-existent-field"
+        import copy
+
+        join = copy.deepcopy(valid_config["join"])
+        join["left_source"]["key"] = "non-existent-field"
         return join
 
-    def get_join_with_same_orientation(valid_config):
-        join = valid_config["join"].copy()
-        join["sources"][0]["orientation"] = models.JoinOrientation.LEFT
-        join["sources"][1]["orientation"] = models.JoinOrientation.LEFT
+    def get_join_with_missing_left_source(valid_config):
+        import copy
+
+        join = copy.deepcopy(valid_config["join"])
+        join.pop("left_source")
         return join
 
-    def get_join_with_only_one_source(valid_config):
-        join = valid_config["join"].copy()
-        join["sources"] = [join["sources"][0]]
+    def get_join_with_missing_right_source(valid_config):
+        import copy
+
+        join = copy.deepcopy(valid_config["join"])
+        join.pop("right_source")
         return join
 
     def get_join_with_invalid_type(valid_config):
-        join = valid_config["join"].copy()
+        import copy
+
+        join = copy.deepcopy(valid_config["join"])
         join["type"] = None
         return join
 
     return [
         {
-            "name": "source_id_not_found",
-            "join": get_join_with_source_id_not_found,
+            "name": "left_source_not_found",
+            "join": get_join_with_left_source_not_found,
             "expected_error": ValueError,
-            "error_message": "does not exist in any topic",
+            "error_message": "does not match any source",
         },
         {
             "name": "join_key_not_found",
@@ -267,47 +274,21 @@ def get_join_validation_error_scenarios():
             "error_message": "does not exist in source",
         },
         {
-            "name": "same_orientation",
-            "join": get_join_with_same_orientation,
-            "expected_error": ValidationError,
-            "error_message": "join sources must have opposite orientations",
+            "name": "missing_left_source",
+            "join": get_join_with_missing_left_source,
+            "expected_error": ValueError,
+            "error_message": "left_source is required when join is enabled",
         },
         {
-            "name": "join_with_only_one_source",
-            "join": get_join_with_only_one_source,
+            "name": "missing_right_source",
+            "join": get_join_with_missing_right_source,
             "expected_error": ValueError,
-            "error_message": "join must have exactly two sources when enabled",
+            "error_message": "right_source is required when join is enabled",
         },
         {
             "name": "join_with_invalid_type",
             "join": get_join_with_invalid_type,
             "expected_error": ValueError,
             "error_message": "type is required when join is enabled",
-        },
-    ]
-
-
-def get_schema_validation_error_scenarios():
-    """Get sink table_mapping validation error test scenarios."""
-
-    def get_sink_with_invalid_source_id(valid_config):
-        sink = dict(valid_config["sink"])
-        existing = list(sink.get("table_mapping", []))
-        sink["table_mapping"] = existing + [
-            {
-                "source_id": "non-existent-topic",
-                "field_name": "id",
-                "column_name": "id",
-                "column_type": "String",
-            }
-        ]
-        return sink
-
-    return [
-        {
-            "name": "source_id_not_found",
-            "schema": get_sink_with_invalid_source_id,
-            "expected_error": ValueError,
-            "error_message": "does not match any known source",
         },
     ]

@@ -3,75 +3,45 @@ import pytest
 from glassflow.etl import models
 
 
-class TestDeduplicationConfig:
-    """Tests for DeduplicationConfig model."""
+class TestDedupTransformConfig:
+    """Tests for DedupTransformConfig model."""
 
-    def test_deduplication_config_enabled_true(self):
-        """Test DeduplicationConfig when enabled is True."""
-        with pytest.raises(ValueError) as exc_info:
-            models.DeduplicationConfig(
-                enabled=True,
-                key=None,
-                time_window=None,
-            )
-        assert "is required when deduplication is enabled" in str(exc_info.value)
-
-        # All fields should be required when enabled is True
-        config = models.DeduplicationConfig(
-            enabled=True,
-            key="id",
-            time_window="1h",
-        )
-        assert config.enabled is True
+    def test_dedup_config_valid(self):
+        config = models.DedupTransformConfig(key="id", time_window="1h")
         assert config.key == "id"
         assert config.time_window == "1h"
 
-    def test_deduplication_config_enabled_false(self):
-        """Test DeduplicationConfig when enabled is False."""
-        # All fields should be optional when enabled is False
-        config = models.DeduplicationConfig(
-            enabled=False,
-            key=None,
-            time_window=None,
-        )
-        assert config.enabled is False
-        assert config.key is None
-        assert config.time_window is None
+    def test_dedup_config_missing_key(self):
+        with pytest.raises(ValueError, match="key is required"):
+            models.DedupTransformConfig(key="", time_window="1h")
 
-    def test_deduplication_config_enabled_false_with_fields(self):
-        """Test DeduplicationConfig when enabled is False."""
-        # All fields should be optional when enabled is False
-        config = models.DeduplicationConfig(
-            enabled=False,
-            key="",
-            time_window=None,
-        )
-        assert config.enabled is False
-        assert config.key is None
-        assert config.time_window is None
+    def test_dedup_config_missing_time_window(self):
+        with pytest.raises(ValueError, match="time_window is required"):
+            models.DedupTransformConfig(key="id", time_window="")
 
-    def test_deduplication_key_field(self):
-        """key is the canonical deduplication field name."""
-        config = models.DeduplicationConfig(
-            enabled=True,
-            key="session_id",
-            time_window="12h",
-        )
-        assert config.key == "session_id"
-
-    def test_deduplication_key_via_dict(self):
-        data = {"enabled": True, "key": "order_id", "time_window": "1h"}
-        config = models.DeduplicationConfig.model_validate(data)
+    def test_dedup_config_from_dict(self):
+        data = {"key": "order_id", "time_window": "1h"}
+        config = models.DedupTransformConfig.model_validate(data)
         assert config.key == "order_id"
 
-    def test_deduplication_requires_key_when_enabled(self):
-        with pytest.raises(ValueError, match="key is required"):
-            models.DeduplicationConfig(enabled=True, time_window="1h")
 
-    def test_deduplication_requires_time_window_when_enabled(self):
-        with pytest.raises(ValueError, match="time_window is required"):
-            models.DeduplicationConfig(enabled=True, key="session_id")
+class TestDedupTransform:
+    """Tests for DedupTransform entry model."""
 
-    def test_deduplication_defaults(self):
-        d = models.DeduplicationConfig()
-        assert d.enabled is False
+    def test_dedup_transform_creation(self):
+        t = models.DedupTransform(
+            source_id="orders",
+            config=models.DedupTransformConfig(key="order_id", time_window="1h"),
+        )
+        assert t.type == "dedup"
+        assert t.source_id == "orders"
+        assert t.config.key == "order_id"
+
+    def test_dedup_transform_from_dict(self):
+        data = {
+            "type": "dedup",
+            "source_id": "orders",
+            "config": {"key": "order_id", "time_window": "1h"},
+        }
+        t = models.DedupTransform.model_validate(data)
+        assert t.config.key == "order_id"

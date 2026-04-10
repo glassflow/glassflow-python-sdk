@@ -1,4 +1,4 @@
-import pytest
+import copy
 
 from glassflow.etl import models
 
@@ -66,23 +66,17 @@ class TestSinkFieldMapping:
 
 
 class TestSinkSourceIdValidation:
-    """Tests for sink source_id validation in PipelineConfig."""
+    """Tests for sink source_id in PipelineConfig."""
 
-    def test_sink_invalid_source_id(self, valid_config):
-        """sink.source_id must match a known topic or transformation id."""
-        import copy
-
+    def test_sink_source_id_optional(self, valid_config):
+        """sink.source_id is optional."""
         config_data = copy.deepcopy(valid_config)
-        config_data["sink"]["source_id"] = "non-existent-topic"
+        config_data["sink"].pop("source_id", None)
+        config = models.PipelineConfig(**config_data)
+        assert config.sink.source_id is None
 
-        with pytest.raises(ValueError) as exc_info:
-            models.PipelineConfig(**config_data)
-        assert "does not match any known source" in str(exc_info.value)
-
-    def test_sink_valid_source_id(self, valid_config):
-        """sink.source_id matching a known component should not raise."""
-        config = models.PipelineConfig(**valid_config)
-        # Verify the source_id is valid
-        topic_names = {t.name for t in config.source.topics}
-        valid_ids = topic_names | {config.stateless_transformation.id}
-        assert config.sink.source_id in valid_ids
+    def test_sink_valid_source_id(self, valid_config_without_joins):
+        """sink.source_id matching a known source should not raise."""
+        config = models.PipelineConfig(**valid_config_without_joins)
+        source_ids = {s.source_id for s in config.sources}
+        assert config.sink.source_id in source_ids

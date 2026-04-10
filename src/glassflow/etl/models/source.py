@@ -13,14 +13,14 @@ class SourceType(CaseInsensitiveStrEnum):
 
 
 class SourceBaseConfig(BaseModel):
-    """Source config."""
+    """Base source config for all source types."""
 
     type: Optional[SourceType] = Field(default=None)
-    id: Optional[str] = Field(default=None)
+    source_id: str
 
 
 class SourceBaseConfigPatch(BaseModel):
     """Patch model source config."""
 
     type: Optional[SourceType] = Field(default=None)
-    id: Optional[str] = Field(default=None)
+    source_id: Optional[str] = Field(default=None)

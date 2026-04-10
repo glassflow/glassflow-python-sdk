@@ -24,10 +24,11 @@ A Python SDK for creating and managing data pipelines between Kafka and ClickHou
 ## Features
 
 - Create and manage data pipelines between Kafka and ClickHouse
-- Ingest from Kafka topics or OTLP signals (logs, metrics, traces)
-- Deduplication of events during a time window based on a key
-- Temporal joins between topics based on a common key with a given time window
-- Per-topic Schema Registry integration
+- Ingest from Kafka sources or OTLP signals (logs, metrics, traces)
+- Unified transforms pipeline: dedup, filter, and stateless transformations
+- Temporal joins between sources based on a common key with a given time window
+- Per-source Schema Registry integration
+- Pipeline configuration via YAML or JSON
 - Schema validation and configuration management
 - Fine-grained resource control per pipeline component
 
@@ -55,56 +56,69 @@ The example below uses pipeline version `v3`. See [Migrating from V2 to V3](#mig
 pipeline_config = {
     "version": "v3",
     "pipeline_id": "my-pipeline-id",
-    "source": {
-        "type": "kafka",
-        "connection_params": {
-            "brokers": ["http://my.kafka.broker:9093"],
-            "protocol": "PLAINTEXT",
-            "mechanism": "NO_AUTH"
-        },
-        "topics": [
-            {
-                "id": "users",
-                "name": "users",
-                "consumer_group_initial_offset": "latest",
-                "deduplication": {
-                    "enabled": True,
-                    "key": "event_id",
-                    "time_window": "1h"
-                },
-                "schema_fields": [
-                    {"name": "event_id",   "type": "string"},
-                    {"name": "user_id",    "type": "string"},
-                    {"name": "created_at", "type": "string"},
-                    {"name": "name",       "type": "string"},
-                    {"name": "email",      "type": "string"}
-                ]
-            }
-        ]
-    },
-    "join": {"enabled": False},
+    "sources": [
+        {
+            "type": "kafka",
+            "source_id": "users",
+            "connection_params": {
+                "brokers": ["my.kafka.broker:9093"],
+                "protocol": "PLAINTEXT",
+            },
+            "topic": "users",
+            "consumer_group_initial_offset": "latest",
+            "schema_fields": [
+                {"name": "event_id",   "type": "string"},
+                {"name": "user_id",    "type": "string"},
+                {"name": "created_at", "type": "string"},
+                {"name": "name",       "type": "string"},
+                {"name": "email",      "type": "string"},
+            ],
+        }
+    ],
+    "transforms": [
+        {
+            "type": "dedup",
+            "source_id": "users",
+            "config": {
+                "key": "event_id",
+                "time_window": "1h",
+            },
+        }
+    ],
     "sink": {
         "type": "clickhouse",
-        "source_id": "users",
         "connection_params": {
-            "host": "http://my.clickhouse.server",
+            "host": "my.clickhouse.server",
             "port": "9000",
             "database": "default",
             "username": "default",
             "password": "mysecret",
-            "secure": False
+            "secure": False,
         },
+        "table": "users",
         "mapping": [
             {"name": "event_id",   "column_name": "event_id",   "column_type": "UUID"},
             {"name": "user_id",    "column_name": "user_id",    "column_type": "UUID"},
             {"name": "created_at", "column_name": "created_at", "column_type": "DateTime"},
             {"name": "name",       "column_name": "name",       "column_type": "String"},
-            {"name": "email",      "column_name": "email",      "column_type": "String"}
-        ]
-    }
+            {"name": "email",      "column_name": "email",      "column_type": "String"},
+        ],
+    },
 }
 
 pipeline = client.create_pipeline(pipeline_config)
+```
+
+You can also load configurations from YAML or JSON files:
+
+```python
+pipeline = client.create_pipeline(
+    pipeline_config_yaml_path="pipeline.yaml"
+)
+# or
+pipeline = client.create_pipeline(
+    pipeline_config_json_path="pipeline.json"
+)
 ```
 
 For full configuration reference — including Schema Registry, joins, OTLP sources, and resource controls — see the [GlassFlow docs](https://docs.glassflow.dev/configuration/pipeline-json-reference).
@@ -159,12 +173,15 @@ If you prefer to migrate manually, the key changes are:
 | Area | V2 | V3 |
 |------|----|----|
 | `version` | `"v2"` | `"v3"` |
-| Topics | no `id` field | `id: "<topic-name>"` required |
-| Schema | top-level `schema.fields` block | `source.topics[].schema_fields` per topic |
-| Sink connection | flat fields (`host`, `port`, …) at top level | nested `sink.connection_params` object |
+| Sources | `source: {type, connection_params, topics: [...]}` | `sources: [{type, source_id, connection_params, topic, ...}]` flat list |
+| Schema | top-level `schema.fields` block | `sources[].schema_fields` per source |
+| Deduplication | per-topic `deduplication: {enabled, id_field, ...}` | `transforms: [{type: "dedup", source_id, config: {key, time_window}}]` |
+| Filter | top-level `filter: {enabled, expression}` | `transforms: [{type: "filter", source_id, config: {expression}}]` |
+| Transformation | top-level `stateless_transformation` | `transforms: [{type: "stateless", source_id, config: {transforms: [...]}}]` |
+| Join | `join.sources: [{source_id, key, orientation}]` | `join: {left_source: {...}, right_source: {...}, output_fields: [...]}` |
+| Sink connection | flat fields (`host`, `port`, ...) at top level | nested `sink.connection_params` object |
 | Sink field mapping | top-level `schema.fields` with `source_id` | `sink.mapping` list of `{name, column_name, column_type}` |
-| Deduplication key | `id_field` | `key` |
-| Join key | `join_key` | `key` |
+| Resources | `pipeline_resources: {ingestor, transform, ...}` | `resources: {sources: [...], transform: [...], ...}` |
 | Sink password | base64-encoded | plain text |
 
 ## Tracking

@@ -1,17 +1,12 @@
 from typing import List, Optional
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, Field, model_validator
 
 from ..base import CaseInsensitiveStrEnum
 
 
-class JoinOrientation(CaseInsensitiveStrEnum):
-    LEFT = "left"
-    RIGHT = "right"
-
-
-class JoinField(BaseModel):
-    """Selects a single field from a join source to include in the output (V3)."""
+class JoinOutputField(BaseModel):
+    """Selects a single field from a join source to include in the output."""
 
     source_id: str
     name: str
@@ -19,10 +14,11 @@ class JoinField(BaseModel):
 
 
 class JoinSourceConfig(BaseModel):
+    """Configuration for one side of a join (left or right)."""
+
     source_id: str
     key: str
     time_window: str
-    orientation: JoinOrientation
 
 
 class JoinType(CaseInsensitiveStrEnum):
@@ -30,60 +26,28 @@ class JoinType(CaseInsensitiveStrEnum):
 
 
 class JoinConfig(BaseModel):
-    """Configuration for joining multiple sources."""
+    """Configuration for joining two sources."""
 
     enabled: bool = False
-    id: Optional[str] = None
-    type: Optional[JoinType] = None
-    sources: Optional[List[JoinSourceConfig]] = None
-    # V3: optional field selection for join output
-    fields: Optional[List[JoinField]] = Field(default=None)
+    type: Optional[JoinType] = Field(default=None)
+    left_source: Optional[JoinSourceConfig] = Field(default=None)
+    right_source: Optional[JoinSourceConfig] = Field(default=None)
+    output_fields: Optional[List[JoinOutputField]] = Field(default=None)
 
-    @field_validator("sources")
-    @classmethod
-    def validate_sources(
-        cls, v: Optional[List[JoinSourceConfig]], info: ValidationInfo
-    ) -> Optional[List[JoinSourceConfig]]:
-        """
-        Validate that when join is enabled, there are exactly two sources
-        with opposite orientations.
-        """
-        if not info.data.get("enabled", False):
-            return v
-
-        if not v:
-            raise ValueError("sources are required when join is enabled")
-
-        if len(v) != 2:
-            raise ValueError("join must have exactly two sources when enabled")
-
-        orientations = {source.orientation for source in v}
-        if orientations != {JoinOrientation.LEFT, JoinOrientation.RIGHT}:
-            raise ValueError(
-                "join sources must have opposite orientations (one LEFT and one RIGHT)"
-            )
-
-        return v
-
-    @field_validator("type")
-    @classmethod
-    def validate_type(
-        cls, v: Optional[JoinType], info: ValidationInfo
-    ) -> Optional[JoinType]:
-        """Validate that type is required when join is enabled."""
-        if info.data.get("enabled", False) and not v:
+    @model_validator(mode="after")
+    def validate_enabled_fields(self) -> "JoinConfig":
+        """Validate required fields when join is enabled."""
+        if not self.enabled:
+            return self
+        if not self.type:
             raise ValueError("type is required when join is enabled")
-        return v
-
-    @field_validator("fields")
-    @classmethod
-    def validate_fields(
-        cls, v: Optional[List[JoinField]], info: ValidationInfo
-    ) -> Optional[List[JoinField]]:
-        """Validate that type is required when join is enabled."""
-        if info.data.get("enabled", False) and not v:
-            raise ValueError("fields is required when join is enabled")
-        return v
+        if not self.left_source:
+            raise ValueError("left_source is required when join is enabled")
+        if not self.right_source:
+            raise ValueError("right_source is required when join is enabled")
+        if not self.output_fields:
+            raise ValueError("output_fields is required when join is enabled")
+        return self
 
     def update(self, patch: "JoinConfigPatch") -> "JoinConfig":
         """Apply a patch to this join config."""
@@ -91,21 +55,21 @@ class JoinConfig(BaseModel):
 
         if patch.enabled is not None:
             update_dict.enabled = patch.enabled
-        if patch.id is not None:
-            update_dict.id = patch.id
         if patch.type is not None:
             update_dict.type = patch.type
-        if patch.sources is not None:
-            update_dict.sources = patch.sources
-        if patch.fields is not None:
-            update_dict.fields = patch.fields
+        if patch.left_source is not None:
+            update_dict.left_source = patch.left_source
+        if patch.right_source is not None:
+            update_dict.right_source = patch.right_source
+        if patch.output_fields is not None:
+            update_dict.output_fields = patch.output_fields
 
         return update_dict
 
 
 class JoinConfigPatch(BaseModel):
     enabled: Optional[bool] = Field(default=None)
-    id: Optional[str] = Field(default=None)
     type: Optional[JoinType] = Field(default=None)
-    sources: Optional[List[JoinSourceConfig]] = Field(default=None)
-    fields: Optional[List[JoinField]] = Field(default=None)
+    left_source: Optional[JoinSourceConfig] = Field(default=None)
+    right_source: Optional[JoinSourceConfig] = Field(default=None)
+    output_fields: Optional[List[JoinOutputField]] = Field(default=None)

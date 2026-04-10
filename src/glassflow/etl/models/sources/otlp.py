@@ -1,22 +1,16 @@
 """OTLP source models."""
 
-from typing import Literal, Optional
-
-from pydantic import Field
+from typing import Literal
 
 from ..source import SourceBaseConfig, SourceBaseConfigPatch, SourceType
-from ..transforms.deduplication import DeduplicationConfig
 
 
 class OTLPSource(SourceBaseConfig):
-    """Base class for all OTLP source types (V3).
+    """Base class for all OTLP source types.
 
     Use OTLPLogsSource, OTLPMetricsSource, or OTLPTracesSource for construction.
     isinstance(source, OTLPSource) returns True for all three concrete types.
     """
-
-    id: str  # required for OTLP (overrides Optional[str] from SourceBaseConfig)
-    deduplication: Optional[DeduplicationConfig] = Field(default=None)
 
 
 class OTLPLogsSource(OTLPSource):

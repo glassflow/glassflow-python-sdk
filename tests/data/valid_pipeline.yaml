@@ -1,29 +1,87 @@
+version: v3
+pipeline_id: test-pipeline
+name: Test Pipeline
+sources:
+- type: kafka
+  source_id: user-logins
+  connection_params:
+    brokers:
+    - kafka-broker-0:9092
+    - kafka-broker-1:9092
+    mechanism: SCRAM-SHA-256
+    password: <password>
+    protocol: SASL_SSL
+    root_ca: <base64 encoded ca>
+    username: <user>
+  topic: user_logins
+  consumer_group_initial_offset: earliest
+  schema_fields:
+  - name: session_id
+    type: string
+  - name: user_id
+    type: string
+  - name: timestamp
+    type: string
+- type: kafka
+  source_id: orders
+  connection_params:
+    brokers:
+    - kafka-broker-0:9092
+    - kafka-broker-1:9092
+    mechanism: SCRAM-SHA-256
+    password: <password>
+    protocol: SASL_SSL
+    root_ca: <base64 encoded ca>
+    username: <user>
+  topic: orders
+  consumer_group_initial_offset: earliest
+  schema_fields:
+  - name: order_id
+    type: string
+  - name: user_id
+    type: string
+  - name: timestamp
+    type: string
+  - name: skip_sink_field
+    type: string
+transforms:
+- type: dedup
+  source_id: user-logins
+  config:
+    key: session_id
+    time_window: 12h
+- type: dedup
+  source_id: orders
+  config:
+    key: order_id
+    time_window: 12h
+- type: filter
+  source_id: user-logins
+  config:
+    expression: user_id = '123'
+- type: stateless
+  source_id: user-logins
+  config:
+    transforms:
+    - expression: upper(user_id)
+      output_name: upper_user_id
+      output_type: string
 join:
   enabled: true
-  sources:
-  - key: user_id
-    orientation: left
-    source_id: user_logins
-    time_window: 1h
-  - key: user_id
-    orientation: right
-    source_id: orders
-    time_window: 1h
   type: temporal
-name: Test Pipeline
-pipeline_id: test-pipeline
-filter:
-  enabled: true
-  expression: user_id = '123'
-stateless_transformation:
-  enabled: true
-  id: my_transformation
-  type: expr_lang_transform
-  config:
-    transform:
-      - expression: upper(user_id)
-        output_name: upper_user_id
-        output_type: string
+  left_source:
+    source_id: user-logins
+    key: user_id
+    time_window: 1h
+  right_source:
+    source_id: orders
+    key: user_id
+    time_window: 1h
+  output_fields:
+  - source_id: user-logins
+    name: session_id
+  - source_id: orders
+    name: order_id
 sink:
   type: clickhouse
   connection_params:
@@ -37,7 +95,6 @@ sink:
   table: user_orders
   max_batch_size: 1
   max_delay_time: 10m
-  source_id: my_transformation
   mapping:
   - name: session_id
     column_name: session_id
@@ -57,45 +114,3 @@ sink:
   - name: upper_user_id
     column_name: upper_user_id
     column_type: String
-source:
-  connection_params:
-    brokers:
-    - kafka-broker-0:9092
-    - kafka-broker-1:9092
-    mechanism: SCRAM-SHA-256
-    password: <password>
-    protocol: SASL_SSL
-    root_ca: <base64 encoded ca>
-    skip_auth: false
-    username: <user>
-  provider: aiven
-  topics:
-  - consumer_group_initial_offset: earliest
-    deduplication:
-      enabled: true
-      key: session_id
-      time_window: 12h
-    name: user_logins
-    schema_fields:
-    - name: session_id
-      type: string
-    - name: user_id
-      type: string
-    - name: timestamp
-      type: string
-  - consumer_group_initial_offset: earliest
-    deduplication:
-      enabled: true
-      key: order_id
-      time_window: 12h
-    name: orders
-    schema_fields:
-    - name: order_id
-      type: string
-    - name: user_id
-      type: string
-    - name: timestamp
-      type: string
-    - name: skip_sink_field
-      type: string
-  type: kafka

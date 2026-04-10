@@ -1,7 +1,6 @@
 import pytest
 
 from glassflow.etl import models
-from glassflow.etl.errors import ImmutableResourceError
 from glassflow.etl.models.sources import OTLPSource
 
 
@@ -12,7 +11,8 @@ class TestPipelineConfig:
         """Test successful PipelineConfig creation."""
         pipeline_config = models.PipelineConfig(**valid_config)
         assert pipeline_config.pipeline_id == "test-pipeline"
-        assert pipeline_config.source.type == "kafka"
+        assert len(pipeline_config.sources) == 2
+        assert pipeline_config.sources[0].type == "kafka"
         assert pipeline_config.sink.type == "clickhouse"
 
     def test_invalid_pipeline_config(self, invalid_config):
@@ -22,21 +22,19 @@ class TestPipelineConfig:
 
     def test_pipeline_config_pipeline_id_validation(self, valid_config):
         """Test PipelineConfig validation for pipeline_id."""
-        # Test with valid configuration
         config = models.PipelineConfig(
             pipeline_id="test-pipeline-123a",
-            source=valid_config["source"],
+            sources=valid_config["sources"],
             join=valid_config["join"],
             sink=valid_config["sink"],
-            stateless_transformation=valid_config["stateless_transformation"],
+            transforms=valid_config["transforms"],
         )
         assert config.pipeline_id == "test-pipeline-123a"
 
-        # Test with invalid configuration
         with pytest.raises(ValueError) as exc_info:
             models.PipelineConfig(
                 pipeline_id="",
-                source=valid_config["source"],
+                sources=valid_config["sources"],
                 join=valid_config["join"],
                 sink=valid_config["sink"],
             )
@@ -45,7 +43,7 @@ class TestPipelineConfig:
         with pytest.raises(ValueError) as exc_info:
             models.PipelineConfig(
                 pipeline_id="Test_Pipeline",
-                source=valid_config["source"],
+                sources=valid_config["sources"],
                 join=valid_config["join"],
                 sink=valid_config["sink"],
             )
@@ -57,7 +55,7 @@ class TestPipelineConfig:
         with pytest.raises(ValueError) as exc_info:
             models.PipelineConfig(
                 pipeline_id="test-pipeline-1234567890123456789012345678901234567890",
-                source=valid_config["source"],
+                sources=valid_config["sources"],
                 join=valid_config["join"],
                 sink=valid_config["sink"],
             )
@@ -66,7 +64,7 @@ class TestPipelineConfig:
         with pytest.raises(ValueError) as exc_info:
             models.PipelineConfig(
                 pipeline_id="-test-pipeline",
-                source=valid_config["source"],
+                sources=valid_config["sources"],
                 join=valid_config["join"],
                 sink=valid_config["sink"],
             )
@@ -77,7 +75,7 @@ class TestPipelineConfig:
         with pytest.raises(ValueError) as exc_info:
             models.PipelineConfig(
                 pipeline_id="test-pipeline-",
-                source=valid_config["source"],
+                sources=valid_config["sources"],
                 join=valid_config["join"],
                 sink=valid_config["sink"],
             )
@@ -90,10 +88,10 @@ class TestPipelineConfig:
         config = models.PipelineConfig(
             pipeline_id="test-pipeline",
             name="My Custom Pipeline Name",
-            source=valid_config["source"],
+            sources=valid_config["sources"],
             join=valid_config["join"],
             sink=valid_config["sink"],
-            stateless_transformation=valid_config["stateless_transformation"],
+            transforms=valid_config["transforms"],
         )
         assert config.pipeline_id == "test-pipeline"
         assert config.name == "My Custom Pipeline Name"
@@ -102,23 +100,23 @@ class TestPipelineConfig:
         """Test PipelineConfig when pipeline_name is not provided (default behavior)."""
         config = models.PipelineConfig(
             pipeline_id="test-pipeline",
-            source=valid_config["source"],
+            sources=valid_config["sources"],
             join=valid_config["join"],
             sink=valid_config["sink"],
-            stateless_transformation=valid_config["stateless_transformation"],
+            transforms=valid_config["transforms"],
         )
         assert config.pipeline_id == "test-pipeline"
         assert config.name == "Test Pipeline"
 
-    def test_pipeline_config_creation_with_pipeline_resources(
+    def test_pipeline_config_creation_with_resources(
         self, valid_config_with_pipeline_resources
     ):
-        """Test PipelineConfig creation and validation with pipeline_resources."""
+        """Test PipelineConfig creation and validation with resources."""
         config = models.PipelineConfig(**valid_config_with_pipeline_resources)
         assert config.pipeline_id == "test-pipeline"
-        assert config.pipeline_resources is not None
+        assert config.resources is not None
 
-        resources = config.pipeline_resources
+        resources = config.resources
         # NATS / JetStream
         assert resources.nats is not None
         assert resources.nats.stream is not None
@@ -135,54 +133,34 @@ class TestPipelineConfig:
         assert resources.sink.limits.memory == "512Mi"
         assert resources.sink.limits.cpu == "500m"
 
+        # Sources
+        assert resources.sources is not None
+        assert len(resources.sources) == 1
+        assert resources.sources[0].source_id == "user-logins"
+        assert resources.sources[0].replicas == 2
+
         # Transform
         assert resources.transform is not None
-        assert resources.transform.storage is not None
-        assert resources.transform.storage.size == "10Gi"
-        assert resources.transform.replicas == 1
-        assert resources.transform.requests.memory == "128Mi"
-        assert resources.transform.limits.cpu == "200m"
+        assert len(resources.transform) == 1
+        assert resources.transform[0].storage is not None
+        assert resources.transform[0].storage.size == "10Gi"
+        assert resources.transform[0].replicas == 1
 
-        # Join
-        assert resources.join is not None
-        assert resources.join.replicas == 1
-        assert resources.join.requests.memory == "64Mi"
-        assert resources.join.limits.cpu == "100m"
-
-        # Ingestor
-        assert resources.ingestor is not None
-        assert resources.ingestor.base is not None
-        assert resources.ingestor.base.replicas == 2
-        assert resources.ingestor.base.requests.memory == "128Mi"
-
-    def test_pipeline_config_pipeline_resources_optional(self, valid_config):
-        """Test that pipeline_resources is optional and defaults to None."""
+    def test_pipeline_config_resources_optional(self, valid_config):
+        """Test that resources is optional and defaults to None."""
         config = models.PipelineConfig(**valid_config)
         assert config.pipeline_id == "test-pipeline"
-        assert config.pipeline_resources is None
+        assert config.resources is None
 
-    def test_pipeline_config_pipeline_resources_partial(self, valid_config):
-        """Test PipelineConfig with partial pipeline_resources (only some sections)."""
-        config_data = {**valid_config, "pipeline_resources": {"sink": {"replicas": 3}}}
+    def test_pipeline_config_resources_partial(self, valid_config):
+        """Test PipelineConfig with partial resources (only some sections)."""
+        config_data = {**valid_config, "resources": {"sink": {"replicas": 3}}}
         config = models.PipelineConfig(**config_data)
-        assert config.pipeline_resources is not None
-        assert config.pipeline_resources.sink is not None
-        assert config.pipeline_resources.sink.replicas == 3
-        assert config.pipeline_resources.nats is None
-        assert config.pipeline_resources.transform is None
-
-    def test_pipeline_config_resources_update_transform_replicas_immutable_raises(
-        self, valid_config
-    ):
-        """Updating pipeline_resources with transform.replicas raises."""
-        config = models.PipelineConfig(**valid_config)
-        patch = models.PipelineConfigPatch(
-            pipeline_resources=models.PipelineResourcesConfig(
-                transform=models.TransformResources(replicas=2)
-            )
-        )
-        with pytest.raises(ImmutableResourceError) as _:
-            config.update(patch)
+        assert config.resources is not None
+        assert config.resources.sink is not None
+        assert config.resources.sink.replicas == 3
+        assert config.resources.nats is None
+        assert config.resources.transform is None
 
 
 class TestPipelineConfigOTLP:
@@ -191,19 +169,19 @@ class TestPipelineConfigOTLP:
     def test_otlp_logs_pipeline_creation(self, valid_otlp_logs_config):
         config = models.PipelineConfig(**valid_otlp_logs_config)
         assert config.pipeline_id == "test-otlp-logs"
-        assert isinstance(config.source, OTLPSource)
-        assert config.source.type == "otlp.logs"
-        assert config.source.id == "otlp-src"
+        assert isinstance(config.sources[0], OTLPSource)
+        assert config.sources[0].type == "otlp.logs"
+        assert config.sources[0].source_id == "otlp-src"
 
     def test_otlp_metrics_pipeline_creation(self, valid_otlp_metrics_config):
         config = models.PipelineConfig(**valid_otlp_metrics_config)
-        assert isinstance(config.source, OTLPSource)
-        assert config.source.type == "otlp.metrics"
+        assert isinstance(config.sources[0], OTLPSource)
+        assert config.sources[0].type == "otlp.metrics"
 
     def test_otlp_traces_pipeline_creation(self, valid_otlp_traces_config):
         config = models.PipelineConfig(**valid_otlp_traces_config)
-        assert isinstance(config.source, OTLPSource)
-        assert config.source.type == "otlp.traces"
+        assert isinstance(config.sources[0], OTLPSource)
+        assert config.sources[0].type == "otlp.traces"
 
     def test_otlp_pipeline_join_must_be_disabled(self, valid_otlp_logs_config):
         """OTLP pipelines must have join.enabled = False."""
@@ -212,19 +190,18 @@ class TestPipelineConfigOTLP:
             "join": {
                 "enabled": True,
                 "type": "temporal",
-                "sources": [
-                    {
-                        "source_id": "a",
-                        "key": "id",
-                        "time_window": "1h",
-                        "orientation": "left",
-                    },
-                    {
-                        "source_id": "b",
-                        "key": "id",
-                        "time_window": "1h",
-                        "orientation": "right",
-                    },
+                "left_source": {
+                    "source_id": "a",
+                    "key": "id",
+                    "time_window": "1h",
+                },
+                "right_source": {
+                    "source_id": "b",
+                    "key": "id",
+                    "time_window": "1h",
+                },
+                "output_fields": [
+                    {"source_id": "a", "name": "f1"},
                 ],
             },
         }
@@ -239,21 +216,21 @@ class TestPipelineConfigOTLP:
         self, valid_otlp_with_transformation_config
     ):
         config = models.PipelineConfig(**valid_otlp_with_transformation_config)
-        assert config.stateless_transformation.enabled is True
-        assert config.stateless_transformation.id == "log_transform"
-        assert config.stateless_transformation.source_id == "otlp-src"
+        assert config.transforms is not None
+        stateless = [
+            t for t in config.transforms if t.type == models.TransformType.STATELESS
+        ]
+        assert len(stateless) == 1
+        assert stateless[0].source_id == "otlp-src"
 
-    def test_otlp_pipeline_invalid_source_id(self, valid_otlp_logs_config):
-        """Sink source_id must reference the OTLP source id."""
-        config_data = {
-            **valid_otlp_logs_config,
-            "sink": {
-                **valid_otlp_logs_config["sink"],
-                "source_id": "non-existent-source",
-            },
-        }
-        with pytest.raises(ValueError, match="does not match any known source"):
-            models.PipelineConfig(**config_data)
+    def test_otlp_pipeline_sink_source_id_optional(self, valid_otlp_logs_config):
+        """Sink source_id is optional."""
+        import copy
+
+        config_data = copy.deepcopy(valid_otlp_logs_config)
+        config_data["sink"].pop("source_id", None)
+        config = models.PipelineConfig(**config_data)
+        assert config.sink.source_id is None
 
 
 class TestPipelineConfigKafka:
@@ -262,55 +239,61 @@ class TestPipelineConfigKafka:
     def test_pipeline_config_creation(self, valid_v3_config):
         config = models.PipelineConfig(**valid_v3_config)
         assert config.pipeline_id == "test-v3-pipeline"
-        assert isinstance(config.source, models.KafkaSource)
+        assert isinstance(config.sources[0], models.KafkaSource)
 
-    def test_topic_id_field(self, valid_v3_config):
+    def test_source_ids(self, valid_v3_config):
         config = models.PipelineConfig(**valid_v3_config)
-        topics = config.source.topics
-        assert topics[0].id == "src-logins"
-        assert topics[1].id == "src-orders"
+        source_ids = [s.source_id for s in config.sources]
+        assert "src-logins" in source_ids
+        assert "src-orders" in source_ids
 
-    def test_topic_schema_registry(self, valid_v3_config):
+    def test_source_schema_registry(self, valid_v3_config):
         config = models.PipelineConfig(**valid_v3_config)
-        topic = config.source.topics[0]
-        assert topic.schema_registry is not None
-        assert topic.schema_registry.url == "https://schema-registry.example.com"
+        logins_src = next(s for s in config.sources if s.source_id == "src-logins")
+        assert logins_src.schema_registry is not None
+        assert logins_src.schema_registry.url == "https://schema-registry.example.com"
 
-    def test_topic_schema_version(self, valid_v3_config):
+    def test_source_schema_version(self, valid_v3_config):
         config = models.PipelineConfig(**valid_v3_config)
-        assert config.source.topics[0].schema_version == "1"
+        logins_src = next(s for s in config.sources if s.source_id == "src-logins")
+        assert logins_src.schema_version == "1"
 
-    def test_topic_deduplication_key(self, valid_v3_config):
+    def test_dedup_transforms(self, valid_v3_config):
         config = models.PipelineConfig(**valid_v3_config)
-        assert config.source.topics[0].deduplication.key == "session_id"
+        dedup_transforms = [
+            t for t in config.transforms if t.type == models.TransformType.DEDUP
+        ]
+        assert len(dedup_transforms) == 2
+        assert dedup_transforms[0].config.key == "session_id"
 
-    def test_join_source_key(self, valid_v3_config):
+    def test_join_left_right_sources(self, valid_v3_config):
         config = models.PipelineConfig(**valid_v3_config)
         assert config.join.enabled is True
-        for join_src in config.join.sources:
-            assert join_src.key == "user_id"
+        assert config.join.left_source.source_id == "src-logins"
+        assert config.join.left_source.key == "user_id"
+        assert config.join.right_source.source_id == "src-orders"
+        assert config.join.right_source.key == "user_id"
 
-    def test_join_fields(self, valid_v3_config):
+    def test_join_output_fields(self, valid_v3_config):
         config = models.PipelineConfig(**valid_v3_config)
-        assert config.join.fields is not None
-        assert len(config.join.fields) == 2
-        assert config.join.fields[0].output_name == "login_session_id"
-        assert config.join.fields[1].output_name is None
+        assert config.join.output_fields is not None
+        assert len(config.join.output_fields) == 2
+        assert config.join.output_fields[0].output_name == "login_session_id"
+        assert config.join.output_fields[1].output_name is None
 
-    def test_stateless_transformation_source_id(self, valid_v3_config):
+    def test_stateless_transform(self, valid_v3_config):
         config = models.PipelineConfig(**valid_v3_config)
-        assert config.stateless_transformation.source_id == "src-logins"
+        stateless = [
+            t for t in config.transforms if t.type == models.TransformType.STATELESS
+        ]
+        assert len(stateless) == 1
+        assert stateless[0].source_id == "src-logins"
 
-    def test_sink_source_id_references_transformation(self, valid_v3_config):
-        """Sink source_id references the stateless transformation id."""
+    def test_source_schema_fields(self, valid_v3_config):
         config = models.PipelineConfig(**valid_v3_config)
-        assert config.sink.source_id == "my_transformation"
-
-    def test_topic_schema_fields(self, valid_v3_config):
-        config = models.PipelineConfig(**valid_v3_config)
-        topic = config.source.topics[0]
-        assert topic.schema_fields is not None
-        field_names = {f.name for f in topic.schema_fields}
+        logins_src = next(s for s in config.sources if s.source_id == "src-logins")
+        assert logins_src.schema_fields is not None
+        field_names = {f.name for f in logins_src.schema_fields}
         assert "session_id" in field_names
         assert "user_id" in field_names
 
@@ -319,27 +302,16 @@ class TestPipelineConfigKafka:
         assert config.sink.connection_params.http_port == "12754"
         assert config.sink.connection_params.password == "plaintext-password"
 
-    def test_pipeline_deduplication_key_set(self, valid_config):
-        """Deduplication key is correctly populated from config."""
+    def test_pipeline_has_dedup(self, valid_config):
+        """Deduplication transforms are present."""
         config = models.PipelineConfig(**valid_config)
-        for topic in config.source.topics:
-            if topic.deduplication and topic.deduplication.enabled:
-                assert topic.deduplication.key is not None
+        dedup = [t for t in config.transforms if t.type == models.TransformType.DEDUP]
+        assert len(dedup) > 0
 
-    def test_pipeline_topic_without_id_falls_back_to_name(self, valid_config):
-        """Topics without an explicit id use name as effective_id."""
-        config = models.PipelineConfig(**valid_config)
-        for topic in config.source.topics:
-            assert topic.effective_id == topic.name
-
-    def test_pipeline_sink_source_id_references_known_component(self, valid_config):
-        """Sink source_id references a known upstream component."""
-        config = models.PipelineConfig(**valid_config)
-        topic_names = {t.name for t in config.source.topics}
-        transform_id = (
-            config.stateless_transformation.id
-            if config.stateless_transformation
-            else None
-        )
-        valid_ids = topic_names | ({transform_id} if transform_id else set())
-        assert config.sink.source_id in valid_ids
+    def test_pipeline_sink_source_id_references_known_source(
+        self, valid_config_without_joins
+    ):
+        """Sink source_id references a known source."""
+        config = models.PipelineConfig(**valid_config_without_joins)
+        source_ids = {s.source_id for s in config.sources}
+        assert config.sink.source_id in source_ids
