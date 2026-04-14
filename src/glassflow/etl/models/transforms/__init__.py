@@ -12,7 +12,7 @@ from .join import (
     JoinSourceConfig,
     JoinType,
 )
-from .stateless_transformation import (
+from .stateless import (
     StatelessTransformConfig,
     Transformation,
 )
