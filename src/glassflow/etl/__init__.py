@@ -11,7 +11,6 @@ from .models import (
     SourceConfig,
 )
 from .pipeline import Pipeline
-from .utils import migrate_pipeline_v2_to_v3
 
 __all__ = [
     "Pipeline",
@@ -21,5 +20,4 @@ __all__ = [
     "SourceConfig",
     "SinkConfig",
     "JoinConfig",
-    "migrate_pipeline_v2_to_v3",
 ]

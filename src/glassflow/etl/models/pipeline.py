@@ -48,12 +48,19 @@ class PipelineConfig(BaseModel):
     @field_validator("version")
     @classmethod
     def validate_version(cls, v: PipelineVersion) -> PipelineVersion:
-        if v in (PipelineVersion.V1, PipelineVersion.V2):
+        if v == PipelineVersion.V1:
             raise ValueError(
-                f"Pipeline version {v} is no longer supported by this SDK. "
-                "Please use glassflow-python-sdk<2.0.0 for v1 pipelines, "
-                "glassflow-python-sdk<4.0.0 for v2 pipelines, "
-                "or migrate your pipeline configuration to v3."
+                "Pipeline version v1 is no longer supported by this SDK. "
+                "Please use glassflow-python-sdk<2.0.0 to work with v1 pipelines."
+            )
+        if v == PipelineVersion.V2:
+            raise ValueError(
+                "Pipeline version v2 is no longer supported by this SDK. "
+                "Convert your v2 configuration to v3 by calling "
+                "`glassflow.etl.Client().migrate_pipeline_v2_to_v3(config)`, "
+                "then pass the returned config to create_pipeline(). "
+                "Alternatively, pin glassflow-python-sdk<4.0.0 to keep "
+                "working with v2 pipelines directly."
             )
         return v
 
