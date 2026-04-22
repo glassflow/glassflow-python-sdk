@@ -255,9 +255,7 @@ class TestClient:
                 f"{pipeline_from_id.ENDPOINT}/{pipeline_from_id.pipeline_id}",
             )
 
-    def test_client_migrate_pipeline_v2_to_v3_success(
-        self, valid_config, mock_success
-    ):
+    def test_client_migrate_pipeline_v2_to_v3_success(self, valid_config, mock_success):
         """Test successful v2 -> v3 migration via the server endpoint.
 
         The SDK just POSTs the v2 config to /api/v1/pipeline/migrate-preview
