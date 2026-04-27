@@ -159,12 +159,14 @@ pipeline.delete()
 
 ## Migrating from V2 to V3
 
-Pipeline version `v2` has been removed. Use `migrate_pipeline_v2_to_v3()` to convert an existing configuration automatically:
+Pipeline version `v2` has been removed. Use `Client.migrate_pipeline_v2_to_v3()` to convert an existing configuration automatically:
 
 ```python
-from glassflow.etl import migrate_pipeline_v2_to_v3
+from glassflow.etl import Client
 
-v3_config = migrate_pipeline_v2_to_v3(v2_config)
+client = Client(host="your-glassflow-etl-url")
+v2_config = ...  # your existing v2 pipeline config dict
+v3_config = client.migrate_pipeline_v2_to_v3(v2_config)
 pipeline = client.create_pipeline(v3_config)
 ```
 
