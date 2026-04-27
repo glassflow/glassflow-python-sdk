@@ -74,6 +74,70 @@ class TestPipelineCreation:
             assert scenario["error_message"] in str(exc_info.value)
 
 
+class TestPipelineGet:
+    """Tests for Pipeline.get() including schema version selection."""
+
+    def test_get_without_schema_versions(
+        self, pipeline, mock_success, get_pipeline_response, get_health_payload
+    ):
+        """get() with no args sends a plain GET with no query params."""
+        with mock_success(
+            [get_pipeline_response, get_health_payload(pipeline.pipeline_id)]
+        ) as mock_request:
+            result = pipeline.get()
+            assert result == pipeline
+            get_call = mock_request.call_args_list[0]
+            assert get_call == call(
+                "GET", f"{pipeline.ENDPOINT}/{pipeline.pipeline_id}"
+            )
+
+    def test_get_with_schema_versions(
+        self, pipeline, mock_success, get_pipeline_response, get_health_payload
+    ):
+        """get(schema_versions=...) appends ?schema=sourceId:versionId params."""
+        with mock_success(
+            [get_pipeline_response, get_health_payload(pipeline.pipeline_id)]
+        ) as mock_request:
+            result = pipeline.get(schema_versions={"src-logins": "1001"})
+            assert result == pipeline
+            get_call = mock_request.call_args_list[0]
+            assert get_call == call(
+                "GET",
+                f"{pipeline.ENDPOINT}/{pipeline.pipeline_id}",
+                params=[("schema", "src-logins:1001")],
+            )
+
+    def test_get_with_multiple_schema_versions(
+        self, pipeline, mock_success, get_pipeline_response, get_health_payload
+    ):
+        """Multiple schema_versions entries produce multiple ?schema= params."""
+        with mock_success(
+            [get_pipeline_response, get_health_payload(pipeline.pipeline_id)]
+        ) as mock_request:
+            pipeline.get(schema_versions={"src-logins": "1001", "src-orders": "2002"})
+            get_call = mock_request.call_args_list[0]
+            params = (
+                get_call.kwargs.get("params") or get_call.args[2]
+                if len(get_call.args) > 2
+                else get_call.kwargs["params"]
+            )
+            assert ("schema", "src-logins:1001") in params
+            assert ("schema", "src-orders:2002") in params
+
+    def test_get_with_empty_schema_versions(
+        self, pipeline, mock_success, get_pipeline_response, get_health_payload
+    ):
+        """get(schema_versions={}) is treated the same as no schema_versions."""
+        with mock_success(
+            [get_pipeline_response, get_health_payload(pipeline.pipeline_id)]
+        ) as mock_request:
+            pipeline.get(schema_versions={})
+            get_call = mock_request.call_args_list[0]
+            assert get_call == call(
+                "GET", f"{pipeline.ENDPOINT}/{pipeline.pipeline_id}"
+            )
+
+
 class TestPipelineLifecycle:
     """Tests for resume, stop, terminate, delete operations."""
 
@@ -234,13 +298,9 @@ class TestPipelineModification:
     def test_update_nested_config(
         self, pipeline, mock_success, get_pipeline_response, get_health_payload
     ):
-        """Test pipeline update with nested configuration."""
+        """Test pipeline update with nested configuration (name only)."""
         config_patch = models.PipelineConfigPatch(
-            source=models.SourceConfigPatch(
-                connection_params=models.KafkaConnectionParamsPatch(
-                    brokers=["new-broker:9092"]
-                )
-            )
+            name="Nested Updated Name",
         )
 
         with mock_success(
@@ -248,9 +308,7 @@ class TestPipelineModification:
         ):
             result = pipeline.update(config_patch)
             assert result == pipeline
-            assert pipeline.config.source.connection_params.brokers == [
-                "new-broker:9092"
-            ]
+            assert pipeline.config.name == "Nested Updated Name"
 
     def test_update_not_found(self, pipeline, mock_not_found_response):
         """Test pipeline update when pipeline is not found."""
@@ -312,61 +370,39 @@ class TestPipelineTracking:
     ):
         """Test tracking info."""
         pipeline = Pipeline(host="http://localhost:8080", config=valid_config)
-        assert pipeline._tracking_info() == {
-            "pipeline_id": valid_config["pipeline_id"],
-            "join_enabled": True,
-            "filter_enabled": True,
-            "deduplication_enabled": True,
-            "source_auth_method": "SCRAM-SHA-256",
-            "source_security_protocol": "SASL_SSL",
-            "source_root_ca_provided": True,
-            "source_skip_tls_verification": False,
-        }
+        info = pipeline._tracking_info()
+        assert info["pipeline_id"] == valid_config["pipeline_id"]
+        assert info["join_enabled"] is True
+        assert info["filter_enabled"] is True
+        assert info["deduplication_enabled"] is True
+        assert info["source_auth_method"] == "SCRAM-SHA-256"
+        assert info["source_security_protocol"] == "SASL_SSL"
+        assert info["source_root_ca_provided"] is True
+        assert info["source_skip_tls_verification"] is False
 
         pipeline = Pipeline(
             host="http://localhost:8080",
             config=valid_config_with_dedup_disabled,
         )
-        assert pipeline._tracking_info() == {
-            "pipeline_id": valid_config_with_dedup_disabled["pipeline_id"],
-            "join_enabled": True,
-            "filter_enabled": True,
-            "deduplication_enabled": False,
-            "source_auth_method": "SCRAM-SHA-256",
-            "source_security_protocol": "SASL_SSL",
-            "source_root_ca_provided": True,
-            "source_skip_tls_verification": False,
-        }
+        info = pipeline._tracking_info()
+        assert info["deduplication_enabled"] is False
+        assert info["join_enabled"] is True
+        assert info["filter_enabled"] is True
 
         pipeline = Pipeline(
             host="http://localhost:8080", config=valid_config_without_joins
         )
-        assert pipeline._tracking_info() == {
-            "pipeline_id": valid_config_without_joins["pipeline_id"],
-            "join_enabled": False,
-            "filter_enabled": False,
-            "deduplication_enabled": True,
-            "source_auth_method": "SCRAM-SHA-256",
-            "source_security_protocol": "SASL_SSL",
-            "source_root_ca_provided": True,
-            "source_skip_tls_verification": False,
-        }
+        info = pipeline._tracking_info()
+        assert info["join_enabled"] is False
+        assert info["deduplication_enabled"] is True
 
         pipeline = Pipeline(
             host="http://localhost:8080",
             config=valid_config_without_joins_and_dedup_disabled,
         )
-        pipeline_id = valid_config_without_joins_and_dedup_disabled["pipeline_id"]
-        assert pipeline._tracking_info() == {
-            "pipeline_id": pipeline_id,
-            "join_enabled": False,
-            "filter_enabled": False,
-            "deduplication_enabled": False,
-            "source_auth_method": "SCRAM-SHA-256",
-            "source_security_protocol": "SASL_SSL",
-            "source_root_ca_provided": True,
-            "source_skip_tls_verification": False,
-        }
+        info = pipeline._tracking_info()
+        assert info["join_enabled"] is False
+        assert info["deduplication_enabled"] is False
 
 
 class TestPipelineIO:

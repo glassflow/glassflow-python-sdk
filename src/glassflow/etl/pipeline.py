@@ -5,7 +5,6 @@ from typing import Any
 
 import yaml
 from httpx._models import Response
-from pydantic import ValidationError
 
 from . import errors, models
 from .api_client import APIClient
@@ -14,7 +13,7 @@ from .dlq import DLQ
 
 class Pipeline(APIClient):
     """
-    Main class for managing Kafka to ClickHouse pipelines.
+    Main class for managing pipelines.
     """
 
     ENDPOINT = "/api/v1/pipeline"
@@ -54,8 +53,18 @@ class Pipeline(APIClient):
         self._dlq = DLQ(pipeline_id=self.pipeline_id, host=host)
         self.status: models.PipelineStatus | None = None
 
-    def get(self) -> Pipeline:
+    def get(
+        self,
+        schema_versions: dict[str, str] | None = None,
+    ) -> Pipeline:
         """Fetch a pipeline by its ID.
+
+        Args:
+            schema_versions: Optional mapping of source ID to schema version ID.
+                When provided, the returned config will use the specified schema
+                versions instead of the latest ones.
+                Format: ``{"sourceId": "versionId"}``.
+                Only applies to sources that use a schema registry.
 
         Returns:
             Pipeline: A Pipeline instance for the given ID
@@ -64,8 +73,17 @@ class Pipeline(APIClient):
             PipelineNotFoundError: If pipeline is not found
             APIError: If the API request fails
         """
+        kwargs: dict = {}
+        if schema_versions:
+            kwargs["params"] = [
+                ("schema", f"{sid}:{vid}") for sid, vid in schema_versions.items()
+            ]
+
         response = self._request(
-            "GET", f"{self.ENDPOINT}/{self.pipeline_id}", event_name="PipelineGet"
+            "GET",
+            f"{self.ENDPOINT}/{self.pipeline_id}",
+            event_name="PipelineGet",
+            **kwargs,
         )
         self.config = models.PipelineConfig.model_validate(response.json())
         self.health()
@@ -103,9 +121,11 @@ class Pipeline(APIClient):
             self._track_event("PipelineCreated", error_type="PipelineAlreadyExists")
             raise errors.PipelineAlreadyExistsError(
                 status_code=e.status_code,
-                message=f"Pipeline with ID {self.config.pipeline_id} already exists;"
-                "delete it first before creating new pipeline or use a"
-                "different pipeline ID",
+                message=(
+                    f"Pipeline with ID {self.config.pipeline_id} already exists; "
+                    "delete it first before creating new pipeline or use a "
+                    "different pipeline ID"
+                ),
                 response=e.response,
             ) from e
 
@@ -328,13 +348,8 @@ class Pipeline(APIClient):
             ValueError: If the configuration is invalid
             ValidationError: If the configuration fails Pydantic validation
         """
-        try:
-            models.PipelineConfig.model_validate(config)
-            return True
-        except ValidationError as e:
-            raise e
-        except ValueError as e:
-            raise e
+        models.PipelineConfig.model_validate(config)
+        return True
 
     @property
     def dlq(self) -> DLQ:
@@ -351,37 +366,55 @@ class Pipeline(APIClient):
 
     def _tracking_info(self) -> dict[str, Any]:
         """Get information about the active pipeline."""
-        # If config is not set, return minimal info
         if self.config is None:
-            return {"pipeline_id": self.pipeline_id}
+            tracking_info = {"pipeline_id": self.pipeline_id}
+        else:
+            # Determine source types
+            source_types = [src.type for src in self.config.sources]
 
-        # Extract join info
-        join_enabled = getattr(self.config.join, "enabled", False)
-        filter_enabled = getattr(self.config.filter, "enabled", False)
-        # Extract deduplication info
-        deduplication_enabled = any(
-            t.deduplication and t.deduplication.enabled
-            for t in self.config.source.topics
-        )
+            # Extract deduplication info from transforms
+            deduplication_enabled = self.config._has_deduplication_enabled()
 
-        # Extract connection params
-        conn_params = self.config.source.connection_params
+            # Extract transform info
+            join_enabled = self.config.join is not None and self.config.join.enabled
+            filter_enabled = False
+            stateless_transform_enabled = False
+            if self.config.transforms:
+                filter_enabled = any(
+                    t.type == models.TransformType.FILTER
+                    for t in self.config.transforms
+                )
+                stateless_transform_enabled = any(
+                    t.type == models.TransformType.STATELESS
+                    for t in self.config.transforms
+                )
 
-        root_ca_provided = conn_params.root_ca is not None
-        skip_tls_verification = conn_params.skip_tls_verification
-        protocol = str(conn_params.protocol)
-        mechanism = str(conn_params.mechanism)
+            tracking_info = {
+                "pipeline_id": self.config.pipeline_id,
+                "source_types": [str(t) for t in source_types],
+                "join_enabled": join_enabled,
+                "filter_enabled": filter_enabled,
+                "stateless_transformation_enabled": stateless_transform_enabled,
+                "deduplication_enabled": deduplication_enabled,
+            }
 
-        return {
-            "pipeline_id": self.config.pipeline_id,
-            "join_enabled": join_enabled,
-            "filter_enabled": filter_enabled,
-            "deduplication_enabled": deduplication_enabled,
-            "source_auth_method": mechanism,
-            "source_security_protocol": protocol,
-            "source_root_ca_provided": root_ca_provided,
-            "source_skip_tls_verification": skip_tls_verification,
-        }
+            # Extract connection params from Kafka sources
+            for src in self.config.sources:
+                if isinstance(src, models.KafkaSource):
+                    conn_params = src.connection_params
+                    tracking_info.update(
+                        {
+                            "source_auth_method": str(conn_params.mechanism),
+                            "source_security_protocol": str(conn_params.protocol),
+                            "source_root_ca_provided": conn_params.root_ca is not None,
+                            "source_skip_tls_verification": (
+                                conn_params.skip_tls_verification
+                            ),
+                        }
+                    )
+                    break  # Use the first Kafka source for tracking
+
+        return tracking_info
 
     def _track_event(self, event_name: str, **kwargs: Any) -> None:
         pipeline_properties = self._tracking_info()

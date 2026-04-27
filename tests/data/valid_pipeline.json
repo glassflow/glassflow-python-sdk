@@ -1,148 +1,123 @@
 {
+    "version": "v3",
     "pipeline_id": "test-pipeline",
     "name": "Test Pipeline",
-    "source": {
-        "type": "kafka",
-        "provider": "aiven",
-        "connection_params": {
-            "brokers": [
-                "kafka-broker-0:9092",
-                "kafka-broker-1:9092"
-            ],
-            "protocol": "SASL_SSL",
-            "mechanism": "SCRAM-SHA-256",
-            "username": "<user>",
-            "password": "<password>",
-            "root_ca": "<base64 encoded ca>",
-            "skip_auth": false
-        },
-        "topics": [
-            {
-                "consumer_group_initial_offset": "earliest",
-                "name": "user_logins",
-                "deduplication": {
-                    "enabled": true,
-                    "id_field": "session_id",
-                    "id_field_type": "string",
-                    "time_window": "12h"
-                }
+    "sources": [
+        {
+            "type": "kafka",
+            "source_id": "user-logins",
+            "connection_params": {
+                "brokers": [
+                    "kafka-broker-0:9092",
+                    "kafka-broker-1:9092"
+                ],
+                "protocol": "SASL_SSL",
+                "mechanism": "SCRAM-SHA-256",
+                "username": "<user>",
+                "password": "<password>",
+                "root_ca": "<base64 encoded ca>"
             },
-            {
-                "consumer_group_initial_offset": "earliest",
-                "name": "orders",
-                "deduplication": {
-                    "enabled": true,
-                    "id_field": "order_id",
-                    "id_field_type": "string",
-                    "time_window": "12h"
-                }
+            "topic": "user_logins",
+            "consumer_group_initial_offset": "earliest",
+            "schema_fields": [
+                {"name": "session_id", "type": "string"},
+                {"name": "user_id", "type": "string"},
+                {"name": "timestamp", "type": "string"}
+            ]
+        },
+        {
+            "type": "kafka",
+            "source_id": "orders",
+            "connection_params": {
+                "brokers": [
+                    "kafka-broker-0:9092",
+                    "kafka-broker-1:9092"
+                ],
+                "protocol": "SASL_SSL",
+                "mechanism": "SCRAM-SHA-256",
+                "username": "<user>",
+                "password": "<password>",
+                "root_ca": "<base64 encoded ca>"
+            },
+            "topic": "orders",
+            "consumer_group_initial_offset": "earliest",
+            "schema_fields": [
+                {"name": "order_id", "type": "string"},
+                {"name": "user_id", "type": "string"},
+                {"name": "timestamp", "type": "string"},
+                {"name": "skip_sink_field", "type": "string"}
+            ]
+        }
+    ],
+    "transforms": [
+        {
+            "type": "dedup",
+            "source_id": "user-logins",
+            "config": {"key": "session_id", "time_window": "12h"}
+        },
+        {
+            "type": "dedup",
+            "source_id": "orders",
+            "config": {"key": "order_id", "time_window": "12h"}
+        },
+        {
+            "type": "filter",
+            "source_id": "user-logins",
+            "config": {"expression": "user_id = '123'"}
+        },
+        {
+            "type": "stateless",
+            "source_id": "user-logins",
+            "config": {
+                "transforms": [
+                    {
+                        "expression": "upper(user_id)",
+                        "output_name": "upper_user_id",
+                        "output_type": "string"
+                    }
+                ]
             }
-        ]
-    },
+        }
+    ],
     "join": {
         "enabled": true,
         "type": "temporal",
-        "sources": [
-            {
-                "source_id": "user_logins",
-                "join_key": "user_id",
-                "time_window": "1h",
-                "orientation": "left"
-            },
-            {
-                "source_id": "orders",
-                "join_key": "user_id",
-                "time_window": "1h",
-                "orientation": "right"
-            }
+        "left_source": {
+            "source_id": "user-logins",
+            "key": "user_id",
+            "time_window": "1h"
+        },
+        "right_source": {
+            "source_id": "orders",
+            "key": "user_id",
+            "time_window": "1h"
+        },
+        "output_fields": [
+            {"source_id": "user-logins", "name": "session_id"},
+            {"source_id": "orders", "name": "order_id"}
         ]
-    },
-    "filter": {
-        "enabled": true,
-        "expression": "user_id = '123'"
-    },
-    "stateless_transformation": {
-        "enabled": true,
-        "id": "my_transformation",
-        "type": "expr_lang_transform",
-        "config": {
-            "transform": [
-                {
-                    "expression": "upper(user_id)",
-                    "output_name": "upper_user_id",
-                    "output_type": "string"
-                }
-            ]
-        }
     },
     "sink": {
         "type": "clickhouse",
-        "provider": "aiven",
-        "host": "<host>",
-        "port": "12753",
-        "http_port": "12754",
-        "database": "default",
-        "username": "<user>",
-        "password": "<password>",
-        "secure": true,
+        "connection_params": {
+            "host": "<host>",
+            "port": "12753",
+            "http_port": "12754",
+            "database": "default",
+            "username": "<user>",
+            "password": "<password>",
+            "secure": true
+        },
+        "table": "user_orders",
         "max_batch_size": 1,
         "max_delay_time": "10m",
-        "table": "user_orders"
-    },
-    "schema": {
-        "fields": [
-            {
-                "source_id": "user_logins",
-                "name": "session_id",
-                "type": "string",
-                "column_name": "session_id",
-                "column_type": "String"
-            },
-            {
-                "source_id": "user_logins",
-                "name": "user_id",
-                "type": "string",
-                "column_name": "user_id",
-                "column_type": "String"
-            },
-            {
-                "source_id": "orders",
-                "name": "order_id",
-                "type": "string",
-                "column_name": "order_id",
-                "column_type": "String"
-            },
-            {
-                "source_id": "orders",
-                "name": "user_id",
-                "type": "string"
-            },
-            {
-                "source_id": "user_logins",
-                "name": "timestamp",
-                "type": "string",
-                "column_name": "login_at",
-                "column_type": "DateTime"
-            },
-            {
-                "source_id": "orders",
-                "name": "timestamp",
-                "type": "string",
-                "column_name": "order_placed_at",
-                "column_type": "DateTime"
-            },
-            {
-                "source_id": "orders",
-                "name": "skip_sink_field",
-                "type": "string"
-            },
-            {
-                "source_id": "my_transformation",
-                "name": "upper_user_id",
-                "type": "string",
-                "column_name": "upper_user_id",
-                "column_type": "String"
-            }
+        "mapping": [
+            {"name": "session_id", "column_name": "session_id", "column_type": "String"},
+            {"name": "user_id", "column_name": "user_id", "column_type": "String"},
+            {"name": "order_id", "column_name": "order_id", "column_type": "String"},
+            {"name": "timestamp", "column_name": "order_placed_at", "column_type": "DateTime"},
+            {"name": "timestamp", "column_name": "login_at", "column_type": "DateTime"},
+            {"name": "upper_user_id", "column_name": "upper_user_id", "column_type": "String"}
         ]
     }
 }

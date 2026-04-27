@@ -3,12 +3,11 @@ import pytest
 from glassflow.etl.errors import ImmutableResourceError
 from glassflow.etl.models.resources import (
     JetStreamResources,
-    JoinResources,
     NATSResources,
     PipelineResourcesConfig,
     Resources,
+    SinkResources,
     StorageResources,
-    TransformResources,
 )
 
 
@@ -65,38 +64,8 @@ class TestImmutableResourceErrors:
         result = current.update(patch)
         assert result.size == "5Gi"
 
-    def test_join_resources_update_immutable_replicas_raises(self):
-        """Updating join replicas raises ImmutableResourceError with clear message."""
-        current = JoinResources(replicas=1, limits=Resources(memory="64Mi"))
-        patch = JoinResources(replicas=2, limits=None, requests=None)
-        with pytest.raises(ImmutableResourceError) as exc_info:
-            current.update(patch)
-        assert "replicas" in str(exc_info.value)
-        assert "join" in str(exc_info.value)
-        assert "immutable" in str(exc_info.value).lower()
-
-    def test_join_resources_update_limits_and_requests_succeeds(self):
-        """Updating join limits/requests (mutable) does not raise."""
-        current = JoinResources(
-            replicas=1,
-            limits=Resources(memory="64Mi"),
-            requests=Resources(memory="32Mi"),
-        )
-        patch = JoinResources(
-            replicas=None,
-            limits=Resources(memory="128Mi", cpu="100m"),
-            requests=Resources(cpu="50m"),
-        )
-        result = current.update(patch)
-        assert result.replicas == 1
-        assert result.limits is not None
-        assert result.limits.memory == "128Mi"
-        assert result.limits.cpu == "100m"
-        assert result.requests is not None
-        assert result.requests.cpu == "50m"
-
     def test_pipeline_resources_config_update_nats_immutable_raises(self):
-        """Updating pipeline_resources with nats.stream immutable fields raises."""
+        """Updating resources with nats.stream immutable fields raises."""
         current = PipelineResourcesConfig(
             nats=NATSResources(
                 stream=JetStreamResources(maxAge="24h", maxBytes="512Mi")
@@ -109,14 +78,15 @@ class TestImmutableResourceErrors:
             current.update(patch)
         assert "nats.stream" in str(exc_info.value)
 
-    def test_pipeline_resources_config_update_transform_storage_immutable_raises(self):
-        """Updating pipeline_resources with transform.storage size raises."""
+    def test_pipeline_resources_config_update_sink_succeeds(self):
+        """Updating resources with sink replicas succeeds."""
         current = PipelineResourcesConfig(
-            transform=TransformResources(storage=StorageResources(size="5Gi"))
+            sink=SinkResources(
+                replicas=1,
+                requests=Resources(memory="64Mi"),
+                limits=Resources(memory="128Mi"),
+            )
         )
-        patch = PipelineResourcesConfig(
-            transform=TransformResources(storage=StorageResources(size="10Gi"))
-        )
-        with pytest.raises(ImmutableResourceError) as exc_info:
-            current.update(patch)
-        assert "transform.storage" in str(exc_info.value)
+        patch = PipelineResourcesConfig(sink=SinkResources(replicas=2))
+        result = current.update(patch)
+        assert result.sink.replicas == 2

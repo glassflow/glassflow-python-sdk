@@ -4,4 +4,4 @@ from pydantic import BaseModel, Field
 
 
 class MetadataConfig(BaseModel):
-    tags: Optional[List[str]] = Field(default=None)
+    tags: Optional[List[str]] = Field(default=[])

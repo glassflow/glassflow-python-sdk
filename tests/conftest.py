@@ -57,7 +57,7 @@ def valid_config_without_joins() -> dict:
 
 @pytest.fixture
 def valid_config_with_pipeline_resources() -> dict:
-    """Fixture for a valid pipeline configuration including pipeline_resources."""
+    """Fixture for a valid pipeline configuration including resources."""
     return pipeline_configs.get_valid_config_with_pipeline_resources()
 
 
@@ -77,6 +77,36 @@ def valid_config_without_joins_and_dedup_disabled() -> dict:
 def invalid_config() -> dict:
     """Fixture for an invalid pipeline configuration."""
     return pipeline_configs.get_invalid_config()
+
+
+@pytest.fixture
+def valid_v3_config() -> dict:
+    """Fixture for a valid V3 Kafka pipeline configuration."""
+    return pipeline_configs.get_valid_v3_pipeline_config()
+
+
+@pytest.fixture
+def valid_otlp_logs_config() -> dict:
+    """Fixture for a valid V3 OTLP logs pipeline configuration."""
+    return pipeline_configs.get_valid_otlp_logs_pipeline_config()
+
+
+@pytest.fixture
+def valid_otlp_metrics_config() -> dict:
+    """Fixture for a valid V3 OTLP metrics pipeline configuration."""
+    return pipeline_configs.get_valid_otlp_metrics_pipeline_config()
+
+
+@pytest.fixture
+def valid_otlp_traces_config() -> dict:
+    """Fixture for a valid V3 OTLP traces pipeline configuration."""
+    return pipeline_configs.get_valid_otlp_traces_pipeline_config()
+
+
+@pytest.fixture
+def valid_otlp_with_transformation_config() -> dict:
+    """Fixture for a valid V3 OTLP pipeline with a stateless transformation."""
+    return pipeline_configs.get_valid_otlp_with_transformation_config()
 
 
 @pytest.fixture
@@ -123,19 +153,7 @@ def mock_connection_error():
 
 @pytest.fixture
 def mock_success():
-    """Factory-context fixture that patches httpx and returns 200 with JSON.
-
-    - Accepts either a single dict payload or a list of dict payloads via the
-      optional argument to the returned context manager. If a list is provided,
-      they are returned sequentially from response.json() to simulate multiple
-      HTTP calls within the same test flow.
-    - If no payload is provided, it defaults to {"message": "Success"}.
-
-    Usage:
-        with mock_success(payload_or_list) as mock_request:
-            # invoke code under test
-            assert mock_request.call_args_list == [...]
-    """
+    """Factory-context fixture that patches httpx and returns 200 with JSON."""
     from contextlib import contextmanager
 
     @contextmanager

@@ -1,20 +1,18 @@
 import re
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from ..errors import ImmutableResourceError
 from .base import CaseInsensitiveStrEnum
-from .filter import FilterConfig, FilterConfigPatch
-from .join import JoinConfig, JoinConfigPatch
 from .metadata import MetadataConfig
 from .resources import PipelineResourcesConfig
-from .schema import Schema
 from .sink import SinkConfig, SinkConfigPatch
-from .source import SourceConfig, SourceConfigPatch
-from .stateless_transformation import (
-    StatelessTransformationConfig,
-    StatelessTransformationConfigPatch,
+from .sources import KafkaSource, OTLPSource, SourceConfig
+from .transforms import (
+    DedupTransform,
+    JoinConfig,
+    JoinConfigPatch,
+    TransformEntry,
 )
 
 
@@ -30,20 +28,41 @@ class PipelineStatus(CaseInsensitiveStrEnum):
     DELETED = "Deleted"
 
 
+class PipelineVersion(CaseInsensitiveStrEnum):
+    V1 = "v1"
+    V2 = "v2"
+    V3 = "v3"
+
+
 class PipelineConfig(BaseModel):
-    version: str = Field(default="v2")
+    version: PipelineVersion = Field(default=PipelineVersion.V3)
     pipeline_id: str
     name: Optional[str] = Field(default=None)
-    source: SourceConfig
-    join: Optional[JoinConfig] = Field(default=JoinConfig())
-    filter: Optional[FilterConfig] = Field(default=FilterConfig())
-    metadata: Optional[MetadataConfig] = Field(default=MetadataConfig())
+    sources: List[SourceConfig]
+    transforms: Optional[List[TransformEntry]] = Field(default=None)
+    join: Optional[JoinConfig] = Field(default=None)
     sink: SinkConfig
-    pipeline_schema: Schema = Field(alias="schema")
-    stateless_transformation: Optional[StatelessTransformationConfig] = Field(
-        default=StatelessTransformationConfig()
-    )
-    pipeline_resources: Optional[PipelineResourcesConfig] = Field(default=None)
+    metadata: Optional[MetadataConfig] = Field(default=MetadataConfig())
+    resources: Optional[PipelineResourcesConfig] = Field(default=None)
+
+    @field_validator("version")
+    @classmethod
+    def validate_version(cls, v: PipelineVersion) -> PipelineVersion:
+        if v == PipelineVersion.V1:
+            raise ValueError(
+                "Pipeline version v1 is no longer supported by this SDK. "
+                "Please use glassflow-python-sdk<2.0.0 to work with v1 pipelines."
+            )
+        if v == PipelineVersion.V2:
+            raise ValueError(
+                "Pipeline version v2 is no longer supported by this SDK. "
+                "Convert your v2 configuration to v3 by calling "
+                "`glassflow.etl.Client().migrate_pipeline_v2_to_v3(config)`, "
+                "then pass the returned config to create_pipeline(). "
+                "Alternatively, pin glassflow-python-sdk<4.0.0 to keep "
+                "working with v2 pipelines directly."
+            )
+        return v
 
     @field_validator("pipeline_id")
     @classmethod
@@ -64,162 +83,128 @@ class PipelineConfig(BaseModel):
 
     @model_validator(mode="after")
     def validate_config(self) -> "PipelineConfig":
-        """
-        Set pipeline name if not provided and validate configuration.
-        """
-        # Set pipeline name if not provided
         if self.name is None:
             self.name = self.pipeline_id.replace("-", " ").title()
 
-        # Validate schema
-        topic_names = [topic.name for topic in self.source.topics]
-        source_ids = topic_names.copy()
-        if self.stateless_transformation.enabled:
-            source_ids.append(self.stateless_transformation.id)
-        for field in self.pipeline_schema.fields:
-            if field.source_id not in source_ids:
-                raise ValueError(
-                    f"Source '{field.source_id}' does not exist in any topic "
-                    "or is not a stateless transformation id"
-                )
+        # Validate sources list is non-empty
+        if not self.sources:
+            raise ValueError("At least one source is required")
 
-        # Validate deduplication ID fields
-        for topic in self.source.topics:
-            if topic.deduplication is None or not topic.deduplication.enabled:
-                continue
+        # Validate source_id uniqueness
+        source_id_list = [src.source_id for src in self.sources]
+        if len(source_id_list) != len(set(source_id_list)):
+            duplicates = {
+                sid for sid in source_id_list if source_id_list.count(sid) > 1
+            }
+            raise ValueError(f"Duplicate source_id(s) found: {duplicates}")
 
-            if not self.pipeline_schema.is_field_in_schema(
-                topic.deduplication.id_field, topic.name
-            ):
-                raise ValueError(
-                    f"Deduplication id_field '{topic.deduplication.id_field}' "
-                    f"not found in schema from source '{topic.name}'"
-                )
+        # Build the set of valid source identifiers from sources list
+        source_ids = set(source_id_list)
+        has_otlp = any(isinstance(src, OTLPSource) for src in self.sources)
 
-        # Validate join configuration
+        if has_otlp and self.join and self.join.enabled:
+            raise ValueError("join.enabled must be False for OTLP pipelines")
+
+        # Validate join source references
         if self.join and self.join.enabled:
-            # Validate each source in the join config
-            for join_source in self.join.sources:
-                if join_source.source_id not in topic_names:
+            if self.join.left_source:
+                if self.join.left_source.source_id not in source_ids:
                     raise ValueError(
-                        f"Join source '{join_source.source_id}' does not exist in any "
-                        "topic"
+                        f"Join left_source '{self.join.left_source.source_id}' "
+                        "does not match any source"
+                    )
+            if self.join.right_source:
+                if self.join.right_source.source_id not in source_ids:
+                    raise ValueError(
+                        f"Join right_source '{self.join.right_source.source_id}' "
+                        "does not match any source"
                     )
 
-                if not self.pipeline_schema.is_field_in_schema(
-                    join_source.join_key,
-                    join_source.source_id,
-                ):
+        # Validate transform source_id references
+        if self.transforms:
+            for transform in self.transforms:
+                if transform.source_id not in source_ids:
                     raise ValueError(
-                        f"Join key '{join_source.join_key}' does not exist in source "
-                        f"'{join_source.source_id}' schema"
+                        f"Transform source_id '{transform.source_id}' "
+                        "does not match any source"
                     )
+
+        # Validate dedup keys against source schema_fields (Kafka only)
+        if self.transforms:
+            source_by_id = {src.source_id: src for src in self.sources}
+            for transform in self.transforms:
+                if isinstance(transform, DedupTransform):
+                    src = source_by_id.get(transform.source_id)
+                    if isinstance(src, KafkaSource) and src.schema_fields is not None:
+                        field_names = {f.name for f in src.schema_fields}
+                        if transform.config.key not in field_names:
+                            raise ValueError(
+                                f"Dedup key '{transform.config.key}' not found "
+                                f"in schema_fields of source "
+                                f"'{transform.source_id}'"
+                            )
+
+        # Validate join keys against source schema_fields (Kafka only)
+        if self.join and self.join.enabled:
+            source_by_id = {src.source_id: src for src in self.sources}
+            for join_src in [self.join.left_source, self.join.right_source]:
+                if join_src is None:
+                    continue
+                src = source_by_id.get(join_src.source_id)
+                if isinstance(src, KafkaSource) and src.schema_fields is not None:
+                    field_names = {f.name for f in src.schema_fields}
+                    if join_src.key not in field_names:
+                        raise ValueError(
+                            f"Join key '{join_src.key}' does not exist in source "
+                            f"'{join_src.source_id}' schema_fields"
+                        )
 
         return self
 
     def _has_deduplication_enabled(self) -> bool:
-        """
-        Check if the pipeline has deduplication enabled.
-        """
-        return any(
-            topic.deduplication and topic.deduplication.enabled
-            for topic in self.source.topics
-            if topic.deduplication is not None
-        )
+        """Check if the pipeline has any dedup transforms."""
+        if not self.transforms:
+            return False
+        return any(isinstance(t, DedupTransform) for t in self.transforms)
 
     def update(self, config_patch: "PipelineConfigPatch") -> "PipelineConfig":
-        """
-        Apply a patch configuration to this pipeline configuration.
-
-        Args:
-            config_patch: The patch configuration (PipelineConfigPatch or dict)
-
-        Returns:
-            PipelineConfig: A new PipelineConfig instance with the patch applied
-        """
-        # Start with a deep copy of the current config
+        """Apply a patch configuration to this pipeline configuration."""
         updated_config = self.model_copy(deep=True)
 
-        # Update name if provided
         if config_patch.name is not None:
             updated_config.name = config_patch.name
 
-        # Update pipeline resources if provided
-        if config_patch.pipeline_resources is not None:
-            if (
-                config_patch.pipeline_resources.transform is not None
-                and config_patch.pipeline_resources.transform.replicas is not None
-                and self._has_deduplication_enabled()
-                and not config_patch._has_deduplication_disabled()
-            ):
-                raise ImmutableResourceError(
-                    "Cannot update pipeline resources of a transform component if the "
-                    "pipeline has deduplication enabled"
-                )
+        if config_patch.resources is not None:
+            updated_config.resources = (
+                updated_config.resources or PipelineResourcesConfig()
+            ).update(config_patch.resources)
 
-            updated_config.pipeline_resources = (
-                updated_config.pipeline_resources or PipelineResourcesConfig()
-            ).update(config_patch.pipeline_resources)
-
-        # Update source if provided
-        if config_patch.source is not None:
-            updated_config.source = updated_config.source.update(config_patch.source)
-
-        # Update join if provided
         if config_patch.join is not None:
             updated_config.join = (updated_config.join or JoinConfig()).update(
                 config_patch.join
             )
 
-        # Update filter if provided
-        if config_patch.filter is not None:
-            updated_config.filter = (updated_config.filter or FilterConfig()).update(
-                config_patch.filter
-            )
-
-        # Update sink if provided
         if config_patch.sink is not None:
             updated_config.sink = updated_config.sink.update(config_patch.sink)
-
-        # Update schema if provided
-        if config_patch.pipeline_schema is not None:
-            updated_config.pipeline_schema = config_patch.pipeline_schema
 
         if config_patch.metadata is not None:
             updated_config.metadata = config_patch.metadata
 
-        # Update stateless transformation if provided
-        if config_patch.stateless_transformation is not None:
-            updated_config.stateless_transformation = (
-                updated_config.stateless_transformation
-                or StatelessTransformationConfig()
-            ).update(config_patch.stateless_transformation)
+        if config_patch.transforms is not None:
+            updated_config.transforms = config_patch.transforms
+
+        if config_patch.sources is not None:
+            updated_config.sources = config_patch.sources
 
         return updated_config
 
 
 class PipelineConfigPatch(BaseModel):
     name: Optional[str] = Field(default=None)
+    sources: Optional[List[SourceConfig]] = Field(default=None)
+    transforms: Optional[List[TransformEntry]] = Field(default=None)
     join: Optional[JoinConfigPatch] = Field(default=None)
-    filter: Optional[FilterConfigPatch] = Field(default=None)
     metadata: Optional[MetadataConfig] = Field(default=None)
-    pipeline_schema: Optional[Schema] = Field(default=None, alias="schema")
     sink: Optional[SinkConfigPatch] = Field(default=None)
-    source: Optional[SourceConfigPatch] = Field(default=None)
-    stateless_transformation: Optional[StatelessTransformationConfigPatch] = Field(
-        default=None
-    )
-    pipeline_resources: Optional[PipelineResourcesConfig] = Field(default=None)
-    version: Optional[str] = Field(default=None)
-
-    def _has_deduplication_disabled(self) -> bool:
-        """
-        Check if the pipeline has deduplication disabled.
-        """
-        disabled = False
-        if self.source is not None and self.source.topics is not None:
-            for topic in self.source.topics:
-                if topic.deduplication and not topic.deduplication.enabled:
-                    disabled = True
-                    break
-        return disabled
+    resources: Optional[PipelineResourcesConfig] = Field(default=None)
+    version: Optional[PipelineVersion] = Field(default=None)

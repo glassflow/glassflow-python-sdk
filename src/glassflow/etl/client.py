@@ -136,6 +136,41 @@ class Client(APIClient):
         """
         Pipeline(host=self.host, pipeline_id=pipeline_id).delete()
 
-    def disable_tracking(self) -> None:
+    def migrate_pipeline_v2_to_v3(
+        self, pipeline_config: dict[str, Any]
+    ) -> models.PipelineConfig:
+        """Convert a v2 pipeline config to the v3 format.
+
+        Calls the backend ``POST /api/v1/pipeline/migrate-preview`` endpoint,
+        which performs the transformation server-side. No pipeline is created
+        and no database state is touched — the endpoint is a pure
+        transformation and is safe to call repeatedly.
+
+        Args:
+            pipeline_config: A v2 pipeline configuration as a plain dict.
+
+        Returns:
+            PipelineConfig: The equivalent v3 pipeline configuration,
+                validated by the SDK's Pydantic model.
+
+        Raises:
+            APIError: If the API request fails (for example, when the input
+                is not a valid v2 configuration).
+        """
+        try:
+            response = self._request(
+                "POST",
+                f"{self.ENDPOINT}/migrate-preview",
+                json=pipeline_config,
+            )
+            return models.PipelineConfig.model_validate(response.json())
+        except errors.APIError as e:
+            self._track_event(
+                "PipelineMigratePreviewError",
+                error_type=type(e).__name__,
+            )
+            raise
+
+    def disable_usagestats(self) -> None:
         """Disable tracking of pipeline events."""
         self._tracking.enabled = False

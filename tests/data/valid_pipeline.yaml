@@ -1,43 +1,9 @@
-join:
-  enabled: true
-  sources:
-  - join_key: user_id
-    orientation: left
-    source_id: user_logins
-    time_window: 1h
-  - join_key: user_id
-    orientation: right
-    source_id: orders
-    time_window: 1h
-  type: temporal
-name: Test Pipeline
+version: v3
 pipeline_id: test-pipeline
-filter:
-  enabled: true
-  expression: user_id = '123'
-stateless_transformation:
-  enabled: true
-  id: my_transformation
-  type: expr_lang_transform
-  config:
-    transform:
-      - expression: upper(user_id)
-        output_name: upper_user_id
-        output_type: string
-sink:
-  database: default
-  host: <host>
-  max_batch_size: 1
-  max_delay_time: 10m
-  password: <password>
-  port: "12753"
-  http_port: "12754"
-  provider: aiven
-  secure: true
-  table: user_orders
-  type: clickhouse
-  username: <user>
-source:
+name: Test Pipeline
+sources:
+- type: kafka
+  source_id: user-logins
   connection_params:
     brokers:
     - kafka-broker-0:9092
@@ -46,60 +12,105 @@ source:
     password: <password>
     protocol: SASL_SSL
     root_ca: <base64 encoded ca>
-    skip_auth: false
     username: <user>
-  provider: aiven
-  topics:
-  - consumer_group_initial_offset: earliest
-    deduplication:
-      enabled: true
-      id_field: session_id
-      id_field_type: string
-      time_window: 12h
-    name: user_logins
-  - consumer_group_initial_offset: earliest
-    deduplication:
-      enabled: true
-      id_field: order_id
-      id_field_type: string
-      time_window: 12h
-    name: orders
-  type: kafka
-schema:
-  fields:
-  - column_name: session_id
-    column_type: String
-    name: session_id
-    source_id: user_logins
-    type: string
-  - column_name: user_id
-    column_type: String
-    name: user_id
-    source_id: user_logins
-    type: string
-  - column_name: order_id
-    column_type: String
-    name: order_id
-    source_id: orders
+  topic: user_logins
+  consumer_group_initial_offset: earliest
+  schema_fields:
+  - name: session_id
     type: string
   - name: user_id
-    source_id: orders
     type: string
-  - column_name: login_at
-    column_type: DateTime
-    name: timestamp
-    source_id: user_logins
+  - name: timestamp
     type: string
-  - column_name: order_placed_at
-    column_type: DateTime
-    name: timestamp
-    source_id: orders
+- type: kafka
+  source_id: orders
+  connection_params:
+    brokers:
+    - kafka-broker-0:9092
+    - kafka-broker-1:9092
+    mechanism: SCRAM-SHA-256
+    password: <password>
+    protocol: SASL_SSL
+    root_ca: <base64 encoded ca>
+    username: <user>
+  topic: orders
+  consumer_group_initial_offset: earliest
+  schema_fields:
+  - name: order_id
+    type: string
+  - name: user_id
+    type: string
+  - name: timestamp
     type: string
   - name: skip_sink_field
+    type: string
+transforms:
+- type: dedup
+  source_id: user-logins
+  config:
+    key: session_id
+    time_window: 12h
+- type: dedup
+  source_id: orders
+  config:
+    key: order_id
+    time_window: 12h
+- type: filter
+  source_id: user-logins
+  config:
+    expression: user_id = '123'
+- type: stateless
+  source_id: user-logins
+  config:
+    transforms:
+    - expression: upper(user_id)
+      output_name: upper_user_id
+      output_type: string
+join:
+  enabled: true
+  type: temporal
+  left_source:
+    source_id: user-logins
+    key: user_id
+    time_window: 1h
+  right_source:
     source_id: orders
-    type: string
+    key: user_id
+    time_window: 1h
+  output_fields:
+  - source_id: user-logins
+    name: session_id
+  - source_id: orders
+    name: order_id
+sink:
+  type: clickhouse
+  connection_params:
+    host: <host>
+    port: "12753"
+    http_port: "12754"
+    database: default
+    username: <user>
+    password: <password>
+    secure: true
+  table: user_orders
+  max_batch_size: 1
+  max_delay_time: 10m
+  mapping:
+  - name: session_id
+    column_name: session_id
+    column_type: String
+  - name: user_id
+    column_name: user_id
+    column_type: String
+  - name: order_id
+    column_name: order_id
+    column_type: String
+  - name: timestamp
+    column_name: order_placed_at
+    column_type: DateTime
+  - name: timestamp
+    column_name: login_at
+    column_type: DateTime
   - name: upper_user_id
-    source_id: my_transformation
-    type: string
     column_name: upper_user_id
     column_type: String

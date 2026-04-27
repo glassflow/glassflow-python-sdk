@@ -254,3 +254,40 @@ class TestClient:
                 "DELETE",
                 f"{pipeline_from_id.ENDPOINT}/{pipeline_from_id.pipeline_id}",
             )
+
+    def test_client_migrate_pipeline_v2_to_v3_success(self, valid_config, mock_success):
+        """Test successful v2 -> v3 migration via the server endpoint.
+
+        The SDK just POSTs the v2 config to /api/v1/pipeline/migrate-preview
+        and validates the response as a v3 PipelineConfig. The backend does
+        the actual transformation; the SDK is a thin passthrough.
+        """
+        client = Client()
+        v2_config = {
+            "version": "v2",
+            "pipeline_id": valid_config["pipeline_id"],
+            "name": "Legacy pipeline",
+            "source": {"type": "kafka", "topics": []},
+            "sink": {"type": "clickhouse"},
+        }
+
+        with mock_success([valid_config]) as mock_request:
+            result = client.migrate_pipeline_v2_to_v3(v2_config)
+            mock_request.assert_called_once_with(
+                "POST",
+                f"{client.ENDPOINT}/migrate-preview",
+                json=v2_config,
+            )
+            assert isinstance(result, PipelineConfig)
+            assert result.pipeline_id == valid_config["pipeline_id"]
+
+    def test_client_migrate_pipeline_v2_to_v3_api_error(
+        self, valid_config, mock_forbidden_response
+    ):
+        """Test that API errors from the migrate endpoint are surfaced."""
+        client = Client()
+        v2_config = {"version": "v2", "pipeline_id": valid_config["pipeline_id"]}
+
+        with patch("httpx.Client.request", return_value=mock_forbidden_response):
+            with pytest.raises(errors.APIError):
+                client.migrate_pipeline_v2_to_v3(v2_config)
