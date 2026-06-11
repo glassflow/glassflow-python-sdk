@@ -28,6 +28,7 @@ from .source import SourceBaseConfig, SourceBaseConfigPatch, SourceType
 from .sources import (
     AnySource,
     ConsumerGroupOffset,
+    JsonFormat,
     KafkaConnectionParams,
     KafkaConnectionParamsPatch,
     KafkaField,
@@ -41,6 +42,7 @@ from .sources import (
     OTLPTracesSource,
     SchemaRegistry,
     SourceConfig,
+    SourceFormat,
 )
 from .transforms import (
     DedupTransform,
@@ -75,6 +77,7 @@ __all__ = [
     "JoinConfig",
     "JoinConfigPatch",
     "JoinOutputField",
+    "JsonFormat",
     "JoinSourceConfig",
     "JoinType",
     "KafkaConnectionParams",
@@ -106,6 +109,7 @@ __all__ = [
     "SourceBaseConfig",
     "SourceBaseConfigPatch",
     "SourceConfig",
+    "SourceFormat",
     "SourceResourceEntry",
     "SourceType",
     "StatelessTransform",

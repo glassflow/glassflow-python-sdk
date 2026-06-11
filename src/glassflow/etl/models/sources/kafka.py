@@ -2,11 +2,13 @@
 
 from typing import Any, List, Literal, Optional
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, SerializeAsAny, field_validator, model_validator
 
 from ..base import CaseInsensitiveStrEnum
 from ..data_types import KafkaDataType
+from ..registry import resolve_format
 from ..source import SourceBaseConfig, SourceBaseConfigPatch, SourceType
+from .formats import SourceFormat
 
 
 class KafkaProtocol(CaseInsensitiveStrEnum):
@@ -86,6 +88,10 @@ class KafkaSource(SourceBaseConfig):
     schema_registry: Optional[SchemaRegistry] = Field(default=None)
     schema_version: Optional[str] = Field(default=None)
     schema_fields: Optional[List[KafkaField]] = Field(default=None)
+    # Payload format. ``None`` means JSON (default) and is omitted from the
+    # serialized config. Concrete subclass is resolved from the format registry
+    # by its ``type``; SerializeAsAny preserves subclass-only fields on dump.
+    format: Optional[SerializeAsAny[SourceFormat]] = Field(default=None)
 
     @model_validator(mode="before")
     @classmethod
@@ -95,6 +101,12 @@ class KafkaSource(SourceBaseConfig):
                 data.pop("schema_registry", None)
         return data
 
+    @field_validator("format", mode="before")
+    @classmethod
+    def resolve_format_field(cls, value: Any) -> Any:
+        """Dispatch a raw format dict to the concrete registered format class."""
+        return resolve_format(value)
+
     @model_validator(mode="after")
     def validate_schema_registry_requires_version(self) -> "KafkaSource":
         """Validate that schema_version is set when schema_registry is provided."""
@@ -102,6 +114,14 @@ class KafkaSource(SourceBaseConfig):
             raise ValueError(
                 "schema_version is required when schema_registry is provided"
             )
+        return self
+
+    @model_validator(mode="after")
+    def validate_format(self) -> "KafkaSource":
+        """Let the format enforce schema-source rules against this source's
+        schema registry configuration."""
+        if self.format is not None:
+            self.format.validate_against_registry(self.schema_registry is not None)
         return self
 
     def update(self, patch: "KafkaSourcePatch") -> "KafkaSource":

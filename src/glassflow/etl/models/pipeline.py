@@ -1,12 +1,20 @@
 import re
-from typing import List, Optional
+from typing import Any, List, Optional
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    Field,
+    SerializeAsAny,
+    field_validator,
+    model_validator,
+)
 
 from .base import CaseInsensitiveStrEnum
 from .metadata import MetadataConfig
+from .registry import resolve_source
 from .resources import PipelineResourcesConfig
 from .sink import SinkConfig, SinkConfigPatch
+from .source import SourceBaseConfig
 from .sources import KafkaSource, OTLPSource, SourceConfig
 from .transforms import (
     DedupTransform,
@@ -38,12 +46,23 @@ class PipelineConfig(BaseModel):
     version: PipelineVersion = Field(default=PipelineVersion.V3)
     pipeline_id: str
     name: Optional[str] = Field(default=None)
-    sources: List[SourceConfig]
+    # Each source is dispatched to its concrete class via the source registry
+    # (see resolve_sources), so editions can add source types without
+    # redefining a union here. SerializeAsAny preserves subclass-only fields.
+    sources: List[SerializeAsAny[SourceBaseConfig]]
     transforms: Optional[List[TransformEntry]] = Field(default=None)
     join: Optional[JoinConfig] = Field(default=None)
     sink: SinkConfig
     metadata: Optional[MetadataConfig] = Field(default=MetadataConfig())
     resources: Optional[PipelineResourcesConfig] = Field(default=None)
+
+    @field_validator("sources", mode="before")
+    @classmethod
+    def resolve_sources(cls, value: Any) -> Any:
+        """Dispatch each raw source dict to its concrete registered class."""
+        if isinstance(value, list):
+            return [resolve_source(item) for item in value]
+        return value
 
     @field_validator("version")
     @classmethod

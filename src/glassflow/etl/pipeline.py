@@ -18,6 +18,17 @@ class Pipeline(APIClient):
 
     ENDPOINT = "/api/v1/pipeline"
 
+    # Class of the DLQ client this pipeline constructs. Editions override this
+    # to have ``self.dlq`` expose their own DLQ subclass without re-implementing
+    # construction. The Enterprise DLQ itself lands in a follow-up PR.
+    _dlq_class: type[DLQ] = DLQ
+
+    # Config models this pipeline validates/serializes. Editions override these
+    # to use their extended PipelineConfig (e.g. with EE-only source types and
+    # formats) without re-implementing __init__/get/update.
+    _config_class: type[models.PipelineConfig] = models.PipelineConfig
+    _config_patch_class: type[models.PipelineConfigPatch] = models.PipelineConfigPatch
+
     def __init__(
         self,
         host: str | None = None,
@@ -43,14 +54,14 @@ class Pipeline(APIClient):
 
         if config is not None:
             if isinstance(config, dict):
-                self.config = models.PipelineConfig.model_validate(config)
+                self.config = self._config_class.model_validate(config)
             else:
                 self.config = config
             self.pipeline_id = self.config.pipeline_id
         else:
             self.config = None
 
-        self._dlq = DLQ(pipeline_id=self.pipeline_id, host=host)
+        self._dlq = self._dlq_class(pipeline_id=self.pipeline_id, host=host)
         self.status: models.PipelineStatus | None = None
 
     def get(
@@ -85,9 +96,9 @@ class Pipeline(APIClient):
             event_name="PipelineGet",
             **kwargs,
         )
-        self.config = models.PipelineConfig.model_validate(response.json())
+        self.config = self._config_class.model_validate(response.json())
         self.health()
-        self._dlq = DLQ(pipeline_id=self.pipeline_id, host=self.host)
+        self._dlq = self._dlq_class(pipeline_id=self.pipeline_id, host=self.host)
         return self
 
     def create(self) -> Pipeline:
@@ -169,7 +180,7 @@ class Pipeline(APIClient):
         """
         self.get()  # Get latest config
         if isinstance(config_patch, dict):
-            config_patch = models.PipelineConfigPatch.model_validate(config_patch)
+            config_patch = self._config_patch_class.model_validate(config_patch)
         else:
             config_patch = config_patch
         updated_config = self.config.update(config_patch)
@@ -333,8 +344,8 @@ class Pipeline(APIClient):
             config = json.load(f)
         return cls(config=config, host=host)
 
-    @staticmethod
-    def validate_config(config: dict[str, Any]) -> bool:
+    @classmethod
+    def validate_config(cls, config: dict[str, Any]) -> bool:
         """
         Validate a pipeline configuration.
 
@@ -348,7 +359,7 @@ class Pipeline(APIClient):
             ValueError: If the configuration is invalid
             ValidationError: If the configuration fails Pydantic validation
         """
-        models.PipelineConfig.model_validate(config)
+        cls._config_class.model_validate(config)
         return True
 
     @property
