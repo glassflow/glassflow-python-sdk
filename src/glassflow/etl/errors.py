@@ -34,6 +34,12 @@ class ForbiddenError(APIError):
     """Raised on 403 Forbidden errors."""
 
 
+class FeatureNotLicensedError(ForbiddenError):
+    """Raised when an Enterprise-only capability is invoked against a backend
+    that is not licensed for it (the API responds 403). Subclasses
+    ForbiddenError so existing 403 handling still catches it."""
+
+
 class UnprocessableContentError(APIError):
     """Raised on 422 Unprocessable Content errors."""
 
