@@ -79,8 +79,8 @@ class DLQ(_OSSDLQ):
         Raises:
             ValueError: If ``message_ids`` is empty or too large.
             FeatureNotLicensedError: If the backend is not licensed for this.
-            APIError: If the API request fails (e.g. 409 if the pipeline is not
-                Running).
+            PipelineNotRunningError: If the pipeline is not in the Running state.
+            APIError: If the API request fails.
         """
         return self._action("reprocess", "selected", message_ids)
 
@@ -168,3 +168,17 @@ class DLQ(_OSSDLQ):
                 message=(f"DLQ {action} requires a GlassFlow Enterprise license"),
                 response=e.response,
             ) from e
+        except errors.ConflictError as e:
+            # Reprocess replays through the running pipeline, so the API rejects
+            # it with 409 when the pipeline is not in the Running state. Discard
+            # acts on the queue directly and has no such constraint.
+            if action == "reprocess":
+                raise errors.PipelineNotRunningError(
+                    status_code=e.status_code,
+                    message=(
+                        "Pipeline must be in the Running state to reprocess DLQ "
+                        "messages"
+                    ),
+                    response=e.response,
+                ) from e
+            raise

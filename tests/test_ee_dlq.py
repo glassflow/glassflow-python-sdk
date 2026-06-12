@@ -180,3 +180,36 @@ class TestEntitlement:
             assert "Enterprise" in str(exc_info.value)
             # Still catchable as a ForbiddenError by existing 403 handling.
             assert isinstance(exc_info.value, errors.ForbiddenError)
+
+
+class TestPipelineState:
+    def _conflict_patch(self):
+        mock_response = mock_responses.create_mock_response_factory()(
+            status_code=409, json_data={"message": "pipeline is not running"}
+        )
+        return patch(
+            "httpx.Client.request",
+            side_effect=mock_response.raise_for_status.side_effect,
+        )
+
+    def test_reprocess_on_non_running_raises_pipeline_not_running(self, ee_dlq):
+        with self._conflict_patch():
+            with pytest.raises(errors.PipelineNotRunningError) as exc_info:
+                ee_dlq.reprocess(["seq_1"])
+
+            assert "Running" in str(exc_info.value)
+            # Still catchable as the generic 409 ConflictError.
+            assert isinstance(exc_info.value, errors.ConflictError)
+
+    def test_reprocess_all_on_non_running_raises_pipeline_not_running(self, ee_dlq):
+        with self._conflict_patch():
+            with pytest.raises(errors.PipelineNotRunningError):
+                ee_dlq.reprocess_all()
+
+    def test_discard_409_stays_conflict_error(self, ee_dlq):
+        # Discard has no Running-state constraint, so a 409 is not remapped.
+        with self._conflict_patch():
+            with pytest.raises(errors.ConflictError) as exc_info:
+                ee_dlq.discard_all()
+
+            assert not isinstance(exc_info.value, errors.PipelineNotRunningError)

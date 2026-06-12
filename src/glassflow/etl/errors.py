@@ -40,6 +40,17 @@ class FeatureNotLicensedError(ForbiddenError):
     ForbiddenError so existing 403 handling still catches it."""
 
 
+class ConflictError(APIError):
+    """Raised on 409 Conflict errors."""
+
+
+class PipelineNotRunningError(ConflictError):
+    """Raised when an operation requires a Running pipeline but the pipeline is
+    in another state (the API responds 409). For example, DLQ reprocessing
+    replays messages through the running pipeline and is rejected when the
+    pipeline is stopped, terminated, or failed."""
+
+
 class UnprocessableContentError(APIError):
     """Raised on 422 Unprocessable Content errors."""
 
