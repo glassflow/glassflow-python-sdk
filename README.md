@@ -31,6 +31,7 @@ A Python SDK for creating and managing data pipelines between Kafka and ClickHou
 - Pipeline configuration via YAML or JSON
 - Schema validation and configuration management
 - Fine-grained resource control per pipeline component
+- Enterprise Edition client (`glassflow.ee`) with DLQ reprocessing and discard
 
 ## Installation
 
@@ -156,6 +157,44 @@ client.delete_pipeline("my-pipeline-id")
 # or
 pipeline.delete()
 ```
+
+## Enterprise Edition
+
+The GlassFlow Enterprise Edition adds capabilities on top of the Open Source engine. The SDK exposes them through a drop-in client that extends the Open Source one. Import `Client` from `glassflow.ee` instead of `glassflow.etl`:
+
+```python
+from glassflow.ee import Client
+
+client = Client(host="your-glassflow-etl-url")
+```
+
+The Enterprise client does everything the Open Source client does, plus the Enterprise-only features below. Entitlement is enforced by the backend: calling an Enterprise-only operation against a backend that is not licensed for it raises `FeatureNotLicensedError`.
+
+### DLQ message processing
+
+When a pipeline component fails to process a message, that message lands in the pipeline's dead-letter queue (DLQ). On the Enterprise client, `pipeline.dlq` adds message management on top of the Open Source `state`, `consume`, and `purge`:
+
+- `list(batch_size, cursor)`: non-destructive paginated read. Each message includes a stable `message_id`, plus its `source` and `received_at`.
+- `reprocess(message_ids)` / `reprocess_all()`: move messages back into the pipeline input to be processed again.
+- `discard(message_ids)` / `discard_all()`: permanently remove messages.
+
+```python
+pipeline = client.get_pipeline("my-pipeline-id")
+
+# Inspect failed messages
+messages = pipeline.dlq.list(batch_size=50)
+ids = [m["message_id"] for m in messages]
+
+# Retry them after fixing the underlying issue
+pipeline.dlq.reprocess(ids)         # or pipeline.dlq.reprocess_all()
+
+# Or drop the ones you do not want
+pipeline.dlq.discard(["seq_200"])   # or pipeline.dlq.discard_all()
+```
+
+Reprocessing replays messages through the running pipeline, so the pipeline must be in the `Running` state. Calling `reprocess` on a stopped, terminated, or failed pipeline raises `PipelineNotRunningError`. Discard acts on the queue directly and works in any state.
+
+`reprocess` and `discard` accept at most 1000 `message_id` values per call. For larger sets, use the `*_all` variants. See the [DLQ documentation](https://docs.glassflow.dev/configuration/dlq) for the full reference.
 
 ## Migrating from V2 to V3
 
