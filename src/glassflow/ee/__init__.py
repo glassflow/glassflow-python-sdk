@@ -8,6 +8,7 @@ Use it exactly like the OSS client::
 
     client = Client(host="https://...")
     pipeline = client.get_pipeline("my-pipeline")
+    pipeline.dlq.reprocess_all()  # Enterprise DLQ management
 
 All open-source models are re-exported from :mod:`glassflow.etl` for
 convenience, so a single import path covers both tiers.
@@ -21,11 +22,13 @@ from glassflow.etl.models import (
 )
 
 from .client import Client
+from .dlq import DLQ
 from .pipeline import Pipeline
 
 __all__ = [
     "Pipeline",
     "Client",
+    "DLQ",
     "PipelineConfig",
     "SourceConfig",
     "SinkConfig",

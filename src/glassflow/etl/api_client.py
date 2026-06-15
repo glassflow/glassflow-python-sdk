@@ -113,6 +113,8 @@ class APIClient:
             raise errors.ForbiddenError(status_code, message, response=response)
         elif status_code == 404:
             raise errors.NotFoundError(status_code, message, response=response)
+        elif status_code == 409:
+            raise errors.ConflictError(status_code, message, response=response)
         elif status_code == 422:
             raise errors.UnprocessableContentError(
                 status_code, message, response=response
