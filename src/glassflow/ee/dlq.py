@@ -11,6 +11,10 @@ from glassflow.etl.dlq import DLQ as _OSSDLQ
 # fast, offline error instead of a round-trip 400.
 MAX_SELECTED_MESSAGE_IDS = 1000
 
+# Data-plane components a DLQ message can come from (DataPlaneRoles in
+# glassflow-etl-ee). Used to validate the list() component filter client-side.
+DLQ_COMPONENTS = ("ingestor", "join", "sink", "dedup", "oltp-receiver")
+
 
 class DLQ(_OSSDLQ):
     """Enterprise Dead Letter Queue client.
@@ -42,9 +46,9 @@ class DLQ(_OSSDLQ):
             batch_size: Number of messages per page (between 1 and 1000).
             cursor: NATS sequence to resume from, taken from the previous page's
                 ``next_cursor``; omit for the first page.
-            component: Filter to messages from a single data-plane component,
-                one of ``ingestor``, ``join``, ``sink``, ``dedup``,
-                ``oltp-receiver``; omit for all components.
+            component: Filter to messages from a single data-plane component;
+                must be one of :data:`DLQ_COMPONENTS` (``ingestor``, ``join``,
+                ``sink``, ``dedup``, ``oltp-receiver``); omit for all components.
 
         Returns:
             A dict with ``messages`` (list of message dicts), ``has_more``
@@ -52,8 +56,8 @@ class DLQ(_OSSDLQ):
             true; pass it back as ``cursor`` to fetch the next page).
 
         Raises:
-            ValueError: If ``batch_size`` is invalid.
-            APIError: If the API request fails (e.g. an unknown ``component``).
+            ValueError: If ``batch_size`` or ``component`` is invalid.
+            APIError: If the API request fails.
         """
         if (
             not isinstance(batch_size, int)
@@ -64,6 +68,9 @@ class DLQ(_OSSDLQ):
                 f"batch_size must be an integer between 1 and "
                 f"{MAX_SELECTED_MESSAGE_IDS}"
             )
+
+        if component is not None and component not in DLQ_COMPONENTS:
+            raise ValueError(f"component must be one of {', '.join(DLQ_COMPONENTS)}")
 
         params: Dict[str, Any] = {"batch_size": batch_size}
         if cursor is not None:

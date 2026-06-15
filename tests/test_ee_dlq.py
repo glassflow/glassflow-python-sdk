@@ -76,14 +76,23 @@ class TestList:
                 params={"batch_size": 10, "cursor": "seq_200"},
             )
 
-    def test_list_with_component_filter(self, ee_dlq, mock_success):
+    @pytest.mark.parametrize(
+        "component", ["ingestor", "join", "sink", "dedup", "oltp-receiver"]
+    )
+    def test_list_with_valid_component_filter(self, ee_dlq, mock_success, component):
         with mock_success(json_payloads=[{"messages": [], "has_more": False}]) as m:
-            ee_dlq.list(batch_size=10, component="sink")
+            ee_dlq.list(batch_size=10, component=component)
             m.assert_called_once_with(
                 "GET",
                 f"{ee_dlq.endpoint}/list",
-                params={"batch_size": 10, "component": "sink"},
+                params={"batch_size": 10, "component": component},
             )
+
+    @pytest.mark.parametrize("bad", ["otlp-receiver", "Sink", "", "transform"])
+    def test_list_invalid_component_raises_client_side(self, ee_dlq, bad):
+        # Validated client-side before any HTTP call (no mock needed).
+        with pytest.raises(ValueError, match="component must be one of"):
+            ee_dlq.list(component=bad)
 
     def test_list_empty_on_204(self, ee_dlq):
         mock_response = mock_responses.create_mock_response_factory()(
