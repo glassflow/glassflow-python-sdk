@@ -45,16 +45,19 @@ class TestEEDLQWiring:
 
 class TestList:
     def test_list_success(self, ee_dlq, mock_success):
-        payload = [
-            {
-                "message_id": "seq_101",
-                "source": "source-0",
-                "component": "sink",
-                "error": "connection refused",
-                "original_message": "{}",
-                "received_at": "2026-05-29T14:00:00Z",
-            }
-        ]
+        payload = {
+            "messages": [
+                {
+                    "message_id": "seq_101",
+                    "component": "sink",
+                    "error": "connection refused",
+                    "original_message": "{}",
+                    "received_at": "2026-05-29T14:00:00Z",
+                }
+            ],
+            "next_cursor": "seq_101",
+            "has_more": True,
+        }
         with mock_success(json_payloads=[payload]) as mock_get:
             result = ee_dlq.list(batch_size=50)
 
@@ -62,14 +65,24 @@ class TestList:
                 "GET", f"{ee_dlq.endpoint}/list", params={"batch_size": 50}
             )
             assert result == payload
+            assert result["messages"][0]["message_id"] == "seq_101"
 
     def test_list_with_cursor(self, ee_dlq, mock_success):
-        with mock_success(json_payloads=[[]]) as mock_get:
+        with mock_success(json_payloads=[{"messages": [], "has_more": False}]) as m:
             ee_dlq.list(batch_size=10, cursor="seq_200")
-            mock_get.assert_called_once_with(
+            m.assert_called_once_with(
                 "GET",
                 f"{ee_dlq.endpoint}/list",
                 params={"batch_size": 10, "cursor": "seq_200"},
+            )
+
+    def test_list_with_component_filter(self, ee_dlq, mock_success):
+        with mock_success(json_payloads=[{"messages": [], "has_more": False}]) as m:
+            ee_dlq.list(batch_size=10, component="sink")
+            m.assert_called_once_with(
+                "GET",
+                f"{ee_dlq.endpoint}/list",
+                params={"batch_size": 10, "component": "sink"},
             )
 
     def test_list_empty_on_204(self, ee_dlq):
@@ -77,12 +90,52 @@ class TestList:
             status_code=204, json_data=None
         )
         with patch("httpx.Client.request", return_value=mock_response):
-            assert ee_dlq.list() == []
+            assert ee_dlq.list() == {"messages": [], "has_more": False}
 
-    @pytest.mark.parametrize("bad", [0, 101, -1, "10"])
+    @pytest.mark.parametrize("bad", [0, 1001, -1, "10"])
     def test_list_invalid_batch_size(self, ee_dlq, bad):
         with pytest.raises(ValueError, match="batch_size must be an integer"):
             ee_dlq.list(batch_size=bad)
+
+
+class TestListIter:
+    def test_pages_through_and_advances_cursor(self, ee_dlq, mock_success):
+        page1 = {
+            "messages": [{"message_id": "1"}, {"message_id": "2"}],
+            "next_cursor": "2",
+            "has_more": True,
+        }
+        page2 = {"messages": [{"message_id": "3"}], "has_more": False}
+        with mock_success(json_payloads=[page1, page2]) as mock_get:
+            ids = [m["message_id"] for m in ee_dlq.list_iter(batch_size=2)]
+
+        assert ids == ["1", "2", "3"]
+        assert mock_get.call_count == 2
+        # Second page resumes from the first page's next_cursor.
+        assert mock_get.call_args_list[1].kwargs["params"] == {
+            "batch_size": 2,
+            "cursor": "2",
+        }
+
+    def test_forwards_component_and_is_lazy(self, ee_dlq, mock_success):
+        page = {"messages": [{"message_id": "1"}], "has_more": False}
+        with mock_success(json_payloads=[page]) as mock_get:
+            it = ee_dlq.list_iter(component="sink")
+            # Generator is lazy: no request until first iteration.
+            assert mock_get.call_count == 0
+            next(it)
+            assert mock_get.call_args_list[0].kwargs["params"] == {
+                "batch_size": 100,
+                "component": "sink",
+            }
+
+    def test_stops_when_has_more_without_cursor(self, ee_dlq, mock_success):
+        # Defensive guard: truthy has_more but no next_cursor must not loop.
+        page = {"messages": [{"message_id": "1"}], "has_more": True}
+        with mock_success(json_payloads=[page]) as mock_get:
+            ids = [m["message_id"] for m in ee_dlq.list_iter()]
+        assert ids == ["1"]
+        assert mock_get.call_count == 1
 
 
 class TestReprocess:
@@ -147,7 +200,8 @@ class TestDiscard:
 
 class TestDeprecatedInherited:
     def test_consume_warns_and_delegates_to_list(self, ee_dlq, mock_success):
-        with mock_success(json_payloads=[[{"message_id": "seq_1"}]]) as mock_get:
+        envelope = {"messages": [{"message_id": "seq_1"}], "has_more": False}
+        with mock_success(json_payloads=[envelope]) as mock_get:
             with pytest.warns(DeprecationWarning, match="use DLQ.list"):
                 result = ee_dlq.consume(batch_size=25)
 
@@ -155,6 +209,7 @@ class TestDeprecatedInherited:
             mock_get.assert_called_once_with(
                 "GET", f"{ee_dlq.endpoint}/list", params={"batch_size": 25}
             )
+            # consume() unwraps the envelope to the legacy list shape.
             assert result == [{"message_id": "seq_1"}]
 
     def test_purge_warns_and_hits_purge_endpoint(self, ee_dlq, mock_success):

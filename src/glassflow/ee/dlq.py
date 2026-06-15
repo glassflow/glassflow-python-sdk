@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterator, List, Optional
 
 from glassflow.etl import errors
 from glassflow.etl.dlq import DLQ as _OSSDLQ
@@ -25,45 +25,88 @@ class DLQ(_OSSDLQ):
     """
 
     def list(
-        self, batch_size: int = 100, cursor: Optional[str] = None
-    ) -> List[Dict[str, Any]]:
+        self,
+        batch_size: int = 100,
+        cursor: Optional[str] = None,
+        component: Optional[str] = None,
+    ) -> Dict[str, Any]:
         """Read messages from the DLQ without removing them.
 
-        The non-destructive successor to :meth:`consume`. Each message carries a
-        stable ``message_id`` (NATS sequence number, as a string) plus
-        ``source``, ``component``, ``error``, ``original_message`` and
+        The non-destructive successor to :meth:`consume`. Each message in the
+        returned page carries a stable ``message_id`` (NATS sequence number, as
+        a string) plus ``component``, ``error``, ``original_message`` and
         ``received_at``. The ``message_id`` values are what :meth:`reprocess`
         and :meth:`discard` act on in ``mode=selected``.
 
         Args:
-            batch_size: Number of messages to read (between 1 and 100).
-            cursor: Opaque pagination cursor from a previous page; omit for the
-                first page.
+            batch_size: Number of messages per page (between 1 and 1000).
+            cursor: NATS sequence to resume from, taken from the previous page's
+                ``next_cursor``; omit for the first page.
+            component: Filter to messages from a single data-plane component,
+                one of ``ingestor``, ``join``, ``sink``, ``dedup``,
+                ``oltp-receiver``; omit for all components.
 
         Returns:
-            List of DLQ message dicts.
+            A dict with ``messages`` (list of message dicts), ``has_more``
+            (bool), and ``next_cursor`` (str, present when ``has_more`` is
+            true; pass it back as ``cursor`` to fetch the next page).
 
         Raises:
             ValueError: If ``batch_size`` is invalid.
-            APIError: If the API request fails.
+            APIError: If the API request fails (e.g. an unknown ``component``).
         """
         if (
             not isinstance(batch_size, int)
             or batch_size < 1
-            or batch_size > self._max_batch_size
+            or batch_size > MAX_SELECTED_MESSAGE_IDS
         ):
             raise ValueError(
-                f"batch_size must be an integer between 1 and {self._max_batch_size}"
+                f"batch_size must be an integer between 1 and "
+                f"{MAX_SELECTED_MESSAGE_IDS}"
             )
 
         params: Dict[str, Any] = {"batch_size": batch_size}
         if cursor is not None:
             params["cursor"] = cursor
+        if component is not None:
+            params["component"] = component
 
         response = self._request("GET", f"{self.endpoint}/list", params=params)
         if response.status_code == 204 or not response.content:
-            return []
+            return {"messages": [], "has_more": False}
         return response.json()
+
+    def list_iter(
+        self,
+        batch_size: int = 100,
+        component: Optional[str] = None,
+        cursor: Optional[str] = None,
+    ) -> Iterator[Dict[str, Any]]:
+        """Lazily iterate over every DLQ message, paging via the cursor for you.
+
+        The streaming companion to :meth:`list`: it calls :meth:`list` page by
+        page and yields each message, so callers do not manage the cursor
+        themselves. Memory stays flat (one page at a time) and it composes with
+        ``itertools`` (e.g. ``itertools.islice`` for the first N).
+
+        Args:
+            batch_size: Messages fetched per underlying page request (1-1000).
+            component: Optional component filter; see :meth:`list`.
+            cursor: Optional starting cursor (e.g. to resume a previous run);
+                omit to start at the beginning of the DLQ.
+
+        Yields:
+            Individual DLQ message dicts.
+        """
+        while True:
+            page = self.list(batch_size=batch_size, cursor=cursor, component=component)
+            yield from page.get("messages", [])
+            if not page.get("has_more"):
+                return
+            cursor = page.get("next_cursor")
+            # Defensive: a truthy has_more without a cursor would loop forever.
+            if not cursor:
+                return
 
     def reprocess(self, message_ids: List[str]) -> Dict[str, Any]:
         """Move specific messages from the DLQ back into the pipeline input.
@@ -127,7 +170,7 @@ class DLQ(_OSSDLQ):
             DeprecationWarning,
             stacklevel=2,
         )
-        return self.list(batch_size=batch_size)
+        return self.list(batch_size=batch_size).get("messages", [])
 
     def purge(self) -> None:
         """Deprecated: use :meth:`discard_all`.

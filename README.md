@@ -174,16 +174,16 @@ The Enterprise client does everything the Open Source client does, plus the Ente
 
 When a pipeline component fails to process a message, that message lands in the pipeline's dead-letter queue (DLQ). On the Enterprise client, `pipeline.dlq` adds message management on top of the Open Source `state`, `consume`, and `purge`:
 
-- `list(batch_size, cursor)`: non-destructive paginated read. Each message includes a stable `message_id`, plus its `source` and `received_at`.
+- `list(batch_size, cursor, component)`: non-destructive paginated read. Returns a page dict with `messages` (each carrying a stable `message_id`, `component`, `error`, `original_message`, and `received_at`), `has_more`, and `next_cursor`. Pass `component` to filter to a single component (`ingestor`, `join`, `sink`, `dedup`, `oltp-receiver`), and pass `next_cursor` back as `cursor` to page.
+- `list_iter(batch_size, component)`: lazily iterate over every message, paging via the cursor for you. Yields individual messages, so you do not manage the cursor by hand.
 - `reprocess(message_ids)` / `reprocess_all()`: move messages back into the pipeline input to be processed again.
 - `discard(message_ids)` / `discard_all()`: permanently remove messages.
 
 ```python
 pipeline = client.get_pipeline("my-pipeline-id")
 
-# Inspect failed messages
-messages = pipeline.dlq.list(batch_size=50)
-ids = [m["message_id"] for m in messages]
+# Inspect failed messages from the sink only (paged automatically)
+ids = [m["message_id"] for m in pipeline.dlq.list_iter(component="sink")]
 
 # Retry them after fixing the underlying issue
 pipeline.dlq.reprocess(ids)         # or pipeline.dlq.reprocess_all()
