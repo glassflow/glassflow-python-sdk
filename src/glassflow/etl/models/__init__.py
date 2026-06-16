@@ -27,12 +27,15 @@ from .sink import (
 from .source import SourceBaseConfig, SourceBaseConfigPatch, SourceType
 from .sources import (
     AnySource,
+    AvroSchema,
     ConsumerGroupOffset,
     KafkaConnectionParams,
     KafkaConnectionParamsPatch,
     KafkaField,
+    KafkaFormat,
     KafkaMechanism,
     KafkaProtocol,
+    KafkaSchema,
     KafkaSource,
     KafkaSourcePatch,
     OTLPLogsSource,
@@ -62,6 +65,7 @@ from .transforms import (
 
 __all__ = [
     "AnySource",
+    "AvroSchema",
     "ClickhouseConnectionParams",
     "ClickhouseConnectionParamsPatch",
     "ClickhouseDataType",
@@ -81,8 +85,10 @@ __all__ = [
     "KafkaConnectionParamsPatch",
     "KafkaDataType",
     "KafkaField",
+    "KafkaFormat",
     "KafkaMechanism",
     "KafkaProtocol",
+    "KafkaSchema",
     "KafkaSource",
     "KafkaSourcePatch",
     "MetadataConfig",

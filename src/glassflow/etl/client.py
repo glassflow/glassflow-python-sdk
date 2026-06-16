@@ -14,6 +14,12 @@ class Client(APIClient):
 
     ENDPOINT = "/api/v1/pipeline"
 
+    # Class of the Pipeline this client constructs and returns. Editions
+    # (e.g. the enterprise client) override this so every pipeline handed back
+    # is their own subclass, propagating edition-specific behaviour down the
+    # Client -> Pipeline -> DLQ chain without re-implementing these methods.
+    _pipeline_class: type[Pipeline] = Pipeline
+
     def __init__(self, host: str | None = None) -> None:
         """Initialize the PipelineManager class.
 
@@ -35,7 +41,7 @@ class Client(APIClient):
             PipelineNotFoundError: If pipeline is not found
             APIError: If the API request fails
         """
-        return Pipeline(host=self.host, pipeline_id=pipeline_id).get()
+        return self._pipeline_class(host=self.host, pipeline_id=pipeline_id).get()
 
     def list_pipelines(self) -> List[dict]:
         """Returns a list of available pipelines.
@@ -91,9 +97,13 @@ class Client(APIClient):
                     "pipeline_config_json_path must be provided"
                 )
             if pipeline_config_yaml_path is not None:
-                pipeline = Pipeline.from_yaml(pipeline_config_yaml_path, host=self.host)
+                pipeline = self._pipeline_class.from_yaml(
+                    pipeline_config_yaml_path, host=self.host
+                )
             elif pipeline_config_json_path is not None:
-                pipeline = Pipeline.from_json(pipeline_config_json_path, host=self.host)
+                pipeline = self._pipeline_class.from_json(
+                    pipeline_config_json_path, host=self.host
+                )
         else:
             if (
                 pipeline_config_yaml_path is not None
@@ -103,7 +113,7 @@ class Client(APIClient):
                     "Either pipeline_config or pipeline_config_yaml_path or "
                     "pipeline_config_json_path must be provided"
                 )
-            pipeline = Pipeline(config=pipeline_config, host=self.host)
+            pipeline = self._pipeline_class(config=pipeline_config, host=self.host)
 
         return pipeline.create()
 
@@ -120,7 +130,9 @@ class Client(APIClient):
             PipelineNotFoundError: If pipeline is not found
             APIError: If the API request fails
         """
-        Pipeline(host=self.host, pipeline_id=pipeline_id).stop(terminate=terminate)
+        self._pipeline_class(host=self.host, pipeline_id=pipeline_id).stop(
+            terminate=terminate
+        )
 
     def delete_pipeline(self, pipeline_id: str) -> None:
         """Deletes the pipeline with the given ID.
@@ -134,7 +146,7 @@ class Client(APIClient):
             PipelineNotFoundError: If pipeline is not found
             APIError: If the API request fails
         """
-        Pipeline(host=self.host, pipeline_id=pipeline_id).delete()
+        self._pipeline_class(host=self.host, pipeline_id=pipeline_id).delete()
 
     def migrate_pipeline_v2_to_v3(
         self, pipeline_config: dict[str, Any]
