@@ -15,10 +15,14 @@ class ConnectionError(RequestError):
 class APIError(GlassFlowError):
     """Base for API response errors."""
 
-    def __init__(self, status_code, message=None, response=None):
+    def __init__(self, status_code, message=None, response=None, details=None):
         self.status_code = status_code
         self.response = response
         self.message = message
+        # The API's structured ``details`` object, when present. For invalid
+        # configs it carries the specific cause under ``details["error"]`` (for
+        # example an Avro/Protobuf schema compilation error).
+        self.details = details or {}
         super().__init__(self.message)
 
 

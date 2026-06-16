@@ -67,66 +67,81 @@ class APIClient:
             error_data = response.json()
             message = error_data.get("message", None)
             code = error_data.get("code", None)
+            details = error_data.get("details", None)
         except json.JSONDecodeError:
             message = f"{status_code} {response.reason_phrase}"
             code = None
+            details = None
             error_data = {}
 
         if status_code == 400:
             # Handle specific status validation error codes
             if code == "TERMINAL_STATE_VIOLATION":
                 raise errors.TerminalStateViolationError(
-                    status_code, message, response=response
+                    status_code, message, response=response, details=details
                 )
             elif code == "INVALID_STATUS_TRANSITION":
                 raise errors.InvalidStatusTransitionError(
-                    status_code,
-                    message,
-                    response=response,
+                    status_code, message, response=response, details=details
                 )
             elif code == "UNKNOWN_STATUS":
-                raise errors.UnknownStatusError(status_code, message, response=response)
+                raise errors.UnknownStatusError(
+                    status_code, message, response=response, details=details
+                )
             elif code == "PIPELINE_ALREADY_IN_STATE":
                 raise errors.PipelineAlreadyInStateError(
-                    status_code, message, response=response
+                    status_code, message, response=response, details=details
                 )
             elif code == "PIPELINE_IN_TRANSITION":
                 raise errors.PipelineInTransitionError(
-                    status_code, message, response=response
+                    status_code, message, response=response, details=details
                 )
             elif message and message.startswith("invalid json:"):
-                raise errors.InvalidJsonError(status_code, message, response=response)
+                raise errors.InvalidJsonError(
+                    status_code, message, response=response, details=details
+                )
             elif message and message == "pipeline id cannot be empty":
                 raise errors.EmptyPipelineIdError(
-                    status_code, message, response=response
+                    status_code, message, response=response, details=details
                 )
             elif message and message.startswith(
                 "pipeline can only be deleted if it's stopped or terminated"
             ):
                 raise errors.PipelineDeletionStateViolationError(
-                    status_code, message, response=response
+                    status_code, message, response=response, details=details
                 )
             else:
                 # Generic 400 error for unknown codes
-                raise errors.ValidationError(status_code, message, response=response)
+                raise errors.ValidationError(
+                    status_code, message, response=response, details=details
+                )
         elif status_code == 403:
-            raise errors.ForbiddenError(status_code, message, response=response)
+            raise errors.ForbiddenError(
+                status_code, message, response=response, details=details
+            )
         elif status_code == 404:
-            raise errors.NotFoundError(status_code, message, response=response)
+            raise errors.NotFoundError(
+                status_code, message, response=response, details=details
+            )
         elif status_code == 409:
-            raise errors.ConflictError(status_code, message, response=response)
+            raise errors.ConflictError(
+                status_code, message, response=response, details=details
+            )
         elif status_code == 422:
             raise errors.UnprocessableContentError(
-                status_code, message, response=response
+                status_code, message, response=response, details=details
             )
         elif status_code == 500:
-            raise errors.ServerError(status_code, message, response=response)
+            raise errors.ServerError(
+                status_code, message, response=response, details=details
+            )
         else:
             raise errors.APIError(
                 status_code,
                 message="An error occurred: "
                 f"({status_code} {response.reason_phrase}) {message}",
                 response=response,
+                details=details,
             )
 
     def _track_event(self, event_name: str, **kwargs: Any) -> None:

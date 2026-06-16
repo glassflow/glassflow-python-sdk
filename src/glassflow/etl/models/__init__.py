@@ -27,13 +27,15 @@ from .sink import (
 from .source import SourceBaseConfig, SourceBaseConfigPatch, SourceType
 from .sources import (
     AnySource,
+    AvroSchema,
     ConsumerGroupOffset,
-    JsonFormat,
     KafkaConnectionParams,
     KafkaConnectionParamsPatch,
     KafkaField,
+    KafkaFormat,
     KafkaMechanism,
     KafkaProtocol,
+    KafkaSchema,
     KafkaSource,
     KafkaSourcePatch,
     OTLPLogsSource,
@@ -42,7 +44,6 @@ from .sources import (
     OTLPTracesSource,
     SchemaRegistry,
     SourceConfig,
-    SourceFormat,
 )
 from .transforms import (
     DedupTransform,
@@ -64,6 +65,7 @@ from .transforms import (
 
 __all__ = [
     "AnySource",
+    "AvroSchema",
     "ClickhouseConnectionParams",
     "ClickhouseConnectionParamsPatch",
     "ClickhouseDataType",
@@ -77,15 +79,16 @@ __all__ = [
     "JoinConfig",
     "JoinConfigPatch",
     "JoinOutputField",
-    "JsonFormat",
     "JoinSourceConfig",
     "JoinType",
     "KafkaConnectionParams",
     "KafkaConnectionParamsPatch",
     "KafkaDataType",
     "KafkaField",
+    "KafkaFormat",
     "KafkaMechanism",
     "KafkaProtocol",
+    "KafkaSchema",
     "KafkaSource",
     "KafkaSourcePatch",
     "MetadataConfig",
@@ -109,7 +112,6 @@ __all__ = [
     "SourceBaseConfig",
     "SourceBaseConfigPatch",
     "SourceConfig",
-    "SourceFormat",
     "SourceResourceEntry",
     "SourceType",
     "StatelessTransform",
