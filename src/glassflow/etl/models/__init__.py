@@ -27,7 +27,6 @@ from .sink import (
 from .source import SourceBaseConfig, SourceBaseConfigPatch, SourceType
 from .sources import (
     AnySource,
-    AvroSchema,
     ConsumerGroupOffset,
     KafkaConnectionParams,
     KafkaConnectionParamsPatch,
@@ -65,7 +64,6 @@ from .transforms import (
 
 __all__ = [
     "AnySource",
-    "AvroSchema",
     "ClickhouseConnectionParams",
     "ClickhouseConnectionParamsPatch",
     "ClickhouseDataType",

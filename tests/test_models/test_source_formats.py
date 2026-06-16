@@ -1,9 +1,11 @@
 """Tests for Kafka source formats (json/avro/protobuf) and the source registry.
 
-The unified ``source_schema`` holds all schema config. It serializes json to a
-top-level ``schema_fields`` (compatible with Open Source and Enterprise) and
-avro/protobuf to the ``schema`` object (``avsc`` / ``proto``+``message``). On
-reads the backend may also return ``schema.parsed_fields``.
+The unified ``source_schema`` (wire key ``schema``) holds all schema config:
+``fields`` (json), ``file`` (the inline avsc/proto text), ``message_type``
+(protobuf), and read-only ``parsed_fields`` (returned on GET). The legacy
+top-level ``schema_fields`` is still accepted on input and upgraded to
+``schema.fields``. The source registry lets an out-of-tree source type plug in
+without changing OSS models.
 """
 
 from typing import Literal
@@ -28,15 +30,9 @@ def _kafka(**overrides) -> dict:
     return base
 
 
-AVSC = {
-    "type": "record",
-    "name": "Event",
-    "namespace": "test",
-    "fields": [
-        {"name": "id", "type": "string"},
-        {"name": "ts_ms", "type": "long"},
-    ],
-}
+AVSC_TEXT = (
+    '{"type": "record", "name": "Event", "fields": [{"name": "id", "type": "string"}]}'
+)
 PROTO_TEXT = 'syntax = "proto3";\npackage test;\nmessage Event {\n  string id = 1;\n}'
 
 
@@ -46,104 +42,71 @@ class TestJsonFormat:
         assert src.format is None
         assert "format" not in src.model_dump(by_alias=True, exclude_none=True)
 
-    def test_top_level_schema_fields_round_trips(self):
-        wire = _kafka(
-            format="json",
-            schema_fields=[
-                {"name": "id", "type": "string"},
-                {"name": "ts_ms", "type": "int"},
-            ],
-        )
+    def test_legacy_schema_fields_accepted_and_upgraded(self):
+        # The deprecated top-level schema_fields is folded into schema.fields.
+        wire = _kafka(format="json", schema_fields=[{"name": "id", "type": "string"}])
         src = models.KafkaSource.model_validate(wire)
         assert src.source_schema.fields[0].name == "id"
         assert src.schema_fields[0].name == "id"  # compat accessor
         dumped = src.model_dump(by_alias=True, exclude_none=True)
-        # json always serializes to top-level schema_fields (OSS + EE compat)
-        assert dumped["schema_fields"] == wire["schema_fields"]
-        assert "schema" not in dumped
-        assert "source_schema" not in dumped
+        assert dumped["schema"] == {"fields": [{"name": "id", "type": "string"}]}
+        assert "schema_fields" not in dumped  # upgraded to the unified schema
 
-    def test_unified_schema_fields_input_also_accepted(self):
-        # EE may return json fields under the unified schema object.
-        src = models.KafkaSource.model_validate(
-            _kafka(format="json", schema={"fields": [{"name": "id", "type": "string"}]})
+    def test_schema_fields_round_trips(self):
+        wire = _kafka(
+            format="json", schema={"fields": [{"name": "id", "type": "string"}]}
         )
+        src = models.KafkaSource.model_validate(wire)
         assert src.schema_fields[0].name == "id"
-        # still emits the compatible top-level form
         dumped = src.model_dump(by_alias=True, exclude_none=True)
-        assert dumped["schema_fields"] == [{"name": "id", "type": "string"}]
+        assert dumped["schema"] == {"fields": [{"name": "id", "type": "string"}]}
 
 
 class TestAvroFormat:
     def test_avro_round_trips(self):
         src = models.KafkaSource.model_validate(
-            _kafka(format="avro", schema={"avsc": AVSC})
+            _kafka(format="avro", schema={"file": AVSC_TEXT})
         )
         assert src.format == models.KafkaFormat.AVRO
-        assert src.source_schema.avsc.name == "Event"
+        assert src.source_schema.file == AVSC_TEXT
         dumped = src.model_dump(by_alias=True, exclude_none=True)
-        assert dumped["schema"] == {"avsc": AVSC}
-        assert "schema_fields" not in dumped
+        assert dumped["schema"] == {"file": AVSC_TEXT}
 
-    def test_avro_requires_avsc(self):
-        with pytest.raises(ValueError, match="avro format requires schema.avsc"):
+    def test_avro_requires_file(self):
+        with pytest.raises(ValueError, match="avro format requires schema.file"):
             models.KafkaSource.model_validate(_kafka(format="avro"))
-
-    def test_avsc_must_be_a_record_with_fields(self):
-        with pytest.raises(ValueError):
-            models.KafkaSource.model_validate(
-                _kafka(format="avro", schema={"avsc": {"type": "string", "name": "x"}})
-            )
-        with pytest.raises(ValueError):
-            models.KafkaSource.model_validate(
-                _kafka(format="avro", schema={"avsc": {"type": "record", "name": "E"}})
-            )
-
-    def test_avsc_preserves_extra_keys(self):
-        avsc = {
-            "type": "record",
-            "name": "Event",
-            "namespace": "test",
-            "doc": "an event",
-            "fields": [{"name": "meta", "type": {"type": "map", "values": "string"}}],
-        }
-        src = models.KafkaSource.model_validate(
-            _kafka(format="avro", schema={"avsc": avsc})
-        )
-        dumped = src.model_dump(by_alias=True, exclude_none=True)
-        assert dumped["schema"]["avsc"] == avsc
 
 
 class TestProtobufFormat:
     def test_protobuf_round_trips(self):
         src = models.KafkaSource.model_validate(
-            _kafka(format="protobuf", schema={"proto": PROTO_TEXT, "message": "Event"})
+            _kafka(
+                format="protobuf",
+                schema={"file": PROTO_TEXT, "message_type": "Event"},
+            )
         )
         assert src.format == models.KafkaFormat.PROTOBUF
-        assert src.source_schema.proto == PROTO_TEXT
-        assert src.source_schema.message == "Event"
+        assert src.source_schema.file == PROTO_TEXT
+        assert src.source_schema.message_type == "Event"
         dumped = src.model_dump(by_alias=True, exclude_none=True)
-        assert dumped["schema"] == {"proto": PROTO_TEXT, "message": "Event"}
+        assert dumped["schema"] == {"file": PROTO_TEXT, "message_type": "Event"}
 
-    def test_protobuf_requires_proto_and_message(self):
-        with pytest.raises(ValueError, match="schema.proto and schema.message"):
+    def test_protobuf_requires_file_and_message_type(self):
+        with pytest.raises(ValueError, match="schema.file and schema.message_type"):
             models.KafkaSource.model_validate(
-                _kafka(format="protobuf", schema={"proto": PROTO_TEXT})
+                _kafka(format="protobuf", schema={"file": PROTO_TEXT})
             )
 
 
 class TestParsedFields:
-    def test_parsed_fields_read_only_not_surfaced_or_emitted(self):
-        # Shape the backend returns for an avro source on GET.
+    def test_parsed_fields_read_only(self):
+        # Shape the backend returns on GET for an avro source.
         src = models.KafkaSource.model_validate(
             _kafka(
                 format="avro",
                 schema={
-                    "avsc": AVSC,
-                    "parsed_fields": [
-                        {"name": "id", "type": "string"},
-                        {"name": "ts_ms", "type": "int"},
-                    ],
+                    "file": AVSC_TEXT,
+                    "parsed_fields": [{"name": "id", "type": "string"}],
                 },
             )
         )
@@ -153,30 +116,15 @@ class TestParsedFields:
         assert src.schema_fields is None
         # ...and not emitted back on dump.
         dumped = src.model_dump(by_alias=True, exclude_none=True)
-        assert dumped["schema"] == {"avsc": AVSC}
+        assert dumped["schema"] == {"file": AVSC_TEXT}
         assert "parsed_fields" not in dumped["schema"]
-
-    def test_parsed_fields_on_json_get(self):
-        # GET of a json source: schema_fields (or schema.fields) plus parsed_fields.
-        src = models.KafkaSource.model_validate(
-            _kafka(
-                format="json",
-                schema_fields=[{"name": "id", "type": "string"}],
-                schema={"parsed_fields": [{"name": "id", "type": "string"}]},
-            )
-        )
-        assert src.schema_fields[0].name == "id"
-        assert src.source_schema.parsed_fields[0].name == "id"
-        dumped = src.model_dump(by_alias=True, exclude_none=True)
-        assert dumped["schema_fields"] == [{"name": "id", "type": "string"}]
-        assert "schema" not in dumped  # parsed_fields not echoed back
 
 
 class TestSchemaFormatConsistency:
-    def test_avsc_without_avro_format_rejected(self):
+    def test_file_without_avro_or_protobuf_format_rejected(self):
         with pytest.raises(ValueError, match="require format 'avro' or 'protobuf'"):
             models.KafkaSource.model_validate(
-                _kafka(format="json", schema={"avsc": AVSC})
+                _kafka(format="json", schema={"file": AVSC_TEXT})
             )
 
 

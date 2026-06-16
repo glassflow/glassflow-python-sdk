@@ -17,7 +17,6 @@ from pydantic import Field  # noqa: F401
 from ..registry import register_source
 from ..source import SourceBaseConfig, SourceBaseConfigPatch, SourceType
 from .kafka import (
-    AvroSchema,
     ConsumerGroupOffset,
     KafkaConnectionParams,
     KafkaConnectionParamsPatch,
@@ -68,7 +67,6 @@ __all__ = [
     "SourceBaseConfig",
     "SourceBaseConfigPatch",
     # Kafka
-    "AvroSchema",
     "ConsumerGroupOffset",
     "KafkaConnectionParams",
     "KafkaConnectionParamsPatch",
