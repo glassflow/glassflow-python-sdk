@@ -1,17 +1,15 @@
-"""Extensible registries for source types and source formats.
+"""Extensible registry for source types.
 
-Source types (``kafka``, ``otlp.logs``, ...) and source formats (``json``,
-and Enterprise ``avro``/``protobuf``) are open-ended: the Enterprise SDK adds
+Source types (``kafka``, ``otlp.logs``, ...) are open-ended: an edition can add
 new ones without modifying this package. Instead of a static Pydantic
 discriminated union (whose members are frozen at class-definition time), models
-annotate their fields with the base type and dispatch each value to the
-concrete class by its ``type`` string at validation time, looked up here.
+annotate their field with the base type and dispatch each value to the concrete
+class by its ``type`` string at validation time, looked up here.
 
 Editions register their classes at import::
 
-    from glassflow.etl.models.registry import register_source, register_format
+    from glassflow.etl.models.registry import register_source
     register_source(KinesisSource)
-    register_format(AvroFormat)
 """
 
 from __future__ import annotations
@@ -23,7 +21,6 @@ from pydantic import BaseModel
 _T = TypeVar("_T", bound=BaseModel)
 
 _SOURCE_CLASSES: Dict[str, Type[BaseModel]] = {}
-_FORMAT_CLASSES: Dict[str, Type[BaseModel]] = {}
 
 
 def _type_key(cls: Type[BaseModel]) -> str:
@@ -41,13 +38,6 @@ def register_source(cls: Type[_T]) -> Type[_T]:
     """Register a source class, keyed by its ``type`` default. Usable as a
     decorator. Idempotent for re-imports."""
     _SOURCE_CLASSES[_type_key(cls)] = cls
-    return cls
-
-
-def register_format(cls: Type[_T]) -> Type[_T]:
-    """Register a source format class, keyed by its ``type`` default. Usable as
-    a decorator."""
-    _FORMAT_CLASSES[_type_key(cls)] = cls
     return cls
 
 
@@ -69,7 +59,3 @@ def _resolve(value: Any, registry: Dict[str, Type[BaseModel]], kind: str) -> Any
 
 def resolve_source(value: Any) -> Any:
     return _resolve(value, _SOURCE_CLASSES, "source")
-
-
-def resolve_format(value: Any) -> Any:
-    return _resolve(value, _FORMAT_CLASSES, "format")

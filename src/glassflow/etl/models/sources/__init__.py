@@ -16,14 +16,16 @@ from pydantic import Field  # noqa: F401
 
 from ..registry import register_source
 from ..source import SourceBaseConfig, SourceBaseConfigPatch, SourceType
-from .formats import JsonFormat, SourceFormat
 from .kafka import (
+    AvroSchema,
     ConsumerGroupOffset,
     KafkaConnectionParams,
     KafkaConnectionParamsPatch,
     KafkaField,
+    KafkaFormat,
     KafkaMechanism,
     KafkaProtocol,
+    KafkaSchema,
     KafkaSource,
     KafkaSourcePatch,
     SchemaRegistry,
@@ -66,12 +68,15 @@ __all__ = [
     "SourceBaseConfig",
     "SourceBaseConfigPatch",
     # Kafka
+    "AvroSchema",
     "ConsumerGroupOffset",
     "KafkaConnectionParams",
     "KafkaConnectionParamsPatch",
     "KafkaField",
+    "KafkaFormat",
     "KafkaMechanism",
     "KafkaProtocol",
+    "KafkaSchema",
     "KafkaSource",
     "KafkaSourcePatch",
     "SchemaRegistry",
@@ -81,9 +86,6 @@ __all__ = [
     "OTLPSource",
     "OTLPSourcePatch",
     "OTLPTracesSource",
-    # Formats
-    "SourceFormat",
-    "JsonFormat",
     # Union
     "AnySource",
     "SourceConfig",

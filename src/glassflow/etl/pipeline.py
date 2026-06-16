@@ -448,9 +448,17 @@ class Pipeline(APIClient):
             ) from e
         except errors.UnprocessableContentError as e:
             self._track_event(event_name, error_type="InvalidPipelineConfig")
+            message = e.message or "Invalid pipeline configuration"
+            # The specific cause (e.g. an Avro/Protobuf schema compilation error)
+            # is in details.error; surface it instead of the generic message.
+            detail = e.details.get("error") if e.details else None
+            if detail:
+                message = f"{message}: {detail}"
             raise errors.PipelineInvalidConfigurationError(
                 status_code=e.status_code,
-                message=e.message or "Invalid pipeline configuration",
+                message=message,
+                response=e.response,
+                details=e.details,
             ) from e
         except errors.APIError as e:
             self._track_event(event_name, error_type="InternalServerError")
