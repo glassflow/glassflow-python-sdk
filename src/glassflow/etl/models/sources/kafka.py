@@ -50,6 +50,21 @@ class KafkaField(BaseModel):
     type: KafkaDataType
 
 
+class ParsedKafkaField(BaseModel):
+    """A field parsed from the avsc/proto by the backend, returned read-only in
+    ``schema.parsed_fields`` on GET.
+
+    ``type`` is a plain ``str`` (not :class:`KafkaDataType`) because nested
+    schemas surface complex type markers — ``"record"`` for nested Avro records,
+    ``"message"`` for nested Protobuf messages — which are not valid *input*
+    field types. Validating these against the input enum would reject an
+    otherwise-valid GET response.
+    """
+
+    name: str
+    type: str
+
+
 class KafkaSchema(BaseModel):
     """Unified schema for a Kafka source. The shape used is selected by the
     source's :class:`KafkaFormat`:
@@ -67,7 +82,7 @@ class KafkaSchema(BaseModel):
     fields: Optional[List[KafkaField]] = Field(default=None)
     file: Optional[str] = Field(default=None)
     message_type: Optional[str] = Field(default=None)
-    parsed_fields: Optional[List[KafkaField]] = Field(default=None, exclude=True)
+    parsed_fields: Optional[List[ParsedKafkaField]] = Field(default=None, exclude=True)
 
 
 class KafkaConnectionParams(BaseModel):
