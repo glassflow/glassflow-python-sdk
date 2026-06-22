@@ -120,12 +120,38 @@ class TestParsedFields:
         assert "parsed_fields" not in dumped["schema"]
 
 
-class TestSchemaFormatConsistency:
-    def test_file_without_avro_or_protobuf_format_rejected(self):
-        with pytest.raises(ValueError, match="require format 'avro' or 'protobuf'"):
-            models.KafkaSource.model_validate(
-                _kafka(format="json", schema={"file": AVSC_TEXT})
+class TestSchemaRegistryRelaxation:
+    """With a schema_registry configured the backend resolves the schema, so
+    schema.file (and message_type) are optional. The backend omits them on GET
+    for schema versions resolved at runtime, so requiring them would reject an
+    otherwise-valid response."""
+
+    _SR = {
+        "url": "https://schema-registry.example.com",
+        "api_key": "key",
+        "api_secret": "secret",
+    }
+
+    def test_registry_avro_without_file_ok(self):
+        # The shape the backend returns on GET after a runtime schema-version
+        # resolution: format=avro with an empty schema block.
+        src = models.KafkaSource.model_validate(
+            _kafka(format="avro", schema_registry=self._SR, schema_version="1")
+        )
+        assert src.format == models.KafkaFormat.AVRO
+        assert src.schema_registry is not None
+
+    def test_registry_protobuf_without_file_ok(self):
+        # GET shape after evolution: file dropped, only message_type survives.
+        src = models.KafkaSource.model_validate(
+            _kafka(
+                format="protobuf",
+                schema_registry=self._SR,
+                schema_version="1",
+                schema={"message_type": "Event"},
             )
+        )
+        assert src.format == models.KafkaFormat.PROTOBUF
 
 
 class TestSchemaErrorSurfacing:

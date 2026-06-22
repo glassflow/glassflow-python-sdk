@@ -166,20 +166,25 @@ class KafkaSource(SourceBaseConfig):
 
     @model_validator(mode="after")
     def validate_format_schema(self) -> "KafkaSource":
-        """The schema shape must match the declared format."""
+        """The schema shape must match the declared format.
+
+        When a ``schema_registry`` is configured the schema is resolved from the
+        registry, so ``schema.file`` (and ``message_type``) are optional: the
+        backend omits them on reads for schema versions resolved at runtime, and
+        requiring them would reject an otherwise-valid GET response.
+        """
         schema = self.source_schema
+        using_registry = self.schema_registry is not None
         if self.format == KafkaFormat.AVRO:
-            if schema is None or not schema.file:
+            if not using_registry and (schema is None or not schema.file):
                 raise ValueError("avro format requires schema.file")
         elif self.format == KafkaFormat.PROTOBUF:
-            if schema is None or not schema.file or not schema.message_type:
+            if not using_registry and (
+                schema is None or not schema.file or not schema.message_type
+            ):
                 raise ValueError(
                     "protobuf format requires schema.file and schema.message_type"
                 )
-        elif schema is not None and (schema.file or schema.message_type):
-            raise ValueError(
-                "schema.file / message_type require format 'avro' or 'protobuf'"
-            )
         return self
 
     def update(self, patch: "KafkaSourcePatch") -> "KafkaSource":
