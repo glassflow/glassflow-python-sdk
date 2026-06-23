@@ -2,11 +2,17 @@
 
 from typing import Any, List, Literal, Optional
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from ..base import CaseInsensitiveStrEnum
 from ..data_types import KafkaDataType
 from ..source import SourceBaseConfig, SourceBaseConfigPatch, SourceType
+
+
+class KafkaFormat(CaseInsensitiveStrEnum):
+    JSON = "json"
+    AVRO = "avro"
+    PROTOBUF = "protobuf"
 
 
 class KafkaProtocol(CaseInsensitiveStrEnum):
@@ -44,6 +50,41 @@ class KafkaField(BaseModel):
     type: KafkaDataType
 
 
+class ParsedKafkaField(BaseModel):
+    """A field parsed from the avsc/proto by the backend, returned read-only in
+    ``schema.parsed_fields`` on GET.
+
+    ``type`` is a plain ``str`` (not :class:`KafkaDataType`) because nested
+    schemas surface complex type markers — ``"record"`` for nested Avro records,
+    ``"message"`` for nested Protobuf messages — which are not valid *input*
+    field types. Validating these against the input enum would reject an
+    otherwise-valid GET response.
+    """
+
+    name: str
+    type: str
+
+
+class KafkaSchema(BaseModel):
+    """Unified schema for a Kafka source. The shape used is selected by the
+    source's :class:`KafkaFormat`:
+
+    - ``json``     -> ``fields`` (GlassFlow field declarations)
+    - ``avro``     -> ``file`` (the inline ``.avsc`` schema text)
+    - ``protobuf`` -> ``file`` (the inline ``.proto`` text) and ``message_type``
+      (the message within it to decode)
+
+    On reads the backend also returns ``parsed_fields``: the field list parsed
+    from the avsc/proto. It is read-only, exposed for inspection, and never sent
+    back on create/edit.
+    """
+
+    fields: Optional[List[KafkaField]] = Field(default=None)
+    file: Optional[str] = Field(default=None)
+    message_type: Optional[str] = Field(default=None)
+    parsed_fields: Optional[List[ParsedKafkaField]] = Field(default=None, exclude=True)
+
+
 class KafkaConnectionParams(BaseModel):
     brokers: List[str]
     protocol: KafkaProtocol
@@ -72,6 +113,26 @@ class KafkaConnectionParams(BaseModel):
         return KafkaConnectionParams.model_validate(merged_dict)
 
 
+def _parse_source_schema(data: Any) -> Any:
+    """Accept the legacy top-level ``schema_fields`` (deprecated) by folding it
+    into the unified ``schema`` object's ``fields``. The ``schema`` object itself
+    maps directly to ``source_schema`` via its alias. Also drops an empty
+    ``schema_registry``. Left untouched if ``source_schema`` is supplied by name.
+    """
+    if not isinstance(data, dict) or "source_schema" in data:
+        return data
+    data = dict(data)
+    if data.get("schema_registry", None) == {}:
+        data.pop("schema_registry", None)
+    if "schema_fields" in data:
+        fields = data.pop("schema_fields")
+        schema = data.get("schema")
+        schema = dict(schema) if isinstance(schema, dict) else {}
+        schema.setdefault("fields", fields)
+        data["schema"] = schema
+    return data
+
+
 class KafkaSource(SourceBaseConfig):
     """Kafka source configuration.
 
@@ -79,21 +140,35 @@ class KafkaSource(SourceBaseConfig):
     and a single topic string.
     """
 
+    model_config = ConfigDict(populate_by_name=True)
+
     type: Literal[SourceType.KAFKA] = SourceType.KAFKA
     connection_params: KafkaConnectionParams
     topic: str
     consumer_group_initial_offset: ConsumerGroupOffset = ConsumerGroupOffset.LATEST
     schema_registry: Optional[SchemaRegistry] = Field(default=None)
     schema_version: Optional[str] = Field(default=None)
-    schema_fields: Optional[List[KafkaField]] = Field(default=None)
+    # Payload wire format. ``None`` means JSON (the backend default) and is
+    # omitted from the serialized config. ``avro`` and ``protobuf`` are
+    # Enterprise features and are rejected by an unlicensed backend.
+    format: Optional[KafkaFormat] = Field(default=None)
+    # All schema-related config in one place, serialized as the ``schema``
+    # object (``fields`` for json, ``file`` [+ ``message_type``] for
+    # avro/protobuf). The legacy top-level ``schema_fields`` is still accepted on
+    # input (see _parse_source_schema).
+    source_schema: Optional[KafkaSchema] = Field(default=None, alias="schema")
 
     @model_validator(mode="before")
     @classmethod
-    def validate_empty_schema_registry(cls, data: Any) -> Any:
-        if isinstance(data, dict):
-            if data.get("schema_registry", None) == {}:
-                data.pop("schema_registry", None)
-        return data
+    def parse_schema(cls, data: Any) -> Any:
+        return _parse_source_schema(data)
+
+    @property
+    def schema_fields(self) -> Optional[List[KafkaField]]:
+        """Backward-compatible accessor for the JSON field declarations, held
+        under ``schema.fields``. (``schema.parsed_fields`` is read-only backend
+        info and is intentionally not surfaced here.)"""
+        return self.source_schema.fields if self.source_schema else None
 
     @model_validator(mode="after")
     def validate_schema_registry_requires_version(self) -> "KafkaSource":
@@ -102,6 +177,29 @@ class KafkaSource(SourceBaseConfig):
             raise ValueError(
                 "schema_version is required when schema_registry is provided"
             )
+        return self
+
+    @model_validator(mode="after")
+    def validate_format_schema(self) -> "KafkaSource":
+        """The schema shape must match the declared format.
+
+        When a ``schema_registry`` is configured the schema is resolved from the
+        registry, so ``schema.file`` (and ``message_type``) are optional: the
+        backend omits them on reads for schema versions resolved at runtime, and
+        requiring them would reject an otherwise-valid GET response.
+        """
+        schema = self.source_schema
+        using_registry = self.schema_registry is not None
+        if self.format == KafkaFormat.AVRO:
+            if not using_registry and (schema is None or not schema.file):
+                raise ValueError("avro format requires schema.file")
+        elif self.format == KafkaFormat.PROTOBUF:
+            if not using_registry and (
+                schema is None or not schema.file or not schema.message_type
+            ):
+                raise ValueError(
+                    "protobuf format requires schema.file and schema.message_type"
+                )
         return self
 
     def update(self, patch: "KafkaSourcePatch") -> "KafkaSource":
@@ -116,8 +214,11 @@ class KafkaSource(SourceBaseConfig):
         if patch.topic is not None:
             update_dict.topic = patch.topic
 
-        if patch.schema_fields is not None:
-            update_dict.schema_fields = patch.schema_fields
+        if patch.format is not None:
+            update_dict.format = patch.format
+
+        if patch.source_schema is not None:
+            update_dict.source_schema = patch.source_schema
 
         return update_dict
 
@@ -142,6 +243,19 @@ class KafkaConnectionParamsPatch(BaseModel):
 class KafkaSourcePatch(SourceBaseConfigPatch):
     """Patch model for KafkaSource."""
 
+    model_config = ConfigDict(populate_by_name=True)
+
     connection_params: Optional[KafkaConnectionParamsPatch] = Field(default=None)
     topic: Optional[str] = Field(default=None)
-    schema_fields: Optional[List[KafkaField]] = Field(default=None)
+    format: Optional[KafkaFormat] = Field(default=None)
+    source_schema: Optional[KafkaSchema] = Field(default=None, alias="schema")
+
+    @model_validator(mode="before")
+    @classmethod
+    def parse_schema(cls, data: Any) -> Any:
+        return _parse_source_schema(data)
+
+    @property
+    def schema_fields(self) -> Optional[List[KafkaField]]:
+        """Backward-compatible accessor for ``schema.fields``."""
+        return self.source_schema.fields if self.source_schema else None

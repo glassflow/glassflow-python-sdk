@@ -14,14 +14,17 @@ from typing import Annotated, Union
 
 from pydantic import Field  # noqa: F401
 
+from ..registry import register_source
 from ..source import SourceBaseConfig, SourceBaseConfigPatch, SourceType
 from .kafka import (
     ConsumerGroupOffset,
     KafkaConnectionParams,
     KafkaConnectionParamsPatch,
     KafkaField,
+    KafkaFormat,
     KafkaMechanism,
     KafkaProtocol,
+    KafkaSchema,
     KafkaSource,
     KafkaSourcePatch,
     SchemaRegistry,
@@ -34,7 +37,10 @@ from .otlp import (
     OTLPTracesSource,
 )
 
-# Discriminated union -- Pydantic resolves the concrete class via the `type` field.
+# Discriminated union -- kept as a convenience type alias for the OSS source
+# set. The PipelineConfig.sources field no longer uses it directly; instead it
+# dispatches via the source registry so editions can add new source types
+# without redefining this union.
 SourceConfig = Annotated[
     Union[KafkaSource, OTLPLogsSource, OTLPMetricsSource, OTLPTracesSource],
     Field(discriminator="type"),
@@ -46,6 +52,15 @@ SourceConfigPatch = Union[KafkaSourcePatch, OTLPSourcePatch]
 AnySource = SourceConfig
 AnySourcePatch = SourceConfigPatch
 
+# Register the OSS source types so the registry-backed dispatch can resolve them.
+for _source_cls in (
+    KafkaSource,
+    OTLPLogsSource,
+    OTLPMetricsSource,
+    OTLPTracesSource,
+):
+    register_source(_source_cls)
+
 __all__ = [
     # Base
     "SourceType",
@@ -56,8 +71,10 @@ __all__ = [
     "KafkaConnectionParams",
     "KafkaConnectionParamsPatch",
     "KafkaField",
+    "KafkaFormat",
     "KafkaMechanism",
     "KafkaProtocol",
+    "KafkaSchema",
     "KafkaSource",
     "KafkaSourcePatch",
     "SchemaRegistry",
